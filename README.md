@@ -1,6 +1,6 @@
 # Malmo Task Learning
 
-This repository is designed to help support the research into companion AI in Minecraft. More specifically, our goal is to run a simulation with an automated player and companion, where the companion performs a hard-coded task. As the companion performs said tasks, we log the environment states and actions to a learning algorithm which attempts to classify complex tasks from a series of primitive tasks. Then, given a new companion that is NOT hardcoded, they should be able to use the "learned" model to perform the same task as efficiently.
+This repository is designed to help support research into companion AI in Minecraft. More specifically, the goal is to run a simulation with an automated player and companion, where the companion performs a hard-coded task. As the companion performs said tasks, we log the environment states and actions to a learning algorithm which attempts to classify complex tasks from a series of primitive tasks. Given a new companion that is NOT hardcoded, they should be able to use the "learned" model to perform the same task with similar performance.
 
 ## Contents
 
