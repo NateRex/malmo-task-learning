@@ -4,16 +4,37 @@
 # ScenarioBuilder
 # ==============================================================================================
 
+def translatePoint(origin, point):
+    """
+    Translate a point in space by the given origin of a coordinate system.
+    """
+    return (point[0] + origin[0], point[1] + origin[1], point[2] + origin[2])
+
 class DecorationBuilder:
     """
     Internal class used by the ScenarioBuilder for developing XML for the environment of a Malmo mission
     """
 
-    def __init__(self):
-        self.generatorString = "3;7,2*3,2;1;"
-        self.decoratorsXML = ""
+    def __init__(self, origin):
+        self.__origin = origin   # (x, y, z)
+        self.__generatorString = "3;7,2*3,2;1;"
+        self.__decoratorsXML = ""
 
-    # Return the complete XML string for this set of decorations
+    def addLine(self, point0, point1, blockType):
+        """
+        Add a line of a specific block type from point0 to point1, where each point is specified as an (x, y, z) tuple relative to the origin (0, 0, 0).
+        """
+        tPoint0 = translatePoint(self.__origin, point0)
+        tPoint1 = translatePoint(self.__origin, point1)
+        self.__decoratorsXML += '''<DrawLine x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}"/>'''.format(tPoint0[0], tPoint0[1], tPoint0[2], tPoint1[0], tPoint1[1], tPoint1[2], blockType.value)
+
+    def addSphere(self, center, radius, blockType):
+        """
+        Add a sphere of a specific block type, with a given radius and center relative to origin (0, 0, 0).
+        """
+        tCenter = translatePoint(self.__origin, center)
+        self.__decoratorsXML += '''<DrawSphere x="{}" y="{}" z="{}" radius="{}" type="{}"/>'''.format(tCenter[0], tCenter[1], tCenter[2], radius, blockType.value)
+
     def finish(self):
         """
         Return the complete XML string for this set of decorations
@@ -21,7 +42,7 @@ class DecorationBuilder:
         return '''
         <FlatWorldGenerator generatorString="{}"/>
         {}
-        '''.format(self.generatorString, "<DrawingDecorator>" + self.decoratorsXML + "</DrawingDecorator>" if len(self.decoratorsXML) > 0 else "")
+        '''.format(self.__generatorString, "<DrawingDecorator>" + self.__decoratorsXML + "</DrawingDecorator>" if len(self.__decoratorsXML) > 0 else "")
     
 
 class AgentBuilder:
@@ -32,8 +53,8 @@ class AgentBuilder:
     def __init__(self, name, startPosition):
         self.name = name
         self.position = startPosition  # (x, y, z)
-        self.inventoryXML = ""
-        self.handlersXML = ""
+        self.__inventoryXML = ""
+        self.__handlersXML = ""
 
     def finish(self):
         """
@@ -47,7 +68,7 @@ class AgentBuilder:
             <Inventory>{}</Inventory>
         </AgentStart>
         <AgentHandlers>{}</AgentHandlers>
-        </AgentSection>'''.format(self.name, str(self.position[0]), str(self.position[1]), str(self.position[2]), self.inventoryXML, self.handlersXML)
+        </AgentSection>'''.format(self.name, str(self.position[0]), str(self.position[1]), str(self.position[2]), self.__inventoryXML, self.__handlersXML)
 
 
 class ScenarioBuilder:
@@ -61,7 +82,8 @@ class ScenarioBuilder:
         # TODO: Change this to account for both player agent AND companion agent
         self.description = description
         self.timeLimit = timeLimit
-        self.decorations = DecorationBuilder()
+        self.__origin = origin    # (x, y, z)
+        self.decorations = DecorationBuilder(origin)
         self.playerAgent = AgentBuilder("PlayerAgent", origin)
 
     def finish(self):

@@ -1,10 +1,12 @@
 # ==============================================================================================
 # This file shows the typical setup for a new scenario to be ran as a mission in the Malmo
-# platform. The XML is handwritten in specifying the environment and agent settings. THIS FILE
-# IS READONLY!!!
+# platform. The XML for the environment and agent settings is dynamically generated using the
+# ScenarioBuilder in ScenarioBuilder.py. THIS FILE IS READONLY!!!
 # ==============================================================================================
 from __future__ import print_function
 from builtins import range
+from Constants import BlockType
+from ScenarioBuilder import ScenarioBuilder
 import MalmoPython
 import os
 import sys
@@ -17,30 +19,8 @@ else:
     print = functools.partial(print, flush=True)
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-            <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            
-              <About>
-                <Summary>Hello world!</Summary>
-              </About>
-              
-              <ServerSection>
-                <ServerHandlers>
-                  <FlatWorldGenerator generatorString="3;7,220*1,5*3,2;3;,biome_1"/>
-                  <ServerQuitFromTimeUp timeLimitMs="30000"/>
-                  <ServerQuitWhenAnyAgentFinishes/>
-                </ServerHandlers>
-              </ServerSection>
-              
-              <AgentSection mode="Survival">
-                <Name>MalmoTutorialBot</Name>
-                <AgentStart/>
-                <AgentHandlers>
-                  <ObservationFromFullStats/>
-                  <ContinuousMovementCommands turnSpeedDegs="180"/>
-                </AgentHandlers>
-              </AgentSection>
-            </Mission>'''
+scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, (0, 5, 0))
+missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 
 agent_host = MalmoPython.AgentHost()
