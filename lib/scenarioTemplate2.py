@@ -1,7 +1,7 @@
 # ==============================================================================================
 # This file shows the typical setup for a new scenario to be ran as a mission in the Malmo
 # platform. The XML for the environment and agent settings is dynamically generated using the
-# ScenarioBuilder in ../tools/ScenarioBuilder.py. THIS FILE IS READONLY!!!
+# ScenarioBuilder in ScenarioBuilder.py. THIS FILE IS READONLY!!!
 # ==============================================================================================
 from __future__ import print_function
 from builtins import range
