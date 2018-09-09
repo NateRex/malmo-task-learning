@@ -4,71 +4,73 @@
 # ScenarioBuilder
 # ==============================================================================================
 
-# Internal class used by ScenarioBuilder for developing the XML for the environment an agent will act in
 class DecorationBuilder:
+    """
+    Internal class used by the ScenarioBuilder for developing XML for the environment of a Malmo mission
+    """
 
-    # Begin a builder for a new set of decorations
     def __init__(self):
-        self.generatorString = "3;7,44*49,73,35:1,159:4,95:13,35:13,159:11,95:10,159:14,159:6,35:6,95:6;12;"
+        self.generatorString = "3;7,2*3,2;1;"
         self.decoratorsXML = ""
 
     # Return the complete XML string for this set of decorations
     def finish(self):
+        """
+        Return the complete XML string for this set of decorations
+        """
         return '''
-        <FlatWorldGenerator generatorString="''' + self.generatorString + '''"/>
-        <DrawingDecorator>
-        ''' + self.decoratorsXML + '''
-        </DrawingDecorator>
-        '''
+        <FlatWorldGenerator generatorString="{}"/>
+        {}
+        '''.format(self.generatorString, "<DrawingDecorator>" + self.decoratorsXML + "</DrawingDecorator>" if len(self.decoratorsXML) > 0 else "")
     
 
-# Internal class used by ScenarioBuilder for developing the XML for an agent in a Malmo mission
 class AgentBuilder:
+    """
+    Internal class used by the ScenarioBuilder for developing XML for an agent in a Malmo mission
+    """
 
-    # Begin a builder for a new agent of a specific name
-    def __init__(self, name):
+    def __init__(self, name, startPosition):
         self.name = name
-        self.position = (0.5, 56, 0.5, 0)  # (x, y, z, yaw)
+        self.position = startPosition  # (x, y, z)
         self.inventoryXML = ""
         self.handlersXML = ""
 
-    # Return the complete XML string for this agent being built
     def finish(self):
+        """
+        Returns the complete XML string for this agent being built.
+        """
         return '''
         <AgentSection mode="Survival">
-        <Name>''' + self.name + '''</Name>
+        <Name>{}</Name>
         <AgentStart>
-            <Placement x="''' + self.position[0] + '''" y="''' + self.position[1] + '''" z="''' + self.position[2] + '''" yaw="''' + self.position[3] + '''"/>
-            <Inventory>
-                ''' + self.inventoryXML + '''
-            </Inventory>
+            <Placement x="{}" y="{}" z="{}" yaw="0"/>
+            <Inventory>{}</Inventory>
         </AgentStart>
-        <AgentHandlers>''' + self.handlersXML + '''</AgentHandlers>
-        </AgentSection>'''
+        <AgentHandlers>{}</AgentHandlers>
+        </AgentSection>'''.format(self.name, str(self.position[0]), str(self.position[1]), str(self.position[2]), self.inventoryXML, self.handlersXML)
 
 
-# Builder for creating a scenario for a new Malmo mission
-# One of the first actions that should be taken by the caller is to set the player
-# agent's starting position, since all other added decorators are relative to this
-# position
 class ScenarioBuilder:
+    """
+    Builder for creating a scenario in the form of a new Malmo mission. All added decorators are relative to
+    the origin provided, which is represented as a tuple containing the following: (x, y, z).
+    The origin marks the player-agent starting position and should not be changed.
+    """
 
-    # Begin a builder for a new player/companion scenario in a Malmo mission using a
-    # description for the scenario and a time limit
-    def __init__(self, description, timeLimit):
+    def __init__(self, description, timeLimit, origin):
         # TODO: Change this to account for both player agent AND companion agent
         self.description = description
         self.timeLimit = timeLimit
         self.decorations = DecorationBuilder()
-        self.playerAgent = AgentBuilder("PlayerAgent")
+        self.playerAgent = AgentBuilder("PlayerAgent", origin)
 
-    # Returns the complete XML string for the current scenario
     def finish(self):
+        """Returns the complete XML string for the current scenario."""
         return '''
         <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
         <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <About>
-                <Summary>''' + self.description + '''</Summary>
+                <Summary>{}</Summary>
             </About>
 
             <ServerSection>
@@ -81,10 +83,11 @@ class ScenarioBuilder:
                     </ServerInitialConditions>
             
                 <ServerHandlers>
-                        ''' + self.decorations.finish() + '''
-                        <ServerQuitFromTimeUp timeLimitMs="''' + self.timeLimit + '''"/>
+                        {}
+                        <ServerQuitFromTimeUp timeLimitMs="{}"/>
                     <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
             </ServerSection>
             
-            ''' + self.playerAgent.finish() + '''</Mission>'''
+            {}
+            </Mission>'''.format(self.description, self.decorations.finish(), str(self.timeLimit), self.playerAgent.finish())

@@ -5,6 +5,7 @@
 # ==============================================================================================
 from __future__ import print_function
 from builtins import range
+from ScenarioBuilder import ScenarioBuilder
 import MalmoPython
 import os
 import sys
@@ -17,31 +18,8 @@ else:
     print = functools.partial(print, flush=True)
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-# Note: In the future, this XML will be built using ../tools/ScenarioBuilder.py
-missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-            <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            
-              <About>
-                <Summary>Hello world!</Summary>
-              </About>
-              
-              <ServerSection>
-                <ServerHandlers>
-                  <FlatWorldGenerator generatorString="3;7,220*1,5*3,2;3;,biome_1"/>
-                  <ServerQuitFromTimeUp timeLimitMs="30000"/>
-                  <ServerQuitWhenAnyAgentFinishes/>
-                </ServerHandlers>
-              </ServerSection>
-              
-              <AgentSection mode="Survival">
-                <Name>MalmoTutorialBot</Name>
-                <AgentStart/>
-                <AgentHandlers>
-                  <ObservationFromFullStats/>
-                  <ContinuousMovementCommands turnSpeedDegs="180"/>
-                </AgentHandlers>
-              </AgentSection>
-            </Mission>'''
+scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, (0, 5, 0))
+missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 
 agent_host = MalmoPython.AgentHost()
