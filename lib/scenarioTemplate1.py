@@ -1,10 +1,9 @@
+# ==============================================================================================
+# This file shows the typical setup for a new scenario to be ran as a mission in the Malmo
+# platform. The XML is handwritten in specifying the environment and agent settings. THIS FILE
+# IS READONLY!!!
+# ==============================================================================================
 from __future__ import print_function
-# ------------------------------------------------------------------------------------------------
-# THIS FILE IS A TEMPLATE FOR CREATING NEW SCENARIOS, AND SHOULD NOT BE CHANGED
-# ------------------------------------------------------------------------------------------------
-
-# Tutorial sample #2: Run simple mission using raw XML
-
 from builtins import range
 import MalmoPython
 import os
@@ -17,8 +16,7 @@ else:
     import functools
     print = functools.partial(print, flush=True)
 
-# INITIAL SETUP GOES HERE ================================================================================================
-# Note: In the future, this XML will be built using ../tools/ScenarioBuilder.py
+# SET UP THE ENVIRONMENT HERE ============================================================================================
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             

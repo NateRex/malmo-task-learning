@@ -4,17 +4,19 @@ This repository is designed to help support research into companion AI in Minecr
 
 ## Contents
 
-#### scenarios/
+#### lib/
 
-This directory contains Python scripts, each one representing a unique hardcoded scenario for both the player and the companion. The scenarios can be ran just like any other missions included in the original Malmo project. When running these scripts, the output traces will be fed to the learning algorithm to be used by future non-hardcoded companions.
+This directory contains Python scripts representing unique hardcoded scenarios for players agents and their companions. A scenario can be ran just like any other Python example mission included in the default clone of the Malmo project. When running these scripts, the trace outputs will be fed to the learning algorithm to be used by future non-hardcoded companions.
 
-#### tools/
+There are also several Python scripts that serve as tools for the development of scenarios. These files should **NOT** be ran directly, but rather they expose functionality that the scenario scripts can make use of. These are listed below:
 
-This directory contains Python scripts that serve as tools for the development and runtime output of newly-created scenarios. These files should not be ran directly, but rather expose functions that other scripts can make use of.
+- **ScenarioBuilder**: Functionality for dynamically building up the XML string representations of a scenario, including both agent and environment settings.
+
+- **TraceLogger**: Functionality for outputting the generated traces of a scenario as it is ran, which includes both state and action contents.
 
 ## Usage
 
-To make use of the scripts in this directory, clone this repository into your local copy of the Malmo platform at the following location:
+To make use of the scripts in this directory, clone this repository into your local clone of the Malmo project at the following location:
 
 ```
 MalmoPlatform/Python_Examples/
