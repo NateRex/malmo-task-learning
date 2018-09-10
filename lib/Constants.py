@@ -1,6 +1,6 @@
 # ==============================================================================================
-# This file contains enumerated types and constant values for values commonly used in setting
-# up scenarios for Malmo
+# This file contains enumerated types and constant values commonly used in setting
+# up scenarios to be ran by Malmo.
 # ==============================================================================================
 from enum import Enum
 
