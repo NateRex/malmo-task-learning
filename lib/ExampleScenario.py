@@ -1,16 +1,17 @@
 # ==============================================================================================
-# This file shows the typical setup for a new scenario to be ran as a mission in the Malmo
-# platform. The XML for the environment and agent settings is dynamically generated using the
-# ScenarioBuilder in ScenarioBuilder.py. THIS FILE IS READONLY!!!
+# This file serves as an example of how to set up a scenario for the Malmo platform. The XML for
+# the environment and agent settings is dynamically generated using the ScenarioBuilder in
+# ScenarioBuilder.py.
 # ==============================================================================================
 from __future__ import print_function
 from builtins import range
-from Constants import BlockType
-from ScenarioBuilder import ScenarioBuilder
 import MalmoPython
 import os
 import sys
 import time
+
+from Constants import BlockType, ItemType, ItemSlot
+from ScenarioBuilder import ScenarioBuilder
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -19,7 +20,24 @@ else:
     print = functools.partial(print, flush=True)
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, (0, 5, 0))
+# Agent
+scenarioBuilder = ScenarioBuilder("Test Scenario", 10000)
+agentPosition = (0, 5, 0)
+scenarioBuilder.agent.setPosition((0.5, 5, 0.5))    # We adjust by 0.5 to start the agent in the CENTER of the block
+scenarioBuilder.agent.addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
+scenarioBuilder.agent.addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
+scenarioBuilder.agent.addInventoryItem(ItemType.Diamond_leggings, ItemSlot.Armor.Leggings)
+scenarioBuilder.agent.addInventoryItem(ItemType.Diamond_chestplate, ItemSlot.Armor.Chestplate)
+scenarioBuilder.agent.addInventoryItem(ItemType.Diamond_helmet, ItemSlot.Armor.Helmet)
+
+# Decorations
+scenarioBuilder.decorations.addSphere((0, 40, 0), 39, BlockType.Air)
+scenarioBuilder.decorations.addLine((0, 0, 0), (0, 4, 0), BlockType.Gold_block)
+scenarioBuilder.decorations.addCube((agentPosition[0] - 20, 1, agentPosition[2] - 20), (agentPosition[0] + 20, 1, agentPosition[2] + 20), BlockType.Lava)
+scenarioBuilder.decorations.addCube((agentPosition[0] - 2, 1, agentPosition[2] - 2), (agentPosition[0] + 2, 1, agentPosition[2] + 2), BlockType.Stone)
+for i in range(-5, 6):
+    for j in range(-5, 6):
+        scenarioBuilder.decorations.addDropItem((agentPosition[0] + i, 35, agentPosition[2] + j), ItemType.Emerald)
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 
