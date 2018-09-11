@@ -497,3 +497,9 @@ class ItemSlot:
         Leggings = "37"
         Chestplate = "38"
         Helmet = "39"
+
+class Direction(Enum):
+    North = 180
+    East = -90
+    South = 0
+    West = 90
