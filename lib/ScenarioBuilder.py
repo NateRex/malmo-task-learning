@@ -3,6 +3,7 @@
 # mission. Note: The only class in this file that should be used directly by callers is the
 # ScenarioBuilder
 # ==============================================================================================
+from Constants import Direction
 
 class DecorationBuilder:
     """
@@ -56,12 +57,13 @@ class DecorationBuilder:
 
 class AgentBuilder:
     """
-    Internal class used by the ScenarioBuilder for developing XML for an agent in a Malmo mission
+    Internal class used by the ScenarioBuilder for developing XML for an agent in a Malmo mission.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, startPosition = None, startDirection = None):
         self.name = name
-        self.__position = (0, 0, 0)   # Each agent starts at the origin until specified otherwise
+        self.__position = startPosition if startPosition != None else (0, 0, 0)
+        self.__direction = startDirection.value if startDirection != None else Direction.North.value
         self.__inventoryXML = ""
         self.__handlersXML = ""
 
@@ -77,6 +79,18 @@ class AgentBuilder:
         """
         return self.__position
 
+    def setDirection(self, direction):
+        """
+        Set the direction for this agent to face (North, South, East, West).
+        """
+        self.__direction = direction.value
+
+    def getDirection(self):
+        """
+        Returns the starting direction this agent is currently set to face as an integer value representing the yaw angle in degrees.
+        """
+        return self.__direction
+    
     def addInventoryItem(self, item, slot):
         """
         Add an item to this agent's inventory at the designated item slot number.
@@ -93,30 +107,44 @@ class AgentBuilder:
         <AgentSection mode="Survival">
         <Name>{}</Name>
         <AgentStart>
-            <Placement x="{}" y="{}" z="{}" yaw="180"/>
-            <Inventory>{}</Inventory>
+            <Placement x="{}" y="{}" z="{}" yaw="{}"/>
+            <Inventory>
+            {}
+            </Inventory>
         </AgentStart>
-        <AgentHandlers>{}</AgentHandlers>
-        </AgentSection>'''.format(self.name, str(self.__position[0]), str(self.__position[1]), str(self.__position[2]), self.__inventoryXML, self.__handlersXML)
+        <AgentHandlers>
+        {}
+        </AgentHandlers>
+        </AgentSection>'''.format(self.name, str(self.__position[0]), str(self.__position[1]), str(self.__position[2]), str(self.__direction), self.__inventoryXML, self.__handlersXML)
 
 
 class ScenarioBuilder:
     """
-    Builder for creating a scenario in the form of a new Malmo mission. Decorations and agent attributes are
-    set through the members of this object. Since it is possible to create scenarios with multiple agents, agents
-    are stored in an array, which initially only has one agent. All points are specified as tuples in the form (x, y, z).
+    Builder for creating a new Malmo mission scenario. Decorations and agent attributes are
+    set through members of this object. Every scenario starts with one agent. Upon creating a new ScenarioBuilder, optionally
+    specify a name, starting position, and direction for this agent, otherwise, they will default to "Agent", the origin (0, 0, 0), and
+    north, respectively.
     """
 
-    def __init__(self, description, timeLimit):
-        # TODO: Change this to allow for multiple agents
+    def __init__(self, description, timeLimit, agentName = "Agent", startPosition = None, startDirection = None):
         self.description = description
         self.timeLimit = timeLimit
         self.decorations = DecorationBuilder()
-        self.agent = AgentBuilder("PlayerAgent")
+        self.agents = [AgentBuilder(agentName, startPosition, startDirection)]
+
+    def addAgent(self, name, startPosition = None, startDirection = Direction.North):
+        """
+        Add a new agent to this scenario, giving it a name.
+        Optionally specify a starting location as an (x, y, z) tuple, as well as a direction.
+        Otherwise, the agent will start at the origin (0, 0, 0) facing north.
+        """
+        self.agents.append(AgentBuilder(name, startPosition, startDirection))
 
     def finish(self):
-        """Returns the complete XML string for the current scenario."""
-        return '''
+        """
+        Returns the complete XML string for the current scenario.
+        """
+        returnValue = '''
         <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
         <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <About>
@@ -138,6 +166,7 @@ class ScenarioBuilder:
                     <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
             </ServerSection>
-            
-            {}
-            </Mission>'''.format(self.description, self.decorations.finish(), str(self.timeLimit), self.agent.finish())
+            '''.format(self.description, self.decorations.finish(), str(self.timeLimit))
+        for i in range(0, len(self.agents)):
+            returnValue += self.agents[i].finish()
+        return returnValue + "</Mission>"
