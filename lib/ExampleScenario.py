@@ -10,7 +10,7 @@ import malmoutils
 import os
 import sys
 import time
-from Constants import BlockType, ItemType, ItemSlot, Direction
+from Constants import *
 from ScenarioBuilder import ScenarioBuilder
 
 # SET UP ALL AGENT HOSTS =================================================================================================
@@ -40,15 +40,22 @@ scenarioBuilder.agents[1].addInventoryItem(ItemType.Leather_leggings, ItemSlot.A
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Leather_chestplate, ItemSlot.Armor.Chestplate)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Leather_helmet, ItemSlot.Armor.Helmet)
 
+# Mobs
+scenarioBuilder.setTimeOfDay(TimeOfDay.Dawn)
+scenarioBuilder.environment.addBlock((13, 3, 0), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock((-13, 3, 0), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock((0, 3, 13), BlockType.Mob_spawner, MobType.Pig)
+
 # Decorations
-scenarioBuilder.decorations.addSphere((0, 40, 0), 39, BlockType.Air)
-scenarioBuilder.decorations.addLine((0, 0, 0), (0, 4, 0), BlockType.Gold_block)
-scenarioBuilder.decorations.addCube((companionPos[0] - 20, 1, companionPos[2] - 20), (companionPos[0] + 20, 1, companionPos[2] + 20), BlockType.Lava)
-scenarioBuilder.decorations.addCube((companionPos[0] - 2, 1, companionPos[2] - 2), (companionPos[0] + 2, 1, companionPos[2] + 2), BlockType.Stone)
+scenarioBuilder.environment.addSphere((0, 40, 0), 39, BlockType.Air)
+scenarioBuilder.environment.addLine((0, 0, 0), (0, 4, 0), BlockType.Gold_block)
+scenarioBuilder.environment.addCube((companionPos[0] - 20, 1, companionPos[2] - 20), (companionPos[0] + 20, 1, companionPos[2] + 20), BlockType.Lava)
+scenarioBuilder.environment.addCube((companionPos[0] - 2, 1, companionPos[2] - 2), (companionPos[0] + 2, 1, companionPos[2] + 2), BlockType.Stone)
 for i in range(-5, 6):
     for j in range(-5, 6):
-        scenarioBuilder.decorations.addDropItem((companionPos[0] + i, 35, companionPos[2] + j), ItemType.Emerald)
+        scenarioBuilder.environment.addDropItem((companionPos[0] + i, 35, companionPos[2] + j), ItemType.Emerald)
 missionXML = scenarioBuilder.finish()
+print(missionXML)
 # ========================================================================================================================
 
 my_mission = MalmoPython.MissionSpec(missionXML, True)
