@@ -504,7 +504,7 @@ class Direction(Enum):
     South = 0
     West = 90
 
-class Mobs(Enum):
+class MobType(Enum):
     ElderGuardian = "ElderGuardian"
     WitherSkeleton = "WitherSkeleton"
     Stray = "Stray"
@@ -552,3 +552,9 @@ class Mobs(Enum):
     PolarBear = "PolarBear"
     Llama = "Llama"
     Villager = "Villager"
+
+class TimeOfDay(Enum):
+    Dawn = "0"
+    Noon = "6000"
+    Sunset = "12000"
+    Midnight = "18000"
