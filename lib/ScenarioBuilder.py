@@ -123,7 +123,7 @@ class EnvironmentBuilder:
         Return the complete XML string for this set of decorations
         """
         return '''
-        <FlatWorldGenerator generatorString="{}"/>
+        <FlatWorldGenerator forceReset="true" generatorString="{}"/>
         {}
         '''.format(self.__generatorString, "<DrawingDecorator>" + self.__decoratorsXML + "</DrawingDecorator>" if len(self.__decoratorsXML) > 0 else "")
     
