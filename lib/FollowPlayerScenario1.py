@@ -26,12 +26,8 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-# Player Agent
-scenarioBuilder = ScenarioBuilder("Follow the player", 45000, "Player", (0, 4, 0), Direction.North)
-
-# Companion Agent
+scenarioBuilder = ScenarioBuilder("Follow the player", 30000, "Player", (0, 4, 0), Direction.North)
 scenarioBuilder.addAgent("Companion", (0, 4, 5), Direction.North)
-
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 
