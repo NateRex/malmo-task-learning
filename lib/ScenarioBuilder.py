@@ -164,12 +164,12 @@ class AgentBuilder:
         """
         return self.__direction
     
-    def addInventoryItem(self, item, slot):
+    def addInventoryItem(self, item, slot, quantity = 1):
         """
-        Add an item to this agent's inventory at the designated item slot number.
+        Add an item to this agent's inventory at a designated item slot number, specifying a quantity.
         Each agent has 39 item slots, where 0-8 are the hotbar slots, 9-35 are the inventory slots, and 36-39 are the armor slots.
         """
-        self.__inventoryXML += '''<InventoryItem slot="{}" type="{}"/>'''.format(slot.value, item.value)
+        self.__inventoryXML += '''<InventoryItem slot="{}" type="{}" quantity="{}"/>'''.format(slot.value, item.value, quantity)
 
 
     def finish(self):
@@ -186,6 +186,7 @@ class AgentBuilder:
             </Inventory>
         </AgentStart>
         <AgentHandlers>
+        <ContinuousMovementCommands/>
         {}
         </AgentHandlers>
         </AgentSection>'''.format(self.name, str(self.__position[0]), str(self.__position[1]), str(self.__position[2]), str(self.__direction), self.__inventoryXML, self.__handlersXML)
