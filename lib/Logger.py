@@ -90,6 +90,8 @@ class Logger:
         Outputs the current JSON log string to a file located a the 'logs' directory within the current working
         directory. The file name is determined by the current date and time.
         """
+        if len(Logger.__contents) > 1:
+            Logger.__contents = Logger.__contents[:-1]
         Logger.__contents += "]"
         fileName = datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S') + "_log.json"
         filePath = "logs"
