@@ -104,12 +104,13 @@ companion_agent.sendCommand("move 1")
 # Wait for all agents to finish:
 while player_agent.peekWorldState().is_mission_running or companion_agent.peekWorldState().is_mission_running:
     # LOG OBSERVATIONS @ REGULAR INTERVALS HERE ======================================================================
-    worldState = companion_agent.getWorldState()
-    if worldState.number_of_observations_since_last_state > 0:
-        Logger.logPosition(worldState.observations[-1].text)
+    playerWorldState = player_agent.getWorldState()
+    companionWorldState = companion_agent.getWorldState()
+    if playerWorldState.number_of_observations_since_last_state > 0 and companionWorldState.number_of_observations_since_last_state > 0:
+        Logger.logPosition(playerWorldState.observations[-1].text, companionWorldState.observations[-1].text)
     time.sleep(1)
     # ================================================================================================================
 
-Logger.flushToFile()
 print()
+Logger.flushToFile()    # Flush the trace information for the companion!
 print("Mission ended")

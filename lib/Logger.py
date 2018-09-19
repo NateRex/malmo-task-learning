@@ -31,54 +31,58 @@ class Logger:
         return datetime.fromtimestamp(time.time()).strftime('%m-%d-%Y %H:%M:%S.%f')
 
     @staticmethod
-    def logAttack(targetBlockType, targetLocation, observations):
+    def logAttack(targetBlockType, targetLocation, playerObservation, companionObservation = "null"):
         """
         Add trace output resulting from an attack to the running log.
         """
         Logger.__contents += '''{{
-            "time": "{}",
             "type": "attack",
+            "time": "{}",
             "target": {},
-            "location": [{}, {}, {}],
-            "agent": {}
-        }},'''.format(Logger.__getTime__(), targetBlockType.value, targetLocation[0], targetLocation[1], targetLocation[2], observations)
+            "targetLocation": [{}, {}, {}],
+            "player": {},
+            "companion": {}
+        }},'''.format(Logger.__getTime__(), targetBlockType.value, targetLocation[0], targetLocation[1], targetLocation[2], playerObservation, companionObservation)
 
     @staticmethod
-    def logPosition(observations):
+    def logPosition(playerObservation, companionObservation = "null"):
         """
         Add trace output resulting from a position observation to the running log.
         """
         Logger.__contents += '''{{
-            "time": "{}",
             "type": "position",
-            "agent": {}
-        }},'''.format(Logger.__getTime__(), observations)
+            "time": "{}",
+            "player": {},
+            "companion": {}
+        }},'''.format(Logger.__getTime__(), playerObservation, companionObservation)
 
     @staticmethod
-    def logCrafting(item, ingredients, observations):
+    def logCrafting(item, ingredients, playerObservation, companionObservation = "null"):
         """
         Add trace output resulting from crafting an item to the running log.
         """
         Logger.__contents += '''{{
-            "time": "{}",
             "type": "crafting",
+            "time": "{}",
             "item": {},
             "ingredients": {},
-            "agent": {}
-        }},'''.format(Logger.__getTime__(), item.value, ___, observations)
+            "player": {},
+            "companion": {}
+        }},'''.format(Logger.__getTime__(), item.value, ___, playerObservation, companionObservation)
 
     @staticmethod
-    def logMoveTo(targetBlockType, targetLocation, observations):
+    def logMoveTo(targetBlockType, targetLocation, playerObservation, companionObservation = "null"):
         """
         Add trace output resulting from moving to a specific block to the running log.
         """
         Logger.__contents += '''{{
-            "time": "{}",
             "type": "moveto",
+            "time": "{}",
             "target": {},
-            "location": [{}, {}, {}],
-            "agent": {}
-        }},'''.format(Logger.__getTime__(), targetBlockType.value, targetLocation[0], targetLocation[1], targetLocation[2], observations)
+            "moveToLocation": [{}, {}, {}],
+            "player": {},
+            "companion": {}
+        }},'''.format(Logger.__getTime__(), targetBlockType.value, targetLocation[0], targetLocation[1], targetLocation[2], playerObservation, companionObservation)
 
     @staticmethod
     def flushToFile():
@@ -95,4 +99,5 @@ class Logger:
         logFile = open(filePath, "w+")
         logFile.write(Logger.__contents)
         logFile.close()
+        print("Mission log output has been saved to: " + filePath)
         Logger.clear()
