@@ -10,9 +10,11 @@ This directory contains Python scripts representing unique hardcoded scenarios f
 
 There are also several Python scripts that serve as tools for the development of scenarios. These files should **NOT** be ran directly, but rather they expose functionality that the scenario scripts can make use of. These are listed below:
 
+- **Constants**: Enumerated types for specifying certain characteristics of the environment, such as block type, item type, direction, time of day, etc.
+
 - **ScenarioBuilder**: Functionality for dynamically building up the XML string representations of a scenario, including both agent and environment settings.
 
-- **TraceLogger**: Functionality for outputting the generated traces of a scenario as it is ran, which includes both state and action contents.
+- **Logger**: Functionality for outputting the generated traces of a scenario as it is ran, which includes both state and action contents.
 
 ## Usage
 
@@ -33,7 +35,7 @@ First, ensure that you have a working copy of Microsoft's MalmoPlatform, and can
 
 - Clone this repository onto your local machine.
 
-- **Currently, the Python script files must be copied directly into the Python_Examples/ directory of the MalmoPlatform repository in order to be ran.**
+- **Currently, the Python script files must be copied directly into the Python_Examples/ directory of the MalmoPlatform repository in order to be ran. We are currently working on figuring out a way around this**
 
 - Any of the missions can then be ran using Python:
 
