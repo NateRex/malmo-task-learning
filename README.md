@@ -16,14 +16,30 @@ There are also several Python scripts that serve as tools for the development of
 
 ## Usage
 
-To make use of the scripts in this directory, clone this repository into your local clone of the Malmo project at the following location:
+First, ensure that you have a working copy of Microsoft's MalmoPlatform, and can run both the Minecraft client and the Python missions. The repository for the Malmo project can be found [here](https://github.com/Microsoft/malmo). Once that is working, clone this repository onto your local machine at any location.
 
-```
-MalmoPlatform/Python_Examples/
-```
+#### Windows
 
-Now, just as you would run any of the original Python missions, you can run any of the scenarios at:
+- Add the Python_Examples/ directory of the MalmoPlatform repository to your list of environment variables.
 
-```
-MalmoPlatform/Python_Examples/malmo-task-learning/
-```
+- Any of the missions in this repository can then be ran using Python:
+
+    ```
+    cd .../malmo-task-learning/lib/
+    python Example.mission.py
+    ```
+
+#### Mac/Linux
+
+- Add the Python_Examples/ directory to the PYTHONPATH environment variable in either .bash_profile or .bash_src:
+
+    ```
+    export PYTHONPATH=..../MalmoPlatform/Python_Examples:$PYTHONPATH
+    ```
+
+- Any of the missions in this repository can then be ran using Python:
+
+    ```
+    cd .../malmo-task-learning/lib/
+    sudo python Example.mission.py
+    ```
