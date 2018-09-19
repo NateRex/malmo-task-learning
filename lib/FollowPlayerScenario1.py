@@ -11,6 +11,7 @@ import os
 import sys
 import time
 from Constants import *
+from Logger import *
 from ScenarioBuilder import ScenarioBuilder
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
@@ -26,8 +27,8 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-scenarioBuilder = ScenarioBuilder("Follow the player", 30000, "Player", (0, 4, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 4, 5), Direction.North)
+scenarioBuilder = ScenarioBuilder("Follow the player", 10000, "Player", (0, 4, 0), Direction.North)
+scenarioBuilder.addAgent("Companion", (0, 4, 7), Direction.North)
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 
@@ -102,7 +103,13 @@ companion_agent.sendCommand("move 1")
 
 # Wait for all agents to finish:
 while player_agent.peekWorldState().is_mission_running or companion_agent.peekWorldState().is_mission_running:
+    # LOG OBSERVATIONS @ REGULAR INTERVALS HERE ======================================================================
+    worldState = companion_agent.getWorldState()
+    if worldState.number_of_observations_since_last_state > 0:
+        Logger.logPosition(worldState.observations[-1].text)
     time.sleep(1)
+    # ================================================================================================================
 
+Logger.flushToFile()
 print()
 print("Mission ended")

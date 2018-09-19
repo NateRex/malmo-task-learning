@@ -186,6 +186,10 @@ class AgentBuilder:
             </Inventory>
         </AgentStart>
         <AgentHandlers>
+        <ObservationFromFullStats/>
+        <ObservationFromFullInventory flat="false"/>
+        <InventoryCommands/>
+        <MissionQuitCommands />
         <ContinuousMovementCommands/>
         {}
         </AgentHandlers>

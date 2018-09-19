@@ -132,7 +132,9 @@ player_agent.sendCommand("jump 1")
 
 # Wait for all agents to finish:
 while player_agent.peekWorldState().is_mission_running or companion_agent.peekWorldState().is_mission_running:
+    # LOG OBSERVATIONS @ REGULAR INTERVALS HERE ======================================================================
     time.sleep(1)
+    # ================================================================================================================
 
 print()
 print("Mission ended")
