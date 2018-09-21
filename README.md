@@ -6,9 +6,9 @@ This repository is designed to help support research into companion AI in Minecr
 
 - First, ensure that you have a working copy of Microsoft's MalmoPlatform, and can run both the Minecraft client and the Python missions. The repository for the Malmo project can be found [here](https://github.com/Microsoft/malmo).
 
-- Clone this repository onto your local machine. Since this repository contains copies of the shared object libraries and MalmoPlatform interfaces that Microsoft's missions use to run, the location of the repo on your machine is not important. The missions should be runnable from anywhere.
+- Clone this repository onto your local machine. Since this repository contains copies of the shared object libraries and interfaces that Microsoft's missions use to run, the scripts inside this repository will be runnable from anywhere.
 
-- Ensure that you have a sufficient number of Malmo Minecraft clients running for a particular mission, and then run any of the missions using the following command as an example:
+- Ensure that you have a sufficient number of Malmo Minecraft clients running for a particular mission, and then run that mission using the following command as an example:
 
     ```
     python malmo-task-learning/lib/Example.mission.py
