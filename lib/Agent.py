@@ -4,6 +4,7 @@
 # Logging is also handled automatically for each command that creates a corresponding trace.
 # ==============================================================================================
 import MalmoPython
+import json
 
 class Agent:
     """
@@ -13,6 +14,23 @@ class Agent:
 
     def __init__(self):
         self.host = MalmoPython.AgentHost()
+
+    def isMissionActive(self):
+        """
+        Returns true if this agent's mission is still running.
+        """
+        return self.host.peekWorldState().is_mission_running
+
+    def getObservations(self):
+        """
+        Returns the world state containing all recent observations as a JSON object.
+        If no new observations have occurred since the previous call to this method, returns None.
+        """
+        worldState = self.host.getWorldState()
+        if worldState.number_of_observations_since_last_state > 0:
+            return json.loads(worldState.observations[-1].text)
+        return None
+        
 
     def move(self, speed):
         """
