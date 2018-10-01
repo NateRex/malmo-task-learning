@@ -14,15 +14,16 @@ import math
 from collections import namedtuple
 from Constants import *
 from ScenarioBuilder import ScenarioBuilder
+from Agent import *
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
-player_agent = MalmoPython.AgentHost()
-companion_agent = MalmoPython.AgentHost()
-malmoutils.parse_command_line(player_agent)
+player_agent = Agent()
+companion_agent = Agent()
+malmoutils.parse_command_line(player_agent.host)
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10000) )
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
@@ -108,9 +109,10 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
-def findNearestPigPosition(stateObject, playerPos):
+def findNearestPigPosition(stateObject):
     nearestPigDistance = 1000000
     nearestPigPos = None
+    playerPos = (stateObj["XPos"], stateObj["YPos"], stateObj["ZPos"])
     if "closeby_entities" in stateObject:
         entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in stateObject["closeby_entities"]]
         for entity in entities:
@@ -122,26 +124,23 @@ def findNearestPigPosition(stateObject, playerPos):
     return nearestPigPos
 
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
-safeStartMission(player_agent, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent, "agent_1_viewpoint_continuous"), 0, '' )
-safeStartMission(companion_agent, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent, "agent_2_viewpoint_continuous"), 1, '' )
-safeWaitForStart([player_agent, companion_agent])
+safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_1_viewpoint_continuous"), 0, '' )
+safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
+safeWaitForStart([player_agent.host, companion_agent.host])
 
-NEAREST_PIG_POS = None
-# AGENT ACTIONS GO HERE  =============================================================================================
-if NEAREST_PIG_POS != None:
-    companion_agent.sendCommand("move ")
-# ====================================================================================================================
 
 # Wait for all agents to finish:
-while player_agent.peekWorldState().is_mission_running or companion_agent.peekWorldState().is_mission_running:
+while player_agent.host.peekWorldState().is_mission_running or companion_agent.host.peekWorldState().is_mission_running:
+    # AGENT ACTIONS GO HERE  =============================================================================================
     # Reset the position of the nearest mob and recalculate
     NEAREST_PIG_POS = None
-    world_state = companion_agent.getWorldState()
+    world_state = companion_agent.host.getWorldState()
     if world_state.number_of_observations_since_last_state > 0:
         stateText = world_state.observations[-1].text
         stateObj = json.loads(stateText)
+        NEAREST_PIG_POS = findNearestPigPosition(stateObj)
         playerPosition = (stateObj["XPos"], stateObj["YPos"], stateObj["ZPos"])
-        NEAREST_PIG_POS = findNearestPigPosition(stateObj, playerPosition)
+    # ====================================================================================================================
         
 
 print()

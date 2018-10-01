@@ -12,15 +12,16 @@ import sys
 import time
 from Constants import *
 from Logger import *
+from Agent import Agent
 from ScenarioBuilder import ScenarioBuilder
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
-player_agent = MalmoPython.AgentHost()
-companion_agent = MalmoPython.AgentHost()
-malmoutils.parse_command_line(player_agent)
+player_agent = Agent()
+companion_agent = Agent()
+malmoutils.parse_command_line(player_agent.host)
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10000) )
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
@@ -92,25 +93,16 @@ def safeWaitForStart(agent_hosts):
     print("Mission has started.")
 
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
-safeStartMission(player_agent, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent, "agent_1_viewpoint_continuous"), 0, '' )
-safeStartMission(companion_agent, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent, "agent_2_viewpoint_continuous"), 1, '' )
-safeWaitForStart([player_agent, companion_agent])
-
-# AGENT ACTIONS GO HERE  =============================================================================================
-player_agent.sendCommand("move 1")
-companion_agent.sendCommand("move 1")
-# ====================================================================================================================
+safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_1_viewpoint_continuous"), 0, '' )
+safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
+safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Wait for all agents to finish:
-while player_agent.peekWorldState().is_mission_running or companion_agent.peekWorldState().is_mission_running:
-    # LOG OBSERVATIONS @ REGULAR INTERVALS HERE ======================================================================
-    playerWorldState = player_agent.getWorldState()
-    companionWorldState = companion_agent.getWorldState()
-    if playerWorldState.number_of_observations_since_last_state > 0 and companionWorldState.number_of_observations_since_last_state > 0:
-        Logger.logPosition(playerWorldState.observations[-1].text, companionWorldState.observations[-1].text)
-    time.sleep(1)
-    # ================================================================================================================
+while player_agent.host.peekWorldState().is_mission_running or companion_agent.host.peekWorldState().is_mission_running:
+    # AGENT ACTIONS GO HERE  =============================================================================================
+    player_agent.move(1)
+    companion_agent.move(1)
+    # ====================================================================================================================
 
 print()
-Logger.flushToFile()    # Flush the trace information for the companion!
 print("Mission ended")
