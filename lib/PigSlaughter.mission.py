@@ -109,12 +109,12 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
-def findNearestPigPosition(stateObject):
+def findNearestPigPosition(worldState):
     nearestPigDistance = 1000000
     nearestPigPos = None
-    playerPos = (stateObj["XPos"], stateObj["YPos"], stateObj["ZPos"])
-    if "closeby_entities" in stateObject:
-        entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in stateObject["closeby_entities"]]
+    playerPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+    if "closeby_entities" in worldState:
+        entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in worldState["closeby_entities"]]
         for entity in entities:
             if entity.name == "Pig":
                 distanceToPig = math.sqrt(math.pow(playerPos[0] - entity.x, 2) + math.pow(playerPos[1] - entity.y, 2) + math.pow(playerPos[2] - entity.z, 2))
@@ -130,16 +130,15 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 
 
 # Wait for all agents to finish:
-while player_agent.host.peekWorldState().is_mission_running or companion_agent.host.peekWorldState().is_mission_running:
+while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     # Reset the position of the nearest mob and recalculate
-    NEAREST_PIG_POS = None
-    world_state = companion_agent.host.getWorldState()
-    if world_state.number_of_observations_since_last_state > 0:
-        stateText = world_state.observations[-1].text
-        stateObj = json.loads(stateText)
-        NEAREST_PIG_POS = findNearestPigPosition(stateObj)
-        playerPosition = (stateObj["XPos"], stateObj["YPos"], stateObj["ZPos"])
+    worldState = companion_agent.getObservations()
+    if worldState == None:
+        continue
+
+    nearestPigPos = findNearestPigPosition(worldState)
+    playerPosition = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
     # ====================================================================================================================
         
 

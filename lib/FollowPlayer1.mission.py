@@ -98,7 +98,7 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Wait for all agents to finish:
-while player_agent.host.peekWorldState().is_mission_running or companion_agent.host.peekWorldState().is_mission_running:
+while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     player_agent.move(1)
     companion_agent.move(1)
