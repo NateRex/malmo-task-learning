@@ -189,8 +189,11 @@ class AgentBuilder:
         <ObservationFromFullStats/>
         <ObservationFromFullInventory flat="false"/>
         <InventoryCommands/>
-        <MissionQuitCommands />
+        <MissionQuitCommands/>
         <ContinuousMovementCommands/>
+        <ObservationFromNearbyEntities>
+            <Range name="closeby_entities" xrange="10" yrange="2" zrange="10" />
+        </ObservationFromNearbyEntities>
         {}
         </AgentHandlers>
         </AgentSection>'''.format(self.name, str(self.__position[0]), str(self.__position[1]), str(self.__position[2]), str(self.__direction), self.__inventoryXML, self.__handlersXML)

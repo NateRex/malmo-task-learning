@@ -9,10 +9,14 @@ import malmoutils
 import os
 import sys
 import time
+import json
+import math
+from collections import namedtuple
 from Constants import *
 from ScenarioBuilder import ScenarioBuilder
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
+EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
@@ -26,16 +30,15 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, "Player", (0, 5, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 5, -5), Direction.North)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 45000, "Player", (0, 4, 0), Direction.North)
+scenarioBuilder.addAgent("Companion", (0, 4, -15), Direction.North)
 
-scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
-scenarioBuilder.environment.addCube((-3, 4, 2), (3, 8, -35), BlockType.Mossy_cobblestone)
-scenarioBuilder.environment.addCube((-2, 5, 1), (2, 7, -34), BlockType.Air)
-scenarioBuilder.environment.addBlock((0, 4, -32), BlockType.Mob_spawner, MobType.Zombie)
-for i in range(0, 30):
-    if i % 5 == 0:
-        scenarioBuilder.environment.addBlock((-3, 6, -i), BlockType.Torch)
+scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
+scenarioBuilder.environment.addLine((-3, 4, 1), (-3, 4, -25), BlockType.Fence)
+scenarioBuilder.environment.addLine((3, 4, 1), (3, 4, -25), BlockType.Fence)
+scenarioBuilder.environment.addLine((-2, 4, 1), (2, 4, 1), BlockType.Fence)
+scenarioBuilder.environment.addLine((-2, 4, -25), (2, 4, -25), BlockType.Fence)
+scenarioBuilder.environment.addCube((-2, 3, -24), (2, 3, -20), BlockType.Mob_spawner, MobType.Pig)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
@@ -105,19 +108,41 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
+def findNearestPigPosition(stateObject, playerPos):
+    nearestPigDistance = 1000000
+    nearestPigPos = None
+    if "closeby_entities" in stateObject:
+        entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in stateObject["closeby_entities"]]
+        for entity in entities:
+            if entity.name == "Pig":
+                distanceToPig = math.sqrt(math.pow(playerPos[0] - entity.x, 2) + math.pow(playerPos[1] - entity.y, 2) + math.pow(playerPos[2] - entity.z, 2))
+                if distanceToPig < nearestPigDistance:
+                    nearestPigDistance = distanceToPig
+                    nearestPigPos = (entity.x, entity.y, entity.z)
+    return nearestPigPos
+
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
 safeStartMission(player_agent, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent, "agent_1_viewpoint_continuous"), 0, '' )
 safeStartMission(companion_agent, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent, companion_agent])
 
+NEAREST_PIG_POS = None
 # AGENT ACTIONS GO HERE  =============================================================================================
+if NEAREST_PIG_POS != None:
+    companion_agent.sendCommand("move ")
 # ====================================================================================================================
 
 # Wait for all agents to finish:
 while player_agent.peekWorldState().is_mission_running or companion_agent.peekWorldState().is_mission_running:
-    # LOG OBSERVATIONS @ REGULAR INTERVALS HERE ======================================================================
-    time.sleep(1)
-    # ================================================================================================================
+    # Reset the position of the nearest mob and recalculate
+    NEAREST_PIG_POS = None
+    world_state = companion_agent.getWorldState()
+    if world_state.number_of_observations_since_last_state > 0:
+        stateText = world_state.observations[-1].text
+        stateObj = json.loads(stateText)
+        playerPosition = (stateObj["XPos"], stateObj["YPos"], stateObj["ZPos"])
+        NEAREST_PIG_POS = findNearestPigPosition(stateObj, playerPosition)
+        
 
 print()
 print("Mission ended")
