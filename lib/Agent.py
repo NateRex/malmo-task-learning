@@ -5,6 +5,10 @@
 # ==============================================================================================
 import MalmoPython
 import json
+import math
+from collections import namedtuple
+
+EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
 class Agent:
     """
@@ -101,3 +105,27 @@ class Agent:
         Stop using the item in the currently selected hotbar slot.
         """
         self.host.sendCommand("use 0")
+
+    def getNearestMobPosition(self, mobType):
+        """
+        Returns the (distance-to, position-of) the nearest mob of a specific type within a 10x10 area around this agent.
+        Returns None if no mob of that type is within the area.
+        """
+        worldState = self.getObservations()
+        if worldState == None:
+            return None
+        agentPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+        entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in worldState["nearby_entities"]]
+        nearestDistance = 1000000
+        nearestPosition = None
+        for entity in entities:
+            if entity.name == mobType.value:
+                distanceToPig = math.sqrt(math.pow(agentPos[0] - entity.x, 2) + math.pow(agentPos[1] - entity.y, 2) + math.pow(agentPos[2] - entity.z, 2))
+                if distanceToPig < nearestDistance:
+                    nearestDistance = distanceToPig
+                    nearestPosition = (entity.x, entity.y, entity.z)
+        if nearestPosition == None:
+            return None
+        return (nearestDistance, nearestPosition)
+
+    

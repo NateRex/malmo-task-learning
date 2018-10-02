@@ -17,7 +17,6 @@ from ScenarioBuilder import ScenarioBuilder
 from Agent import *
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
-EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
@@ -109,20 +108,6 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
-def findNearestPigPosition(worldState):
-    nearestPigDistance = 1000000
-    nearestPigPos = None
-    playerPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
-    if "closeby_entities" in worldState:
-        entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in worldState["closeby_entities"]]
-        for entity in entities:
-            if entity.name == "Pig":
-                distanceToPig = math.sqrt(math.pow(playerPos[0] - entity.x, 2) + math.pow(playerPos[1] - entity.y, 2) + math.pow(playerPos[2] - entity.z, 2))
-                if distanceToPig < nearestPigDistance:
-                    nearestPigDistance = distanceToPig
-                    nearestPigPos = (entity.x, entity.y, entity.z)
-    return nearestPigPos
-
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
 safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_1_viewpoint_continuous"), 0, '' )
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
@@ -132,13 +117,11 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    # Reset the position of the nearest mob and recalculate
-    worldState = companion_agent.getObservations()
-    if worldState == None:
+    nearestPig = companion_agent.getNearestMobPosition(MobType.Pig)
+    if nearestPig == None:
         continue
-
-    nearestPigPos = findNearestPigPosition(worldState)
-    playerPosition = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+    print("Distance: {}     |     Position: ({}, {}, {})".format(nearestPig[0], nearestPig[1][0], nearestPig[1][1], nearestPig[1][2]))
+    time.sleep(1)
     # ====================================================================================================================
         
 
