@@ -10,9 +10,11 @@ import malmoutils
 import os
 import sys
 import time
+import random
 from Constants import *
 from Logger import *
 from Agent import Agent
+from Utils import MathExt
 from ScenarioBuilder import ScenarioBuilder
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
@@ -28,7 +30,7 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-scenarioBuilder = ScenarioBuilder("Follow the player", 10000, "Player", (0, 4, 0), Direction.North)
+scenarioBuilder = ScenarioBuilder("Follow the player", 60000, "Player", (0, 4, 0), Direction.North)
 scenarioBuilder.addAgent("Companion", (0, 4, 7), Direction.North)
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -97,11 +99,34 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
+turnCounter = 0
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
+    playerPos = player_agent.getPosition()
+    companionPos = companion_agent.getPosition()
+    if playerPos == None or companionPos == None:   # We sure hope not
+        continue
+    
     player_agent.startMoving(1)
-    companion_agent.startMoving(1)
+
+    # Ensure the companion keeps a good distance
+    if MathExt.distanceBetweenPoints(companionPos, playerPos) < 10:
+        companion_agent.startMoving(.5)
+    else:
+        companion_agent.startMoving(1)
+    
+    # Every so often, make the player veer to the left or right
+    if turnCounter > 40000:
+        turningRate = random.randint(0, 2)
+        turnDirection = 1 if random.randint(0, 1) == 1 else -1
+        turningRate = float(turningRate) / 10.0 * turnDirection
+        player_agent.startTurning(turningRate)
+        turnCounter = 0
+
+    companion_agent.turnToPosition(playerPos)
+    turnCounter += 1
     # ====================================================================================================================
 
 print()

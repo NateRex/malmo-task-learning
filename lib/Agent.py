@@ -29,14 +29,21 @@ class Agent:
 
     def getObservations(self):
         """
-        Returns the world state containing all recent observations as a JSON object.
+        Returns the entire world state containing recent observations as a JSON object.
         If no new observations have occurred since the previous call to this method, returns None.
         """
-        worldState = self.host.getWorldState()
-        if len(worldState.observations) > 0:
-            self.mostRecentWorldState = json.loads(worldState.observations[-1].text)
+        agentState = self.host.getWorldState()
+        if len(agentState.observations) > 0:
+            self.mostRecentWorldState = json.loads(agentState.observations[-1].text)
         return self.mostRecentWorldState
         
+    def getPosition(self):
+        """
+        Returns the (x, y, z) position of this agent.
+        If no observations have occurred, returns None.
+        """
+        agentState = self.getObservations()
+        return (agentState["XPos"], agentState["YPos"], agentState["ZPos"])
 
     def startMoving(self, speed):
         """
@@ -204,5 +211,3 @@ class Agent:
             newYaw = 0
 
         self.startTurning(self.__turningRateFromAngleDifference__(currentYaw, newYaw))
-
-        
