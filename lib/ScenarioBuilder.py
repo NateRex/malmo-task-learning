@@ -118,6 +118,12 @@ class EnvironmentBuilder:
         """
         self.__decoratorsXML += '''<DrawItem x="{}" y="{}" z="{}" type="{}"/>'''.format(location[0], location[1], location[2], itemType.value)
 
+    def addMob(self, location, mobType):
+        """
+        Spawn a mob of a specific type at the location given.
+        """
+        self.__decoratorsXML += '''<DrawEntity x="{}" y="{}" z="{}" type="{}"/>'''.format(location[0], location[1], location[2], mobType.value)
+
     def finish(self):
         """
         Return the complete XML string for this set of decorations

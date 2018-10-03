@@ -119,9 +119,10 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     nearestPigPos = companion_agent.getNearestMobPosition(MobType.Pig)
-    if nearestPigPos == None:
-        continue
-    companion_agent.turnToPosition(nearestPigPos)
+    if nearestPigPos != None:
+        companion_agent.turnToPosition(nearestPigPos)
+    else:
+        companion_agent.stopTurning()
     # ====================================================================================================================
         
 

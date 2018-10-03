@@ -27,14 +27,16 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, "Player", (0, 5, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 5, -5), Direction.North)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 40000, "Player", (0, 5, 0), Direction.North)
+scenarioBuilder.addAgent("Companion", (0, 5, -10), Direction.North)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
 scenarioBuilder.environment.addCube((-3, 4, 2), (3, 8, -35), BlockType.Mossy_cobblestone)
 scenarioBuilder.environment.addCube((-2, 5, 1), (2, 7, -34), BlockType.Air)
-scenarioBuilder.environment.addBlock((0, 4, -32), BlockType.Mob_spawner, MobType.Zombie)
-for i in range(0, 30):
+scenarioBuilder.environment.addMob((-1, 5, -33), MobType.Zombie)
+scenarioBuilder.environment.addMob((1, 5, -33), MobType.Zombie)
+scenarioBuilder.environment.addMob((0, 5, -25), MobType.Zombie)
+for i in range(0, 31):
     if i % 5 == 0:
         scenarioBuilder.environment.addBlock((-3, 6, -i), BlockType.Torch)
 
@@ -114,7 +116,12 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    time.sleep(1)
+    companion_agent.startAttacking()    # attack continuously
+    nearestZombie = companion_agent.getNearestMobPosition(MobType.Zombie)
+    if nearestZombie != None:
+        companion_agent.turnToPosition(nearestZombie)
+    else:
+        companion_agent.stopTurning()
     # ====================================================================================================================
 
 print()

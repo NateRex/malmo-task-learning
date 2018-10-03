@@ -151,22 +151,22 @@ class Agent:
             return None
         return nearestPosition
 
-    def __turningRateFromAngleDifference__(self, currentAngle, yawAngle):
+    def __turningRateFromAngleDifference__(self, currentAngle, targetAngle):
         """
         Internal method for calculating how fast to turn or change pitch based on a difference
         of angles.
         """
         diff = None
         multiplier = 1
-        if currentAngle <= yawAngle:
-            diff = yawAngle - currentAngle
+        if currentAngle <= targetAngle:
+            diff = targetAngle - currentAngle
         else:
-            diff = currentAngle - yawAngle
+            diff = currentAngle - targetAngle
             multiplier = -1
         
         if diff > 10:
             return 1.0 * multiplier
-        elif diff > 3:
+        elif diff > 5:
             return .25 * multiplier
         return MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
