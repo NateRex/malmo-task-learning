@@ -15,6 +15,7 @@ from collections import namedtuple
 from Constants import *
 from ScenarioBuilder import ScenarioBuilder
 from Agent import *
+from Logger import Logger
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -31,14 +32,14 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
 scenarioBuilder = ScenarioBuilder("Test Scenario", 45000, "Player", (0, 4, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 4, -15), Direction.North)
+scenarioBuilder.addAgent("Companion", (0, 4, -15), Direction.South)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
 scenarioBuilder.environment.addLine((-3, 4, 1), (-3, 4, -25), BlockType.Fence)
 scenarioBuilder.environment.addLine((3, 4, 1), (3, 4, -25), BlockType.Fence)
 scenarioBuilder.environment.addLine((-2, 4, 1), (2, 4, 1), BlockType.Fence)
 scenarioBuilder.environment.addLine((-2, 4, -25), (2, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addCube((-2, 3, -24), (2, 3, -20), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock((0, 3, -22), BlockType.Mob_spawner, MobType.Pig)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
@@ -117,11 +118,10 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    nearestPig = companion_agent.getNearestMobPosition(MobType.Pig)
-    if nearestPig == None:
+    nearestPigPos = companion_agent.getNearestMobPosition(MobType.Pig)
+    if nearestPigPos == None:
         continue
-    print("Distance: {}     |     Position: ({}, {}, {})".format(nearestPig[0], nearestPig[1][0], nearestPig[1][1], nearestPig[1][2]))
-    time.sleep(1)
+    companion_agent.turnToPosition(nearestPigPos)
     # ====================================================================================================================
         
 

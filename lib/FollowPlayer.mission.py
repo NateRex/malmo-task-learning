@@ -100,8 +100,8 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    player_agent.move(1)
-    companion_agent.move(1)
+    player_agent.startMoving(1)
+    companion_agent.startMoving(1)
     # ====================================================================================================================
 
 print()
