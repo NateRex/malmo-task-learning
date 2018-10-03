@@ -7,6 +7,7 @@ import MalmoPython
 import json
 import math
 from collections import namedtuple
+from Utils import MathExt
 
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
@@ -18,6 +19,7 @@ class Agent:
 
     def __init__(self):
         self.host = MalmoPython.AgentHost()
+        self.mostRecentWorldState = None
 
     def isMissionActive(self):
         """
@@ -31,38 +33,58 @@ class Agent:
         If no new observations have occurred since the previous call to this method, returns None.
         """
         worldState = self.host.getWorldState()
-        if worldState.number_of_observations_since_last_state > 0:
-            return json.loads(worldState.observations[-1].text)
-        return None
+        if len(worldState.observations) > 0:
+            self.mostRecentWorldState = json.loads(worldState.observations[-1].text)
+        return self.mostRecentWorldState
         
 
-    def move(self, speed):
+    def startMoving(self, speed):
         """
         Start moving backwards or forwards at a specific speed. Accepted values range from -1 to 1.
-        A speed of 0 stops the agent.
         """
         self.host.sendCommand("move {}".format(speed))
 
-    def strafe(self, speed):
+    def stopMoving(self):
         """
-        Start moving left or right at a specific speed. Accepted values range from -1 to 1.
-        A speed of 0 stops the agent.
+        Stop moving forwards/backwards.
+        """
+        self.host.sendCommand("move 0")
+
+    def startStrafing(self, speed):
+        """
+        Start moving left or right continuously at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("strafe {}".format(speed))
 
-    def look(self, speed):
+    def stopStrafing(self, speed):
         """
-        Start tilting the agent's head up or down at a specific speed. Accepted values range from -1 to 1.
-        A speed of 0 stops the agent.
+        Stop moving left/right.
+        """
+        self.host.sendCommand("strafe 0")
+
+    def startChangingPitch(self, speed):
+        """
+        Start tilting the agent's head up or down continuously at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("pitch {}".format(speed))
 
-    def turn(self, speed):
+    def stopChangingPitch(self, speed):
         """
-        Start turning to the left or right at a specific speed. Accepted values range from -1 to 1.
-        A speed of 0 stops the agent.
+        Stop tilting the agent's head up/down.
+        """
+        self.host.sendCommand("pitch 0")
+
+    def startTurning(self, speed):
+        """
+        Start turning continuously to the left or right at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("turn {}".format(speed))
+
+    def stopTurning(self):
+        """
+        Stop turning left/right.
+        """
+        self.host.sendCommand("turn 0")
 
     def startJumping(self):
         """
@@ -108,7 +130,7 @@ class Agent:
 
     def getNearestMobPosition(self, mobType):
         """
-        Returns the (distance-to, position-of) the nearest mob of a specific type within a 10x10 area around this agent.
+        Returns the position of the nearest mob of a specific type within a 10x10 area around this agent.
         Returns None if no mob of that type is within the area.
         """
         worldState = self.getObservations()
@@ -120,12 +142,67 @@ class Agent:
         nearestPosition = None
         for entity in entities:
             if entity.name == mobType.value:
-                distanceToPig = math.sqrt(math.pow(agentPos[0] - entity.x, 2) + math.pow(agentPos[1] - entity.y, 2) + math.pow(agentPos[2] - entity.z, 2))
+                entityPos = (entity.x, entity.y, entity.z)
+                distanceToPig = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToPig < nearestDistance:
                     nearestDistance = distanceToPig
-                    nearestPosition = (entity.x, entity.y, entity.z)
+                    nearestPosition = entityPos
         if nearestPosition == None:
             return None
-        return (nearestDistance, nearestPosition)
+        return nearestPosition
 
+    def __turningRateFromAngleDifference__(self, currentAngle, yawAngle):
+        """
+        Internal method for calculating how fast to turn or change pitch based on a difference
+        of angles.
+        """
+        diff = None
+        multiplier = 1
+        if currentAngle <= yawAngle:
+            diff = yawAngle - currentAngle
+        else:
+            diff = currentAngle - yawAngle
+            multiplier = -1
+        
+        if diff > 10:
+            return 1.0 * multiplier
+        elif diff > 3:
+            return .25 * multiplier
+        return MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
+
+
+    def turnToPosition(self, targetPosition):
+        """
+        Begin continuously turning to face a position relative to the agent's current position.
+        If unable to determine the agent's current position, does nothing.
+        """
+        worldState = self.getObservations()
+        if worldState == None:
+            return
+        agentPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+        currentYaw = worldState["Yaw"] if worldState["Yaw"] >= 0 else 360.0 - worldState["Yaw"]
+        vector = MathExt.vectorFromPoints(agentPos, targetPosition)
+        vector = MathExt.normalizeVector(vector)
+
+        newYaw = None
+        if MathExt.valuesAreEqual(vector[0], 0, 1.0e-14): # Avoid dividing by 0
+            if vector[2] >= 0:
+                newYaw = -MathExt.PI_OVER_TWO
+            else:
+                newYaw = MathExt.PI_OVER_TWO
+        else:
+            newYaw = math.atan(vector[2] / vector[0])
     
+        # Adjust angle based on quadrant of vector
+        if vector[0] <= 0:   # Quadrant 1 or 2
+            newYaw = MathExt.PI_OVER_TWO + newYaw
+        elif vector[0] > 0:  # Quadrant 3 or 4
+            newYaw = MathExt.THREE_PI_OVER_TWO + newYaw
+
+        newYaw = math.degrees(newYaw)
+        if MathExt.valuesAreEqual(newYaw, 360.0, 1.0e-14):
+            newYaw = 0
+
+        self.startTurning(self.__turningRateFromAngleDifference__(currentYaw, newYaw))
+
+        
