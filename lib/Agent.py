@@ -43,6 +43,8 @@ class Agent:
         If no observations have occurred, returns None.
         """
         agentState = self.getObservations()
+        if agentState == None:
+            return None
         return (agentState["XPos"], agentState["YPos"], agentState["ZPos"])
 
     def startMoving(self, speed):
@@ -163,14 +165,22 @@ class Agent:
         Internal method for calculating how fast to turn or change pitch based on a difference
         of angles.
         """
+        # Get the difference between the two angles
         diff = None
-        multiplier = 1
         if currentAngle <= targetAngle:
             diff = targetAngle - currentAngle
         else:
             diff = currentAngle - targetAngle
+
+        # Get the turn direction
+        multiplier = 1
+        if currentAngle > targetAngle and diff < 180:
+            multiplier = -1
+        elif targetAngle > 180 and currentAngle < (targetAngle - 180):
             multiplier = -1
         
+        print("Current: {}     Target: {}     Diff: {}     Mult: {}".format(currentAngle, targetAngle, diff, multiplier))
+
         if diff > 10:
             return 1.0 * multiplier
         elif diff > 5:
