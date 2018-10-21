@@ -83,13 +83,13 @@ class Agent:
         """
         self.host.sendCommand("pitch 0")
 
-    def startTurning(self, speed):
+    def startChangingYaw(self, speed):
         """
         Start turning continuously to the left or right at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("turn {}".format(speed))
 
-    def stopTurning(self):
+    def stopChangingYaw(self):
         """
         Stop turning left/right.
         """
@@ -160,35 +160,7 @@ class Agent:
             return None
         return nearestPosition
 
-    def __turningRateFromAngleDifference__(self, currentAngle, targetAngle):
-        """
-        Internal method for calculating how fast to turn or change pitch based on a difference
-        of angles.
-        """
-        # Get the difference between the two angles
-        diff = None
-        if currentAngle <= targetAngle:
-            diff = targetAngle - currentAngle
-        else:
-            diff = currentAngle - targetAngle
-
-        # Get the turn direction
-        multiplier = 1
-        if currentAngle > targetAngle and diff < 180:
-            multiplier = -1
-        elif targetAngle > 180 and currentAngle < (targetAngle - 180):
-            multiplier = -1
-        
-        print("Current: {}     Target: {}     Diff: {}     Mult: {}".format(currentAngle, targetAngle, diff, multiplier))
-
-        if diff > 10:
-            return 1.0 * multiplier
-        elif diff > 5:
-            return .25 * multiplier
-        return MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
-
-
-    def turnToPosition(self, targetPosition):
+    def __changeYawAngleToFacePosition__(self, targetPosition):
         """
         Begin continuously turning to face a position relative to the agent's current position.
         If unable to determine the agent's current position, does nothing.
@@ -197,27 +169,59 @@ class Agent:
         if worldState == None:
             return
         agentPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
-        currentYaw = worldState["Yaw"] if worldState["Yaw"] >= 0 else 360.0 - worldState["Yaw"]
+        currentAngle = worldState["Yaw"] if worldState["Yaw"] >= 0 else 360.0 - abs(worldState["Yaw"])
         vector = MathExt.vectorFromPoints(agentPos, targetPosition)
         vector = MathExt.normalizeVector(vector)
 
-        newYaw = None
+        # Get the angle that we wish to face
+        targetAngle = None
         if MathExt.valuesAreEqual(vector[0], 0, 1.0e-14): # Avoid dividing by 0
             if vector[2] >= 0:
-                newYaw = -MathExt.PI_OVER_TWO
+                targetAngle = -MathExt.PI_OVER_TWO
             else:
-                newYaw = MathExt.PI_OVER_TWO
+                targetAngle = MathExt.PI_OVER_TWO
         else:
-            newYaw = math.atan(vector[2] / vector[0])
+            targetAngle = math.atan(vector[2] / vector[0])
     
         # Adjust angle based on quadrant of vector
         if vector[0] <= 0:   # Quadrant 1 or 2
-            newYaw = MathExt.PI_OVER_TWO + newYaw
+            targetAngle = MathExt.PI_OVER_TWO + targetAngle
         elif vector[0] > 0:  # Quadrant 3 or 4
-            newYaw = MathExt.THREE_PI_OVER_TWO + newYaw
+            targetAngle = MathExt.THREE_PI_OVER_TWO + targetAngle
 
-        newYaw = math.degrees(newYaw)
-        if MathExt.valuesAreEqual(newYaw, 360.0, 1.0e-14):
-            newYaw = 0
+        targetAngle = math.degrees(targetAngle)
+        if MathExt.valuesAreEqual(targetAngle, 360.0, 1.0e-14):
+            targetAngle = 0
 
-        self.startTurning(self.__turningRateFromAngleDifference__(currentYaw, newYaw))
+        # Get difference between the two angles
+        diff = None
+        if currentAngle <= targetAngle:
+            diff = min(targetAngle - currentAngle, 360 - targetAngle + currentAngle)
+        else:
+            diff = min(currentAngle - targetAngle, 360 - currentAngle + targetAngle)
+        
+        # Get the turning direction
+        multiplier = 1
+        if currentAngle > targetAngle and currentAngle - targetAngle < 180:
+            multiplier = -1
+        elif targetAngle > currentAngle and targetAngle - currentAngle > 180:
+            multiplier = -1
+
+        # Get the turning rate
+        rate = 0
+        if diff > 10:
+            rate = 1.0 * multiplier
+        elif diff > 5:
+            rate = .25 * multiplier
+        else:
+            rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
+        print("{}".format(rate))
+        self.startChangingYaw(rate)
+
+    def lookAt(self, targetPosition):
+        """
+        Begin continuously turning/looking to face an (x,y,z) position.
+        If unable to determine the agent's current position, does nothing.
+        """
+        self.__changeYawAngleToFacePosition__(targetPosition)
+        #self.__adjustPitchAngleToFacePosition__(targetPosition)

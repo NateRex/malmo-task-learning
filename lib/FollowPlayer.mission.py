@@ -122,10 +122,10 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         turningRate = random.randint(0, 2)
         turnDirection = 1 if random.randint(0, 1) == 1 else -1
         turningRate = float(turningRate) / 10.0 * turnDirection
-        player_agent.startTurning(turningRate)
+        player_agent.startChangingYaw(turningRate)
         turnCounter = 0
 
-    companion_agent.turnToPosition(playerPos)
+    companion_agent.lookAt(playerPos)
     turnCounter += 1
     # ====================================================================================================================
 

@@ -119,9 +119,9 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     companion_agent.startAttacking()    # attack continuously
     nearestZombie = companion_agent.getNearestMobPosition(MobType.Zombie)
     if nearestZombie != None:
-        companion_agent.turnToPosition(nearestZombie)
+        companion_agent.lookAt(nearestZombie)
     else:
-        companion_agent.stopTurning()
+        companion_agent.stopChangingYaw()
     # ====================================================================================================================
 
 print()
