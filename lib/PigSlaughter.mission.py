@@ -13,9 +13,10 @@ import json
 import math
 from collections import namedtuple
 from Constants import *
-from ScenarioBuilder import ScenarioBuilder
+from Utils import *
+from ScenarioBuilder import *
 from Agent import *
-from Logger import Logger
+from Logger import *
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -31,15 +32,15 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 45000, "Player", (0, 4, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 4, -15), Direction.South)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 45000, "Player", Vector(0, 4, 0), Direction.North)
+scenarioBuilder.addAgent("Companion", Vector(0, 4, -15), Direction.South)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
-scenarioBuilder.environment.addLine((-3, 4, 1), (-3, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addLine((3, 4, 1), (3, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addLine((-2, 4, 1), (2, 4, 1), BlockType.Fence)
-scenarioBuilder.environment.addLine((-2, 4, -25), (2, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addBlock((0, 3, -22), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addLine(Vector(-3, 4, 1), Vector(-3, 4, -25), BlockType.Fence)
+scenarioBuilder.environment.addLine(Vector(3, 4, 1), Vector(3, 4, -25), BlockType.Fence)
+scenarioBuilder.environment.addLine(Vector(-2, 4, 1), Vector(2, 4, 1), BlockType.Fence)
+scenarioBuilder.environment.addLine(Vector(-2, 4, -25), Vector(2, 4, -25), BlockType.Fence)
+scenarioBuilder.environment.addBlock(Vector(0, 3, -22), BlockType.Mob_spawner, MobType.Pig)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
@@ -118,9 +119,9 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    nearestPigPos = companion_agent.getNearestMobPosition(MobType.Pig)
-    if nearestPigPos != None:
-        companion_agent.lookAt(nearestPigPos)
+    nearestPig = companion_agent.getNearestMobPosition(MobType.Pig)
+    if nearestPig != None:
+        companion_agent.lookAt(nearestPig.position)
     else:
         companion_agent.stopChangingYaw()
     # ====================================================================================================================

@@ -10,7 +10,7 @@ from collections import namedtuple
 # Named tuples
 # ==============================================================================================
 Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
-EntityInfo = namedtuple("EntityInfo", "location name quantity")   # Information for an entity observed by an agent
+EntityInfo = namedtuple("EntityInfo", "position name quantity")   # Information for an entity observed by an agent
 
 # ==============================================================================================
 # Classes
@@ -57,7 +57,7 @@ class MathExt:
         """
         Returns an (x, y, z) vector from point A to point B.
         """
-        return (pointB.x - pointA.x, pointB.y - pointA.y, pointB.z - pointA.z)
+        return Vector(pointB.x - pointA.x, pointB.y - pointA.y, pointB.z - pointA.z)
 
     @staticmethod
     def vectorMagnitude(vector):

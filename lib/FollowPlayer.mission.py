@@ -13,9 +13,9 @@ import time
 import random
 from Constants import *
 from Logger import *
-from Agent import Agent
-from Utils import MathExt
-from ScenarioBuilder import ScenarioBuilder
+from Agent import *
+from Utils import *
+from ScenarioBuilder import *
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -30,8 +30,8 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-scenarioBuilder = ScenarioBuilder("Follow the player", 60000, "Player", (0, 4, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 4, 7), Direction.North)
+scenarioBuilder = ScenarioBuilder("Follow the player", 60000, "Player", Vector(0, 4, 0), Direction.North)
+scenarioBuilder.addAgent("Companion", Vector(0, 4, 7), Direction.North)
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 

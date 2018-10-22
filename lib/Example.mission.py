@@ -11,8 +11,9 @@ import os
 import sys
 import time
 from Constants import *
-from Agent import Agent
-from ScenarioBuilder import ScenarioBuilder
+from Utils import *
+from Agent import *
+from ScenarioBuilder import *
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -28,7 +29,7 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, "Player", (0.5, 5, 0.5), Direction.North) # We adjust agent start position by 0.5 in x & z to start the agent in the CENTER of the block
+scenarioBuilder = ScenarioBuilder("Test Scenario", 10000, "Player", Vector(0.5, 5, 0.5), Direction.North) # We adjust agent start position by 0.5 in x & z to start the agent in the CENTER of the block
 scenarioBuilder.agents[0].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 scenarioBuilder.agents[0].addInventoryItem(ItemType.Bow, ItemSlot.HotBar._1)
 scenarioBuilder.agents[0].addInventoryItem(ItemType.Arrow, ItemSlot.HotBar._2, 64)
@@ -38,7 +39,7 @@ scenarioBuilder.agents[0].addInventoryItem(ItemType.Diamond_chestplate, ItemSlot
 scenarioBuilder.agents[0].addInventoryItem(ItemType.Diamond_helmet, ItemSlot.Armor.Helmet)
 
 # Companion Agent
-scenarioBuilder.addAgent("Companion", (0.5, 3, -8.5), Direction.South)
+scenarioBuilder.addAgent("Companion", Vector(0.5, 3, -8.5), Direction.South)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Stone_pickaxe, ItemSlot.HotBar._0)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Leather_boots, ItemSlot.Armor.Boots)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Leather_leggings, ItemSlot.Armor.Leggings)
@@ -47,19 +48,19 @@ scenarioBuilder.agents[1].addInventoryItem(ItemType.Leather_helmet, ItemSlot.Arm
 
 # Mobs
 scenarioBuilder.setTimeOfDay(TimeOfDay.Dawn)
-scenarioBuilder.environment.addBlock((13, 3, 0), BlockType.Mob_spawner, MobType.Pig)
-scenarioBuilder.environment.addBlock((-13, 3, 0), BlockType.Mob_spawner, MobType.Pig)
-scenarioBuilder.environment.addBlock((0, 3, 13), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock(Vector(13, 3, 0), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock(Vector(-13, 3, 0), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock(Vector(0, 3, 13), BlockType.Mob_spawner, MobType.Pig)
 
 # Decorations
 playerPos = (0, 5, 0)
-scenarioBuilder.environment.addSphere((0, 40, 0), 39, BlockType.Air)
-scenarioBuilder.environment.addLine((0, 0, 0), (0, 4, 0), BlockType.Gold_block)
-scenarioBuilder.environment.addCube((playerPos[0] - 20, 1, playerPos[2] - 20), (playerPos[0] + 20, 1, playerPos[2] + 20), BlockType.Lava)
-scenarioBuilder.environment.addCube((playerPos[0] - 2, 1, playerPos[2] - 2), (playerPos[0] + 2, 1, playerPos[2] + 2), BlockType.Stone)
+scenarioBuilder.environment.addSphere(Vector(0, 40, 0), 39, BlockType.Air)
+scenarioBuilder.environment.addLine(Vector(0, 0, 0), Vector(0, 4, 0), BlockType.Gold_block)
+scenarioBuilder.environment.addCube(Vector(playerPos[0] - 20, 1, playerPos[2] - 20), Vector(playerPos[0] + 20, 1, playerPos[2] + 20), BlockType.Lava)
+scenarioBuilder.environment.addCube(Vector(playerPos[0] - 2, 1, playerPos[2] - 2), Vector(playerPos[0] + 2, 1, playerPos[2] + 2), BlockType.Stone)
 for i in range(-5, 6):
     for j in range(-5, 6):
-        scenarioBuilder.environment.addDropItem((playerPos[0] + i, 35, playerPos[2] + j), ItemType.Emerald)
+        scenarioBuilder.environment.addDropItem(Vector(playerPos[0] + i, 35, playerPos[2] + j), ItemType.Emerald)
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 

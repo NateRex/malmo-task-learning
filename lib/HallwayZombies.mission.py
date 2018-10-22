@@ -10,8 +10,9 @@ import os
 import sys
 import time
 from Constants import *
-from Agent import Agent
-from ScenarioBuilder import ScenarioBuilder
+from Utils import *
+from Agent import *
+from ScenarioBuilder import *
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -27,18 +28,18 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 40000, "Player", (0, 5, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", (0, 5, -10), Direction.North)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 40000, "Player", Vector(0, 5, 0), Direction.North)
+scenarioBuilder.addAgent("Companion", Vector(0, 5, -10), Direction.North)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
-scenarioBuilder.environment.addCube((-3, 4, 2), (3, 8, -35), BlockType.Mossy_cobblestone)
-scenarioBuilder.environment.addCube((-2, 5, 1), (2, 7, -34), BlockType.Air)
-scenarioBuilder.environment.addMob((-1, 5, -33), MobType.Zombie)
-scenarioBuilder.environment.addMob((1, 5, -33), MobType.Zombie)
-scenarioBuilder.environment.addMob((0, 5, -25), MobType.Zombie)
+scenarioBuilder.environment.addCube(Vector(-3, 4, 2), Vector(3, 8, -35), BlockType.Mossy_cobblestone)
+scenarioBuilder.environment.addCube(Vector(-2, 5, 1), Vector(2, 7, -34), BlockType.Air)
+scenarioBuilder.environment.addMob(Vector(-1, 5, -33), MobType.Zombie)
+scenarioBuilder.environment.addMob(Vector(1, 5, -33), MobType.Zombie)
+scenarioBuilder.environment.addMob(Vector(0, 5, -25), MobType.Zombie)
 for i in range(0, 31):
     if i % 5 == 0:
-        scenarioBuilder.environment.addBlock((-3, 6, -i), BlockType.Torch)
+        scenarioBuilder.environment.addBlock(Vector(-3, 6, -i), BlockType.Torch)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
@@ -119,9 +120,9 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     companion_agent.startAttacking()    # attack continuously
     nearestZombie = companion_agent.getNearestMobPosition(MobType.Zombie)
     if nearestZombie != None:
-        companion_agent.lookAt(nearestZombie)
+        companion_agent.lookAt(nearestZombie.position)
     else:
-        companion_agent.stopChangingYaw()
+        companion_agent.stopChangingAngle()
     # ====================================================================================================================
 
 print()

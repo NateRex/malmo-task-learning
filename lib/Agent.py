@@ -93,6 +93,13 @@ class Agent:
         """
         self.host.sendCommand("turn 0")
 
+    def stopChangingAngle(self):
+        """
+        Stop any turning left/right and up/down.
+        """
+        self.stopChangingYaw()
+        self.stopChangingPitch()
+
     def startJumping(self):
         """
         Start jumping continuously.
@@ -143,13 +150,13 @@ class Agent:
         worldState = self.getObservations()
         if worldState == None:
             return None
-        agentPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+        agentPos = Vector(worldState["XPos"], worldState["YPos"], worldState["ZPos"])
         entities = [EntityInfo(Vector(k["x"], k["y"], k["z"]), k["name"], k.get("quantity")) for k in worldState["nearby_entities"]]
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
             if entity.name == mobType.value:
-                entityPos = entity.location
+                entityPos = entity.position
                 distanceToPig = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToPig < nearestDistance:
                     nearestDistance = distanceToPig
@@ -227,7 +234,7 @@ class Agent:
         currentAngle = worldState["Pitch"]
         vectorWithHeight = MathExt.vectorFromPoints(agentPos, targetPosition)
         vectorWithHeight = MathExt.normalizeVector(vectorWithHeight)
-        vectorWithoutHeight = (vectorWithHeight.x, 0, vectorWithHeight.z)
+        vectorWithoutHeight = Vector(vectorWithHeight.x, 0, vectorWithHeight.z)
 
         # Get the angle that we wish to change the pitch to (account for range -90 to 90)
         if MathExt.isZeroVector(vectorWithHeight) or MathExt.isZeroVector(vectorWithoutHeight): # Avoid dividing by 0
