@@ -4,6 +4,17 @@
 # planning, and small algorithms that are meant to be reused.
 # ==============================================================================================
 import math
+from collections import namedtuple
+
+# ==============================================================================================
+# Named tuples
+# ==============================================================================================
+Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
+EntityInfo = namedtuple("EntityInfo", "location name quantity")   # Information for an entity observed by an agent
+
+# ==============================================================================================
+# Classes
+# ==============================================================================================
 
 class MathExt:
     """
@@ -39,21 +50,21 @@ class MathExt:
         """
         Returns the distance between two points.
         """
-        return math.sqrt(math.pow(pointB[0] - pointA[0], 2) + math.pow(pointB[1] - pointA[1], 2) + math.pow(pointB[2] - pointA[2], 2))
+        return math.sqrt(math.pow(pointB.x - pointA.x, 2) + math.pow(pointB.y - pointA.y, 2) + math.pow(pointB.z - pointA.z, 2))
 
     @staticmethod
     def vectorFromPoints(pointA, pointB):
         """
         Returns an (x, y, z) vector from point A to point B.
         """
-        return (pointB[0] - pointA[0], pointB[1] - pointA[1], pointB[2] - pointA[2])
+        return (pointB.x - pointA.x, pointB.y - pointA.y, pointB.z - pointA.z)
 
     @staticmethod
     def vectorMagnitude(vector):
         """
         Returns the magnitude of a vector.
         """
-        return math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2])
+        return math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
 
     @staticmethod
     def normalizeVector(vector):
@@ -63,22 +74,22 @@ class MathExt:
         """
         mag = MathExt.vectorMagnitude(vector)
         if MathExt.valuesAreEqual(mag, 0, 1.0e-14):
-            return (0, 0, 0)
+            return Vector(0, 0, 0)
         else:
-            return (vector[0] / mag, vector[1] / mag, vector[2] / mag)
+            return Vector(vector.x / mag, vector.y / mag, vector.z / mag)
 
     @staticmethod
     def dotProduct(vectorA, vectorB):
         """
         Returns the dot product of two vectors.
         """
-        return vectorA[0] * vectorB[0] + vectorA[1] * vectorB[1] + vectorA[2] * vectorB[2]
+        return vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z
 
     @staticmethod
     def isZeroVector(vector):
         """
         Returns true if the vector given is equal to the zero vector.
         """
-        if vector[0] == 0 and vector[1] == 0 and vector[2] == 0:
+        if vector.x == 0 and vector.y == 0 and vector.z == 0:
             return True
         return False
