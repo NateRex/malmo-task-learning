@@ -66,7 +66,7 @@ class EnvironmentBuilder:
     def addCube(self, point0, point1, blockType, variant = None):
         """
         Add a cuboid of a specific block type from lower-left-near corner point0 to upper-right-far corner point1.
-        Each point is specified as an (x, y, z) tuple. If the block type specified is a mob spawner an additional mob type
+        Each point is specified as a named Vector. If the block type specified is a mob spawner an additional mob type
         must be provided.
         """
         if (blockType == BlockType.Mob_spawner):
@@ -78,7 +78,7 @@ class EnvironmentBuilder:
 
     def addLine(self, point0, point1, blockType, variant = None):
         """
-        Add a line of a specific block type from point0 to point1, where each point is specified as an (x, y, z) tuple.
+        Add a line of a specific block type from point0 to point1, where each point is specified as a named Vector.
         If the block type specified is a mob spawner, an additional mob type must be provided.
         """
         if (blockType == BlockType.Mob_spawner):
@@ -90,7 +90,7 @@ class EnvironmentBuilder:
 
     def addBlock(self, location, blockType, variant = None):
         """
-        Add a block of a specific type at the location specified. The location should be given as an (x, y, z) tuple.
+        Add a block of a specific type at the location specified. The location should be given as a named Vector.
         If the block type specified is a mob spawner, an additional mob type must be provided.
         """
         if (blockType == BlockType.Mob_spawner):
@@ -102,7 +102,7 @@ class EnvironmentBuilder:
 
     def addSphere(self, center, radius, blockType, variant = None):
         """
-        Add a sphere of a specific block type, with a given radius and center. The center should be given as an (x, y, z) tuple.
+        Add a sphere of a specific block type, with a given radius and center. The center should be given as a named Vector.
         If the block type specified is a mob spawner, an additional mob type must be provided.
         """
         if (blockType == BlockType.Mob_spawner):
@@ -114,13 +114,13 @@ class EnvironmentBuilder:
 
     def addDropItem(self, location, itemType):
         """
-        Add a drop-item at a specific location specified as an (x, y, z) tuple.
+        Add a drop-item at a specific location specified as a named Vector.
         """
         self.__decoratorsXML += '''<DrawItem x="{}" y="{}" z="{}" type="{}"/>'''.format(location.x, location.y, location.z, itemType.value)
 
     def addMob(self, location, mobType):
         """
-        Spawn a mob of a specific type at the location given.
+        Spawn a mob of a specific type at the named Vector location given.
         """
         self.__decoratorsXML += '''<DrawEntity x="{}" y="{}" z="{}" type="{}"/>'''.format(location.x, location.y, location.z, mobType.value)
 
@@ -148,13 +148,13 @@ class AgentBuilder:
 
     def setPosition(self, position):
         """
-        Set the position of this agent in world-space given an (x, y, z) tuple.
+        Set the position of this agent in world-space given a named Vector.
         """
         self.__position = position
 
     def getPosition(self):
         """
-        Returns the position of this agent in world-space as an (x, y, z) tuple.
+        Returns the position of this agent in world-space as a named Vector.
         """
         return self.__position
 
@@ -209,7 +209,7 @@ class ScenarioBuilder:
     """
     Builder for creating a new Malmo mission scenario. Environment and agent attributes are
     set through members of this object. Every scenario starts with one agent. Upon creating a new ScenarioBuilder, optionally
-    specify a name, starting position, and direction for this agent, otherwise, they will default to "Agent", the origin (0, 0, 0), and
+    specify a name, starting Vector position, and direction for this agent, otherwise, they will default to "Agent", the origin (0, 0, 0), and
     north, respectively.
     """
 
@@ -241,7 +241,7 @@ class ScenarioBuilder:
     def addAgent(self, name, startPosition = None, startDirection = Direction.North):
         """
         Add a new agent to this scenario, giving it a name.
-        Optionally specify a starting location as an (x, y, z) tuple, as well as a direction.
+        Optionally specify a starting location as a named Vector, as well as a direction.
         Otherwise, the agent will start at the origin (0, 0, 0) facing north.
         """
         self.agents.append(AgentBuilder(name, startPosition, startDirection))

@@ -144,7 +144,7 @@ class Agent:
 
     def getNearestMobPosition(self, mobType):
         """
-        Returns the EntityInfo of the nearest mob of a specific type within a 10x10 area around this agent.
+        Returns a named EntityInfo tuple of the nearest mob of a specific type within a 10x10 area around this agent.
         Returns None if no mob of that type is within the area.
         """
         worldState = self.getObservations()
@@ -167,7 +167,7 @@ class Agent:
 
     def __changeYawAngleToFacePosition__(self, targetPosition):
         """
-        Begin continuously turning to face a position relative to the agent's current position.
+        Begin continuously turning to face a Vector position relative to the agent's current position.
         If unable to determine the agent's current position, does nothing.
         """
         worldState = self.getObservations()
@@ -224,7 +224,7 @@ class Agent:
 
     def __changePitchAngleToFacePosition__(self, targetPosition):
         """
-        Begin continuously changing pitch of this agent to face a particular (x,y,z) position.
+        Begin continuously changing pitch of this agent to face a particular Vector position.
         If unable to determine the agent's current position, does nothing.
         """
         worldState = self.getObservations()
@@ -275,7 +275,7 @@ class Agent:
 
     def lookAt(self, targetPosition):
         """
-        Begin continuously turning/looking to face an (x,y,z) position.
+        Begin continuously turning/looking to face a Vector position.
         If unable to determine the agent's current position, does nothing.
         """
         self.__changeYawAngleToFacePosition__(targetPosition)

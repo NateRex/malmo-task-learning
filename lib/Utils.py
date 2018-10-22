@@ -48,29 +48,29 @@ class MathExt:
     @staticmethod
     def distanceBetweenPoints(pointA, pointB):
         """
-        Returns the distance between two points.
+        Returns the distance between two points, where each point is specified as a named Vector.
         """
         return math.sqrt(math.pow(pointB.x - pointA.x, 2) + math.pow(pointB.y - pointA.y, 2) + math.pow(pointB.z - pointA.z, 2))
 
     @staticmethod
     def vectorFromPoints(pointA, pointB):
         """
-        Returns an (x, y, z) vector from point A to point B.
+        Returns a Vector from point A to point B.
         """
         return Vector(pointB.x - pointA.x, pointB.y - pointA.y, pointB.z - pointA.z)
 
     @staticmethod
     def vectorMagnitude(vector):
         """
-        Returns the magnitude of a vector.
+        Returns the magnitude of a 'Vector'.
         """
         return math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
 
     @staticmethod
     def normalizeVector(vector):
         """
-        Normalize a vector into the range (-1, -1, -1) to (1, 1, 1) and return it.
-        If the given vector is the zero vector, returns the zero vector.
+        Normalize a Vector into the range (-1, -1, -1) to (1, 1, 1) and return it.
+        If the given Vector is the zero vector, returns the zero vector.
         """
         mag = MathExt.vectorMagnitude(vector)
         if MathExt.valuesAreEqual(mag, 0, 1.0e-14):
@@ -81,14 +81,14 @@ class MathExt:
     @staticmethod
     def dotProduct(vectorA, vectorB):
         """
-        Returns the dot product of two vectors.
+        Returns the dot product of a Vector with another Vector.
         """
         return vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z
 
     @staticmethod
     def isZeroVector(vector):
         """
-        Returns true if the vector given is equal to the zero vector.
+        Returns true if the Vector given is equal to the zero vector.
         """
         if vector.x == 0 and vector.y == 0 and vector.z == 0:
             return True
