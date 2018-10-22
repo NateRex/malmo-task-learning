@@ -226,8 +226,6 @@ class Agent:
         if worldState == None:
             return
         agentPos = (worldState["XPos"], worldState["YPos"] + 1, worldState["ZPos"])     # Agent's head is above the agent's location
-        print("Agent pos: ({}, {}, {})".format(agentPos[0], agentPos[1], agentPos[2]))
-        print("Target pos: ({}, {}, {})".format(targetPosition[0], targetPosition[1], targetPosition[2]))
         currentAngle = worldState["Pitch"]
         vectorWithHeight = MathExt.vectorFromPoints(agentPos, targetPosition)
         vectorWithHeight = MathExt.normalizeVector(vectorWithHeight)
@@ -237,7 +235,6 @@ class Agent:
         if MathExt.isZeroVector(vectorWithHeight) or MathExt.isZeroVector(vectorWithoutHeight): # Avoid dividing by 0
             return
         cosValue = MathExt.dotProduct(vectorWithHeight, vectorWithoutHeight) / (MathExt.vectorMagnitude(vectorWithHeight) * MathExt.vectorMagnitude(vectorWithoutHeight))
-        print("ACos of: {}".format(cosValue))
         if cosValue > 1:
             cosValue = 1
         elif cosValue < -1:
@@ -268,7 +265,7 @@ class Agent:
             rate = .25 * multiplier
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
-        print("Rate: {}".format(rate))
+
         self.startChangingPitch(rate)        
 
     def lookAt(self, targetPosition):
