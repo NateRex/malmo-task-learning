@@ -121,9 +121,10 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     nearestPig = companion_agent.getNearestMobPosition(MobType.Pig)
     if nearestPig != None:
-        companion_agent.lookAt(nearestPig.position)
+        companion_agent.moveTo(nearestPig.position)
     else:
-        companion_agent.stopChangingYaw()
+        companion_agent.stopMoving()
+        companion_agent.stopChangingAngle()
     # ====================================================================================================================
         
 

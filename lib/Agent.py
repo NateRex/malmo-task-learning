@@ -37,13 +37,13 @@ class Agent:
         
     def getPosition(self):
         """
-        Returns the (x, y, z) position of this agent.
+        Returns the Vector position of this agent.
         If no observations have occurred, returns None.
         """
         agentState = self.getObservations()
         if agentState == None:
             return None
-        return Vector(agentState["XPos"], agentState["YPos"], agentState["ZPos"])
+        return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
 
     def startMoving(self, speed):
         """
@@ -75,7 +75,7 @@ class Agent:
         """
         self.host.sendCommand("pitch {}".format(speed))
 
-    def stopChangingPitch(self, speed):
+    def stopChangingPitch(self):
         """
         Stop tilting the agent's head up/down.
         """
@@ -148,9 +148,9 @@ class Agent:
         Returns None if no mob of that type is within the area.
         """
         worldState = self.getObservations()
-        if worldState == None:
+        agentPos = self.getPosition()
+        if worldState == None or agentPos == None:
             return None
-        agentPos = Vector(worldState["XPos"], worldState["YPos"], worldState["ZPos"])
         entities = [EntityInfo(Vector(k["x"], k["y"], k["z"]), k["name"], k.get("quantity")) for k in worldState["nearby_entities"]]
         nearestDistance = 1000000
         nearestEntity = None
@@ -168,12 +168,12 @@ class Agent:
     def __changeYawAngleToFacePosition__(self, targetPosition):
         """
         Begin continuously turning to face a Vector position relative to the agent's current position.
-        If unable to determine the agent's current position, does nothing.
+        Returns true if the agent is currently facing the target. Returns false otherwise.
         """
         worldState = self.getObservations()
-        if worldState == None:
-            return
-        agentPos = Vector(worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+        agentPos = self.getPosition()
+        if worldState == None or agentPos == None:
+            return False    
         currentAngle = worldState["Yaw"] if worldState["Yaw"] >= 0 else 360.0 - abs(worldState["Yaw"])
         vector = MathExt.vectorFromPoints(agentPos, targetPosition)
         vector = MathExt.normalizeVector(vector)
@@ -220,17 +220,23 @@ class Agent:
             rate = .25 * multiplier
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
+
         self.startChangingYaw(rate)
+        if rate < 0.03:
+            return True
+        else:
+            self.stopChangingYaw()
+            return False
 
     def __changePitchAngleToFacePosition__(self, targetPosition):
         """
         Begin continuously changing pitch of this agent to face a particular Vector position.
-        If unable to determine the agent's current position, does nothing.
+        Returns true if the agent is currently facing the target. Returns false otherwise.
         """
         worldState = self.getObservations()
-        if worldState == None:
-            return
-        agentPos = Vector(worldState["XPos"], worldState["YPos"] + 1, worldState["ZPos"])     # Agent's head is above the agent's location
+        agentPos = self.getPosition()
+        if worldState == None or agentPos == None:
+            return False  
         currentAngle = worldState["Pitch"]
         vectorWithHeight = MathExt.vectorFromPoints(agentPos, targetPosition)
         vectorWithHeight = MathExt.normalizeVector(vectorWithHeight)
@@ -238,7 +244,7 @@ class Agent:
 
         # Get the angle that we wish to change the pitch to (account for range -90 to 90)
         if MathExt.isZeroVector(vectorWithHeight) or MathExt.isZeroVector(vectorWithoutHeight): # Avoid dividing by 0
-            return
+            return False
         cosValue = MathExt.dotProduct(vectorWithHeight, vectorWithoutHeight) / (MathExt.vectorMagnitude(vectorWithHeight) * MathExt.vectorMagnitude(vectorWithoutHeight))
         if cosValue > 1:
             cosValue = 1
@@ -271,12 +277,34 @@ class Agent:
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
-        self.startChangingPitch(rate)        
+        self.startChangingPitch(rate)
+        if rate < 0.03:
+            return True
+        else:
+            self.stopChangingPitch()
+            return False
 
     def lookAt(self, targetPosition):
         """
         Begin continuously turning/looking to face a Vector position.
-        If unable to determine the agent's current position, does nothing.
+        Returns true if the agent is currently looking at the target. Returns false otherwise.
         """
-        self.__changeYawAngleToFacePosition__(targetPosition)
-        self.__changePitchAngleToFacePosition__(targetPosition)
+        return self.__changeYawAngleToFacePosition__(targetPosition) and self.__changePitchAngleToFacePosition__(targetPosition)
+
+    def moveTo(self, targetPosition):
+        """
+        Begin continuously moving & turning to reach a desired Vector position (within 2-3 blocks).
+        Returns true if the agent is currently facing and at the desired target. Returns false otherwise.
+        """
+        agentPos = self.getPosition()
+        if agentPos == None:
+            return False  
+        distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
+
+        if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
+            self.stopMoving()
+            return self.lookAt(targetPosition)
+        else:                                            # We must both move and look towards the correct location
+            self.lookAt(targetPosition)
+            self.startMoving(1)
+            return False
