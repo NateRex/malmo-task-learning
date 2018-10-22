@@ -72,9 +72,9 @@ class EnvironmentBuilder:
         if (blockType == BlockType.Mob_spawner):
             if (variant != None):
                 self.__allowedMobs.add(variant.value)   # Ensure the mob is allowed to spawn
-                self.__decoratorsXML += '''<DrawCuboid x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}" variant="{}"/>'''.format(point0[0], point0[1], point0[2], point1[0], point1[1], point1[2], blockType.value, variant.value)
+                self.__decoratorsXML += '''<DrawCuboid x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}" variant="{}"/>'''.format(point0.x, point0.y, point0.z, point1.x, point1.y, point1.z, blockType.value, variant.value)
         else:
-            self.__decoratorsXML += '''<DrawCuboid x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}"/>'''.format(point0[0], point0[1], point0[2], point1[0], point1[1], point1[2], blockType.value)
+            self.__decoratorsXML += '''<DrawCuboid x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}"/>'''.format(point0.x, point0.y, point0.z, point1.x, point1.y, point1.z, blockType.value)
 
     def addLine(self, point0, point1, blockType, variant = None):
         """
@@ -84,9 +84,9 @@ class EnvironmentBuilder:
         if (blockType == BlockType.Mob_spawner):
             if (variant != None):
                 self.__allowedMobs.add(variant.value)   # Ensure the mob is allowed to spawn
-                self.__decoratorsXML += '''<DrawLine x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}" variant="{}"/>'''.format(point0[0], point0[1], point0[2], point1[0], point1[1], point1[2], blockType.value, variant.value)
+                self.__decoratorsXML += '''<DrawLine x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}" variant="{}"/>'''.format(point0.x, point0.y, point0.z, point1.x, point1.y, point1.z, blockType.value, variant.value)
         else:
-            self.__decoratorsXML += '''<DrawLine x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}"/>'''.format(point0[0], point0[1], point0[2], point1[0], point1[1], point1[2], blockType.value)
+            self.__decoratorsXML += '''<DrawLine x1="{}" y1="{}" z1="{}" x2="{}" y2="{}" z2="{}" type="{}"/>'''.format(point0.x, point0.y, point0.z, point1.x, point1.y, point1.z, blockType.value)
 
     def addBlock(self, location, blockType, variant = None):
         """
@@ -96,9 +96,9 @@ class EnvironmentBuilder:
         if (blockType == BlockType.Mob_spawner):
             if (variant != None):
                 self.__allowedMobs.add(variant.value)   # Ensure the mob is allowed to spawn
-                self.__decoratorsXML += '''<DrawBlock x="{}" y="{}" z="{}" type="{}" variant="{}"/>'''.format(location[0], location[1], location[2], blockType.value, variant.value)
+                self.__decoratorsXML += '''<DrawBlock x="{}" y="{}" z="{}" type="{}" variant="{}"/>'''.format(location.x, location.y, location.z, blockType.value, variant.value)
         else:
-            self.__decoratorsXML += '''<DrawBlock x="{}" y="{}" z="{}" type="{}"/>'''.format(location[0], location[1], location[2], blockType.value)
+            self.__decoratorsXML += '''<DrawBlock x="{}" y="{}" z="{}" type="{}"/>'''.format(location.x, location.y, location.z, blockType.value)
 
     def addSphere(self, center, radius, blockType, variant = None):
         """
@@ -108,21 +108,21 @@ class EnvironmentBuilder:
         if (blockType == BlockType.Mob_spawner):
             if (variant != None):
                 self.__allowedMobs.add(variant.value)   # Ensure the mob is allowed to spawn
-                self.__decoratorsXML += '''<DrawSphere x="{}" y="{}" z="{}" radius="{}" type="{}" variant="{}"/>'''.format(center[0], center[1], center[2], radius, blockType.value, variant.value)
+                self.__decoratorsXML += '''<DrawSphere x="{}" y="{}" z="{}" radius="{}" type="{}" variant="{}"/>'''.format(center.x, center.y, center.z, radius, blockType.value, variant.value)
         else:
-            self.__decoratorsXML += '''<DrawSphere x="{}" y="{}" z="{}" radius="{}" type="{}"/>'''.format(center[0], center[1], center[2], radius, blockType.value)
+            self.__decoratorsXML += '''<DrawSphere x="{}" y="{}" z="{}" radius="{}" type="{}"/>'''.format(center.x, center.y, center.z, radius, blockType.value)
 
     def addDropItem(self, location, itemType):
         """
         Add a drop-item at a specific location specified as an (x, y, z) tuple.
         """
-        self.__decoratorsXML += '''<DrawItem x="{}" y="{}" z="{}" type="{}"/>'''.format(location[0], location[1], location[2], itemType.value)
+        self.__decoratorsXML += '''<DrawItem x="{}" y="{}" z="{}" type="{}"/>'''.format(location.x, location.y, location.z, itemType.value)
 
     def addMob(self, location, mobType):
         """
         Spawn a mob of a specific type at the location given.
         """
-        self.__decoratorsXML += '''<DrawEntity x="{}" y="{}" z="{}" type="{}"/>'''.format(location[0], location[1], location[2], mobType.value)
+        self.__decoratorsXML += '''<DrawEntity x="{}" y="{}" z="{}" type="{}"/>'''.format(location.x, location.y, location.z, mobType.value)
 
     def finish(self):
         """
@@ -202,7 +202,7 @@ class AgentBuilder:
         </ObservationFromNearbyEntities>
         {}
         </AgentHandlers>
-        </AgentSection>'''.format(self.name, str(self.__position[0]), str(self.__position[1]), str(self.__position[2]), str(self.__direction), self.__inventoryXML, self.__handlersXML)
+        </AgentSection>'''.format(self.name, self.__position.x, self.__position.y, self.__position.z, self.__direction, self.__inventoryXML, self.__handlersXML)
 
 
 class ScenarioBuilder:
@@ -278,7 +278,7 @@ class ScenarioBuilder:
                     <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
             </ServerSection>
-            '''.format(self.__description, self.__timeOfDay, "false" if len(mobsList) == 0 else "true", mobsAllowed, self.environment.finish(), str(self.__timeLimit))
+            '''.format(self.__description, self.__timeOfDay, "false" if len(mobsList) == 0 else "true", mobsAllowed, self.environment.finish(), self.__timeLimit)
         for i in range(0, len(self.agents)):
             returnValue += self.agents[i].finish()
         return returnValue + "</Mission>"
