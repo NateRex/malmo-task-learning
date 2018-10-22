@@ -6,10 +6,8 @@
 import MalmoPython
 import json
 import math
-from collections import namedtuple
-from Utils import MathExt
+from Utils import *
 
-EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
 class Agent:
     """
@@ -45,7 +43,7 @@ class Agent:
         agentState = self.getObservations()
         if agentState == None:
             return None
-        return (agentState["XPos"], agentState["YPos"], agentState["ZPos"])
+        return Vector(agentState["XPos"], agentState["YPos"], agentState["ZPos"])
 
     def startMoving(self, speed):
         """
@@ -139,26 +137,26 @@ class Agent:
 
     def getNearestMobPosition(self, mobType):
         """
-        Returns the position of the nearest mob of a specific type within a 10x10 area around this agent.
+        Returns the EntityInfo of the nearest mob of a specific type within a 10x10 area around this agent.
         Returns None if no mob of that type is within the area.
         """
         worldState = self.getObservations()
         if worldState == None:
             return None
         agentPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
-        entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in worldState["nearby_entities"]]
+        entities = [EntityInfo(Vector(k["x"], k["y"], k["z"]), k["name"], k.get("quantity")) for k in worldState["nearby_entities"]]
         nearestDistance = 1000000
-        nearestPosition = None
+        nearestEntity = None
         for entity in entities:
             if entity.name == mobType.value:
-                entityPos = (entity.x, entity.y, entity.z)
+                entityPos = entity.location
                 distanceToPig = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToPig < nearestDistance:
                     nearestDistance = distanceToPig
-                    nearestPosition = entityPos
-        if nearestPosition == None:
+                    nearestEntity = entity
+        if nearestEntity == None:
             return None
-        return nearestPosition
+        return nearestEntity
 
     def __changeYawAngleToFacePosition__(self, targetPosition):
         """
@@ -168,25 +166,25 @@ class Agent:
         worldState = self.getObservations()
         if worldState == None:
             return
-        agentPos = (worldState["XPos"], worldState["YPos"], worldState["ZPos"])
+        agentPos = Vector(worldState["XPos"], worldState["YPos"], worldState["ZPos"])
         currentAngle = worldState["Yaw"] if worldState["Yaw"] >= 0 else 360.0 - abs(worldState["Yaw"])
         vector = MathExt.vectorFromPoints(agentPos, targetPosition)
         vector = MathExt.normalizeVector(vector)
 
         # Get the angle that we wish to face
         targetAngle = None
-        if MathExt.valuesAreEqual(vector[0], 0, 1.0e-14): # Avoid dividing by 0
-            if vector[2] >= 0:
+        if MathExt.valuesAreEqual(vector.x, 0, 1.0e-14): # Avoid dividing by 0
+            if vector.z >= 0:
                 targetAngle = -MathExt.PI_OVER_TWO
             else:
                 targetAngle = MathExt.PI_OVER_TWO
         else:
-            targetAngle = math.atan(vector[2] / vector[0])
+            targetAngle = math.atan(vector.z / vector.x)
     
         # Adjust angle based on quadrant of vector
-        if vector[0] <= 0:   # Quadrant 1 or 2
+        if vector.x <= 0:   # Quadrant 1 or 2
             targetAngle = MathExt.PI_OVER_TWO + targetAngle
-        elif vector[0] > 0:  # Quadrant 3 or 4
+        elif vector.x > 0:  # Quadrant 3 or 4
             targetAngle = MathExt.THREE_PI_OVER_TWO + targetAngle
 
         targetAngle = math.degrees(targetAngle)
@@ -225,11 +223,11 @@ class Agent:
         worldState = self.getObservations()
         if worldState == None:
             return
-        agentPos = (worldState["XPos"], worldState["YPos"] + 1, worldState["ZPos"])     # Agent's head is above the agent's location
+        agentPos = Vector(worldState["XPos"], worldState["YPos"] + 1, worldState["ZPos"])     # Agent's head is above the agent's location
         currentAngle = worldState["Pitch"]
         vectorWithHeight = MathExt.vectorFromPoints(agentPos, targetPosition)
         vectorWithHeight = MathExt.normalizeVector(vectorWithHeight)
-        vectorWithoutHeight = (vectorWithHeight[0], 0, vectorWithHeight[2])
+        vectorWithoutHeight = (vectorWithHeight.x, 0, vectorWithHeight.z)
 
         # Get the angle that we wish to change the pitch to (account for range -90 to 90)
         if MathExt.isZeroVector(vectorWithHeight) or MathExt.isZeroVector(vectorWithoutHeight): # Avoid dividing by 0
@@ -240,7 +238,7 @@ class Agent:
         elif cosValue < -1:
             cosValue = -1
         targetAngle = math.acos(cosValue)
-        if vectorWithHeight[1] > 0:
+        if vectorWithHeight.y > 0:
             targetAngle = -targetAngle
 
         targetAngle = math.degrees(targetAngle)
