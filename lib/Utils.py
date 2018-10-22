@@ -49,7 +49,7 @@ class MathExt:
         return (pointB[0] - pointA[0], pointB[1] - pointA[1], pointB[2] - pointA[2])
 
     @staticmethod
-    def magnitudeOfVector(vector):
+    def vectorMagnitude(vector):
         """
         Returns the magnitude of a vector.
         """
@@ -61,11 +61,18 @@ class MathExt:
         Normalize a vector into the range (-1, -1, -1) to (1, 1, 1) and return it.
         If the given vector is the zero vector, returns the zero vector.
         """
-        mag = MathExt.magnitudeOfVector(vector)
+        mag = MathExt.vectorMagnitude(vector)
         if MathExt.valuesAreEqual(mag, 0, 1.0e-14):
             return (0, 0, 0)
         else:
             return (vector[0] / mag, vector[1] / mag, vector[2] / mag)
+
+    @staticmethod
+    def dotProduct(vectorA, vectorB):
+        """
+        Returns the dot product of two vectors.
+        """
+        return vectorA[0] * vectorB[0] + vectorA[1] * vectorB[1] + vectorA[2] * vectorB[2]
 
     @staticmethod
     def isZeroVector(vector):

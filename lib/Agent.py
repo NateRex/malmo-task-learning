@@ -215,8 +215,61 @@ class Agent:
             rate = .25 * multiplier
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
-        print("{}".format(rate))
         self.startChangingYaw(rate)
+
+    def __changePitchAngleToFacePosition__(self, targetPosition):
+        """
+        Begin continuously changing pitch of this agent to face a particular (x,y,z) position.
+        If unable to determine the agent's current position, does nothing.
+        """
+        worldState = self.getObservations()
+        if worldState == None:
+            return
+        agentPos = (worldState["XPos"], worldState["YPos"] + 1, worldState["ZPos"])     # Agent's head is above the agent's location
+        print("Agent pos: ({}, {}, {})".format(agentPos[0], agentPos[1], agentPos[2]))
+        print("Target pos: ({}, {}, {})".format(targetPosition[0], targetPosition[1], targetPosition[2]))
+        currentAngle = worldState["Pitch"]
+        vectorWithHeight = MathExt.vectorFromPoints(agentPos, targetPosition)
+        vectorWithHeight = MathExt.normalizeVector(vectorWithHeight)
+        vectorWithoutHeight = (vectorWithHeight[0], 0, vectorWithHeight[2])
+
+        # Get the angle that we wish to change the pitch to (account for range -90 to 90)
+        if MathExt.isZeroVector(vectorWithHeight) or MathExt.isZeroVector(vectorWithoutHeight): # Avoid dividing by 0
+            return
+        cosValue = MathExt.dotProduct(vectorWithHeight, vectorWithoutHeight) / (MathExt.vectorMagnitude(vectorWithHeight) * MathExt.vectorMagnitude(vectorWithoutHeight))
+        print("ACos of: {}".format(cosValue))
+        if cosValue > 1:
+            cosValue = 1
+        elif cosValue < -1:
+            cosValue = -1
+        targetAngle = math.acos(cosValue)
+        if vectorWithHeight[1] > 0:
+            targetAngle = -targetAngle
+
+        targetAngle = math.degrees(targetAngle)
+
+        # Get difference between two angles
+        diff = None
+        if currentAngle <= targetAngle:
+            diff = targetAngle - currentAngle
+        else:
+            diff = currentAngle - targetAngle
+
+        # Get the turning direction
+        multiplier = 1
+        if currentAngle > targetAngle:
+            multiplier = -1
+
+        # Get the turning rate
+        rate = 0
+        if diff > 10:
+            rate = 1.0 * multiplier
+        elif diff > 5:
+            rate = .25 * multiplier
+        else:
+            rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
+        print("Rate: {}".format(rate))
+        self.startChangingPitch(rate)        
 
     def lookAt(self, targetPosition):
         """
@@ -224,4 +277,4 @@ class Agent:
         If unable to determine the agent's current position, does nothing.
         """
         self.__changeYawAngleToFacePosition__(targetPosition)
-        #self.__adjustPitchAngleToFacePosition__(targetPosition)
+        self.__changePitchAngleToFacePosition__(targetPosition)
