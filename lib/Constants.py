@@ -4,6 +4,8 @@
 # ==============================================================================================
 from enum import Enum
 
+NUMBER_OF_INVENTORY_SLOTS = 39
+
 class BlockType(Enum):
     Air = "air"
     Stone = "stone"

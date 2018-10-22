@@ -304,7 +304,9 @@ class Agent:
         if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
             self.stopMoving()
             return self.lookAt(targetPosition)
-        else:                                            # We must both move and look towards the correct location
-            self.lookAt(targetPosition)
-            self.startMoving(1)
+        else:
+            if (self.lookAt(targetPosition)):   # We are far away but looking in the correct direction
+                self.startMoving(1)
+            else:
+                self.startMoving(0.5)           # We are far away and looking in the wrong direction (start turning slowly)
             return False
