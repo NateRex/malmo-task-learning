@@ -7,6 +7,7 @@ import MalmoPython
 import json
 import math
 from Utils import *
+from Logger import *
 from Constants import *
 
 
@@ -18,7 +19,7 @@ class Agent:
 
     def __init__(self):
         self.host = MalmoPython.AgentHost()
-        self.mostRecentWorldState = None
+        self.lastWorldState = None
 
     def isMissionActive(self):
         """
@@ -33,8 +34,8 @@ class Agent:
         """
         agentState = self.host.getWorldState()
         if len(agentState.observations) > 0:
-            self.mostRecentWorldState = json.loads(agentState.observations[-1].text)
-        return self.mostRecentWorldState
+            self.lastWorldState = json.loads(agentState.observations[-1].text)
+        return self.lastWorldState
 
     def getPosition(self):
         """
@@ -66,9 +67,9 @@ class Agent:
             return -1
         return agentState["currentItemIndex"]
 
-    def getNextAvailableHotbarIndex(self):
+    def __getNextAvailableHotbarIndex__(self):
         """
-        Returns the next hotbar index (0-based) that is empty.
+        Internal method that returns the next hotbar index (0-based) that is empty.
         If there is no such slot available, returns -1.
         """
         inventory = self.getInventory()
@@ -88,9 +89,9 @@ class Agent:
                 return i
         return -1
 
-    def locationOfItemInInventory(self, item):
+    def __locationOfItemInInventory__(self, item):
         """
-        Returns the inventory index of the specified item in this agent's inventory.
+        Internal method that returns the inventory index of the specified item in this agent's inventory.
         Returns -1 if the agent does not carry that item.
         """
         inventory = self.getInventory()
@@ -378,25 +379,31 @@ class Agent:
         agentPos = self.getPosition()
         if agentPos == None:
             return False  
+        
+        Logger.logMoveToStart(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))
         distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
 
         if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
             self.stopMoving()
-            return self.lookAt(targetPosition)
+            returnValue = self.lookAt(targetPosition)
+            if returnValue == True:
+                Logger.logMoveToFinish(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))  # Finished moving.. log post-conditions
+            return returnValue
         else:
             self.lookAt(targetPosition)
             self.startMoving(1)
             return False
 
-    def craft(self, item):
+    def craft(self, item, recipe):
         """
-        Craft an item using the ingredients list specified.
+        Craft an item using the ingredients list of RecipeItems given.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
         initialAmt = self.amountOfItemInInventory(item)
         self.host.sendCommand("craft {}".format(item))
         newAmt = self.amountOfItemInInventory(item)
         if (newAmt > initialAmt):
+            Logger.logCraft(self, LoggableCommand(AgentCommands.Craft, CraftArgs(item, recipe)))
             return True
         else:
             return False
@@ -406,19 +413,18 @@ class Agent:
         Changes the currently equipped item to something in this agent's inventory. This can cause items to be
         swapped from the hot-bar. Returns true if the specified item is equipped. Returns false otherwise.
         """
-        worldState = self.getObservations()
-
-        itemIdx = self.locationOfItemInInventory(item)
+        itemIdx = self.__locationOfItemInInventory__(item)
         if itemIdx == -1:
             return False
         
-        if itemIdx < 9: # Item is in hotbar (note: key commands are 1-indexed)
+        # Check if item is already in hotbar (note: key commands are 1-indexed)
+        if itemIdx < 9:
             self.host.sendCommand("hotbar.{} 1".format(itemIdx + 1))
             self.host.sendCommand("hotbar.{} 0".format(itemIdx + 1))
             return True
         
         # Try to swap the item into the hotbar where there currently exists no item
-        swapIndex = self.getNextAvailableHotbarIndex()
+        swapIndex = self.__getNextAvailableHotbarIndex__()
         if swapIndex != -1:
             self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
             self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))

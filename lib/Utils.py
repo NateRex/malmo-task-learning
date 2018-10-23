@@ -12,6 +12,9 @@ from collections import namedtuple
 
 Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
 EntityInfo = namedtuple("EntityInfo", "position name quantity")   # Information for an entity observed by an agent
+LoggableCommand = namedtuple("LoggableCommand", "type args")    # Representation of a command that can be logged via the Logger
+MoveToArgs = namedtuple("MoveToArgs", "start finish")
+CraftArgs = namedtuple("CraftArgs", "item recipe")
 
 # ==============================================================================================
 # Classes

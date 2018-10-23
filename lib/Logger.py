@@ -5,23 +5,23 @@
 from datetime import datetime
 import os
 import time
-import json
 
 class Logger:
     """
-    Purely static class containing functionality for logging JSON traces containing state and action information
-    as a result of some action performed by the companion. All of the methods in this class should be called
+    Purely static class containing functionality for logging traces containing state and action information
+    as a result of actions performed by a companion agent. All of the methods in this class should be called
     from a corresponding action method, such that the trace output is produced as a direct result of performing
     an action.
     """
-    __contents = "["
+    __contents = ""
+    __startedCommand = None     # A continuous action that was started but was not yet finished to completion
 
     @staticmethod
     def clear():
         """
         Clear the contents of this log.
         """
-        Logger.__contents = "["
+        Logger.__contents = ""
 
     @staticmethod
     def __getTime__():
@@ -31,58 +31,81 @@ class Logger:
         return datetime.fromtimestamp(time.time()).strftime('%m-%d-%Y %H:%M:%S.%f')
 
     @staticmethod
-    def logAttack(targetBlockType, targetLocation, playerObservation, companionObservation = "null"):
+    def __pushStatement__(value):
         """
-        Add trace output resulting from an attack to the running log.
+        Internal method for pushing a new statement onto the trace log.
         """
-        Logger.__contents += '''{{
-            "type": "attack",
-            "time": "{}",
-            "target": {},
-            "targetLocation": [{}, {}, {}],
-            "player": {},
-            "companion": {}
-        }},'''.format(Logger.__getTime__(), targetBlockType.value, targetLocation[0], targetLocation[1], targetLocation[2], playerObservation, companionObservation)
+        Logger.__contents += value + "\n"
 
     @staticmethod
-    def logPosition(playerObservation, companionObservation = "null"):
+    def __sameAsStartedCommand__(command):
         """
-        Add trace output resulting from a position observation to the running log.
+        Returns true if the given command is a repeat of the last command that was started and has not yet finished.
+        Returns false otherwise.
         """
-        Logger.__contents += '''{{
-            "type": "position",
-            "time": "{}",
-            "player": {},
-            "companion": {}
-        }},'''.format(Logger.__getTime__(), playerObservation, companionObservation)
+        if Logger.__startedCommand == None:
+            return False
+        if command.type != Logger.__startedCommand.type:
+            return False
+        if len(command.args) != len(Logger.__startedCommand.args):
+            return False
+        for i in range(0, len(command.args)):
+            if type(command.args[i]) != type(Logger.__startedCommand.args[i]) or command.args[i] != Logger.__startedCommand.args[i]:
+                return False
+        return True 
 
     @staticmethod
-    def logCrafting(item, ingredients, playerObservation, companionObservation = "null"):
-        """
-        Add trace output resulting from crafting an item to the running log.
-        """
-        Logger.__contents += '''{{
-            "type": "crafting",
-            "time": "{}",
-            "item": {},
-            "ingredients": {},
-            "player": {},
-            "companion": {}
-        }},'''.format(Logger.__getTime__(), item.value, ___, playerObservation, companionObservation)
+    def __logMoveToPreconditions__(agent, command):
+        # TODO: Log where agent is using some other entity or block
+        # TODO: Log where thing we are moving to is at
+        return
 
     @staticmethod
-    def logMoveTo(targetBlockType, targetLocation, playerObservation, companionObservation = "null"):
+    def __logMoveToPostconditions__(agent, command):
+        # TODO: Log where agent is now as a result of moving using some identifier
+        return
+
+    @staticmethod
+    def logMoveToStart(agent, command):
         """
-        Add trace output resulting from moving to a specific block to the running log.
+        Log the preconditions and action identifier for the MoveTo command, provided that it is unique
+        from the previous action.
         """
-        Logger.__contents += '''{{
-            "type": "moveto",
-            "time": "{}",
-            "target": {},
-            "moveToLocation": [{}, {}, {}],
-            "player": {},
-            "companion": {}
-        }},'''.format(Logger.__getTime__(), targetBlockType.value, targetLocation[0], targetLocation[1], targetLocation[2], playerObservation, companionObservation)
+        if Logger.__sameAsStartedCommand__(command):
+            return
+        # TODO: If Logger.__currentCommand != None... do some wrap up of old command
+        agentPos = agent.getPosition()
+        if agentPos == None:
+            return
+        Logger.__logMoveToPreconditions__(agent, command)
+        Logger.__pushStatement__("!MOVETO-{}-({},{},{})-({},{},{})".format("PLACEHOLDER", command.args.start.x, command.args.start.y, command.args.start.z, command.args.finish.x, command.args.finish.y, command.args.finish.z,))
+
+    @staticmethod
+    def logMoveToFinish(agent, command):
+        """
+        Log the postconditions for the MoveTo command, since it has ran to completion before executing another command.
+        """
+        if not Logger.__sameAsStartedCommand__(command):    # We started another command before finishing this one
+            return
+        Logger.__logMoveToPostconditions__(agent, command)
+        Logger.__startedCommand = None
+
+    @staticmethod
+    def logCraft(agent, command):
+        """
+        Log the preconditions and action identifier for the Craft command, provided that it is unique
+        from the previous action.
+        """
+        if Logger.__sameAsStartedCommand__(command):
+            return
+        # TODO: If Logger.__currentCommand != None... do some wrap up of old command
+        for recipeItem in command.args.recipe:
+            Logger.__pushStatement__("agent_has-{}-{}".format("PLACEHOLDER", recipeItem.value))
+        Logger.__pushStatement__("!CRAFT-{}-{}".format("PLACEHOLDER", command.item.value))
+        for recipeItem in command.args.recipe:
+            if agent.amountOfItemInInventory(recipeItem) <= 0:
+                Logger.__pushStatement__("agent_not_have-{}-{}".format("PLACEHOLDER", recipeItem.value))
+        Logger.__pushStatement__("agent_has-{}-{}".format("PLACEHOLDER", command.item.value))
 
     @staticmethod
     def flushToFile():

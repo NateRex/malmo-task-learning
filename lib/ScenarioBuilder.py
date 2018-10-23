@@ -217,7 +217,7 @@ class ScenarioBuilder:
     def __init__(self, description, timeLimit, agentName = "Agent", startPosition = None, startDirection = None):
         self.__description = description
         self.__timeLimit = timeLimit
-        self.__timeOfDay = TimeOfDay.Noon.value
+        self.__timeOfDay = str(TimeOfDay.Noon.value)
         self.environment = EnvironmentBuilder()
         self.agents = [AgentBuilder(agentName, startPosition, startDirection)]
 

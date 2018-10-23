@@ -126,5 +126,6 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         companion_agent.stopChangingAngle()
     # ====================================================================================================================
 
+Logger.flushToFile()
 print()
 print("Mission ended")
