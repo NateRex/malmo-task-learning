@@ -302,10 +302,9 @@ class Agent:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
         self.startChangingYaw(rate)
-        if rate < 0.03:
+        if rate < 0.25:
             return True
-        else:
-            self.stopChangingYaw()
+        welse:
             return False
 
     def __changePitchAngleToFacePosition__(self, targetPosition):
@@ -358,10 +357,9 @@ class Agent:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
         self.startChangingPitch(rate)
-        if rate < 0.03:
+        if rate < 0.25:
             return True
         else:
-            self.stopChangingPitch()
             return False
 
     def lookAt(self, targetPosition):
@@ -371,7 +369,7 @@ class Agent:
         """
         return self.__changeYawAngleToFacePosition__(targetPosition) and self.__changePitchAngleToFacePosition__(targetPosition)
 
-    def moveTo(self, targetPosition):
+    def moveToPosition(self, targetPosition):
         """
         Begin continuously moving & turning to reach a desired Vector position (within 2-3 blocks).
         Returns true if the agent is currently facing and at the desired target. Returns false otherwise.
@@ -380,17 +378,19 @@ class Agent:
         if agentPos == None:
             return False  
         
-        Logger.logMoveToStart(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))
+        # Logger.logMoveToStart(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))
+        isLookingAtTarget = self.lookAt(targetPosition)
+        if not isLookingAtTarget:
+            self.stopMoving()
+            return False
+
         distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
 
         if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
             self.stopMoving()
-            returnValue = self.lookAt(targetPosition)
-            if returnValue == True:
-                Logger.logMoveToFinish(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))  # Finished moving.. log post-conditions
-            return returnValue
+            # Logger.logMoveToFinish(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))  # Finished moving.. log post-conditions
+            return True
         else:
-            self.lookAt(targetPosition)
             self.startMoving(1)
             return False
 

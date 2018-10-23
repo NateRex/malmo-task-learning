@@ -120,12 +120,11 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     nearestPig = companion_agent.getNearestMobPosition(MobType.Pig)
     if nearestPig != None:
-        companion_agent.moveTo(nearestPig.position)
+        companion_agent.moveToPosition(nearestPig.position)
     else:
         companion_agent.stopMoving()
         companion_agent.stopChangingAngle()
     # ====================================================================================================================
 
-Logger.flushToFile()
 print()
 print("Mission ended")

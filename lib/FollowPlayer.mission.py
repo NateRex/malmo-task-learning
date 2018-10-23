@@ -100,6 +100,7 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 turnCounter = 0
+player_agent.startMoving(1)
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
@@ -109,14 +110,6 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     if playerPos == None or companionPos == None:   # We sure hope not
         continue
     
-    player_agent.startMoving(1)
-
-    # Ensure the companion keeps a good distance
-    if MathExt.distanceBetweenPoints(companionPos, playerPos) < 10:
-        companion_agent.startMoving(.5)
-    else:
-        companion_agent.startMoving(1)
-    
     # Every so often, make the player veer to the left or right
     if turnCounter > 40000:
         turningRate = random.randint(0, 2)
@@ -125,7 +118,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         player_agent.startChangingYaw(turningRate)
         turnCounter = 0
 
-    companion_agent.lookAt(playerPos)
+    companion_agent.moveToPosition(playerPos)
     turnCounter += 1
     # ====================================================================================================================
 
