@@ -9,6 +9,7 @@ from collections import namedtuple
 # ==============================================================================================
 # Named tuples
 # ==============================================================================================
+
 Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
 EntityInfo = namedtuple("EntityInfo", "position name quantity")   # Information for an entity observed by an agent
 

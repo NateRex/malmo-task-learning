@@ -7,6 +7,7 @@ import MalmoPython
 import json
 import math
 from Utils import *
+from Constants import *
 
 
 class Agent:
@@ -27,14 +28,14 @@ class Agent:
 
     def getObservations(self):
         """
-        Returns the entire world state containing recent observations as a JSON object.
+        Returns the entire world state containing the most recent observations as a JSON object.
         If no new observations have occurred since the previous call to this method, returns None.
         """
         agentState = self.host.getWorldState()
         if len(agentState.observations) > 0:
             self.mostRecentWorldState = json.loads(agentState.observations[-1].text)
         return self.mostRecentWorldState
-        
+
     def getPosition(self):
         """
         Returns the Vector position of this agent.
@@ -44,6 +45,84 @@ class Agent:
         if agentState == None:
             return None
         return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
+
+    def getInventory(self):
+        """
+        Returns an array of inventory items that this agent is currently carrying.
+        If no observations have occurred, returns None.
+        """
+        agentState = self.getObservations()
+        if agentState == None:
+            return None
+        return agentState["inventory"]
+
+    def getCurrentHotbarIndex(self):
+        """
+        Returns the hotbar index (0-based) that this agent currently has selected.
+        If unable to determine the currently used hotbar index, returns -1.
+        """
+        agentState = self.getObservations()
+        if agentState == None:
+            return -1
+        return agentState["currentItemIndex"]
+
+    def getNextAvailableHotbarIndex(self):
+        """
+        Returns the next hotbar index (0-based) that is empty.
+        If there is no such slot available, returns -1.
+        """
+        inventory = self.getInventory()
+        if inventory == None:
+            return -1
+
+        # Record all used hotbar index
+        usedSlots = []
+        for i in range(0, len(inventory)):
+            currentItem = inventory[i]
+            if currentItem["index"] < 9:
+                usedSlots.append(currentItem["index"])
+
+        # Now find first hotbar index not in use
+        for i in range(0, 9):
+            if not i in usedSlots:
+                return i
+        return -1
+
+    def locationOfItemInInventory(self, item):
+        """
+        Returns the inventory index of the specified item in this agent's inventory.
+        Returns -1 if the agent does not carry that item.
+        """
+        inventory = self.getInventory()
+        if inventory == None:
+            return -1
+        
+        for i in range(0, len(inventory)):
+            currentItem = inventory[i]
+            if currentItem["type"] == item.value:
+                return currentItem["index"] 
+        return -1
+
+    def amountOfItemInInventory(self, item):
+        """
+        Returns the quantity of a particular item in this agent's inventory. Returns 0 on error.
+        """
+        inventory = self.getInventory()
+        if inventory == None:
+            return 0
+        
+        numberFound = 0
+        for i in range(0, len(inventory)):
+            currentItem = inventory[i]
+            if currentItem["type"] == item.value:
+                numberFound += currentItem["quantity"]
+        return numberFound
+
+    def sendCommand(self, command):
+        """
+        Execute a primitive AgentHost-recognized command.
+        """
+        self.host.sendCommand(command)
 
     def startMoving(self, speed):
         """
@@ -305,8 +384,53 @@ class Agent:
             self.stopMoving()
             return self.lookAt(targetPosition)
         else:
-            if (self.lookAt(targetPosition)):   # We are far away but looking in the correct direction
-                self.startMoving(1)
-            else:
-                self.startMoving(0.5)           # We are far away and looking in the wrong direction (start turning slowly)
+            self.lookAt(targetPosition)
+            self.startMoving(1)
             return False
+
+    def craft(self, item):
+        """
+        Craft an item using the ingredients list specified.
+        Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
+        """
+        initialAmt = self.amountOfItemInInventory(item)
+        self.host.sendCommand("craft {}".format(item))
+        newAmt = self.amountOfItemInInventory(item)
+        if (newAmt > initialAmt):
+            return True
+        else:
+            return False
+    
+    def equip(self, item):
+        """
+        Changes the currently equipped item to something in this agent's inventory. This can cause items to be
+        swapped from the hot-bar. Returns true if the specified item is equipped. Returns false otherwise.
+        """
+        worldState = self.getObservations()
+
+        itemIdx = self.locationOfItemInInventory(item)
+        if itemIdx == -1:
+            return False
+        
+        if itemIdx < 9: # Item is in hotbar (note: key commands are 1-indexed)
+            self.host.sendCommand("hotbar.{} 1".format(itemIdx + 1))
+            self.host.sendCommand("hotbar.{} 0".format(itemIdx + 1))
+            return True
+        
+        # Try to swap the item into the hotbar where there currently exists no item
+        swapIndex = self.getNextAvailableHotbarIndex()
+        if swapIndex != -1:
+            self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
+            self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
+            self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            return True
+
+        # Try to swap the item into the index currently in use
+        swapIndex = self.getCurrentHotbarIndex()
+        if swapIndex != -1:
+            self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
+            self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
+            self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            return True
+        
+        return False

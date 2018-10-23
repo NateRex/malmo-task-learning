@@ -4,7 +4,7 @@
 # ==============================================================================================
 from enum import Enum
 
-NUMBER_OF_INVENTORY_SLOTS = 39
+NUMBER_OF_INVENTORY_SLOTS = 40
 
 class BlockType(Enum):
     Air = "air"

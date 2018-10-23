@@ -195,6 +195,7 @@ class AgentBuilder:
         <ObservationFromFullStats/>
         <ObservationFromFullInventory flat="false"/>
         <InventoryCommands/>
+        <SimpleCraftCommands/>
         <MissionQuitCommands/>
         <ContinuousMovementCommands/>
         <ObservationFromNearbyEntities>
