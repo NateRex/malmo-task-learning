@@ -199,7 +199,7 @@ class AgentBuilder:
         <MissionQuitCommands/>
         <ContinuousMovementCommands/>
         <ObservationFromNearbyEntities>
-            <Range name="nearby_entities" xrange="10" yrange="2" zrange="10" />
+            <Range name="nearby_entities" xrange="25" yrange="2" zrange="25" />
         </ObservationFromNearbyEntities>
         {}
         </AgentHandlers>

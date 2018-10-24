@@ -115,14 +115,19 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
+# Log initial state
+Logger.logInitialState(companion_agent)
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    nearestPig = companion_agent.getNearestMob(MobType.Pig)
+    nearestPig = companion_agent.getClosestEntityByType(MobType.Pig)
     if nearestPig != None:
         companion_agent.moveToEntity(nearestPig)
     # ====================================================================================================================
 
+# Log final state and flush the log
+Logger.logFinalState()
 Logger.flushToFile()
 print()
 print("Mission ended")

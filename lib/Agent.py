@@ -232,20 +232,30 @@ class Agent:
         """
         self.host.sendCommand("use 0")
 
-    def getNearestMob(self, mobType):
+    def getNearbyEntities(self):
         """
-        Returns a named EntityInfo tuple of the nearest mob of a specific type within a 10x10 area around this agent.
-        Returns None if no mob of that type is within the area.
+        Returns a list of named EntityInfo tuples of all entities within a 20x20 area around this agent.
+        Returns None on error.
         """
         worldState = self.getObservations()
-        agentPos = self.getPosition()
-        if worldState == None or agentPos == None:
+        if worldState == None:
             return None
         entities = [EntityInfo(k["id"], k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
+        return entities
+
+    def getClosestEntityByType(self, entityType):
+        """
+        Returns a named EntityInfo tuple of the nearest entity of a specific type within a 20x20 area around this agent.
+        Returns None if no entity of that type is within the area.
+        """
+        agentPos = self.getPosition()
+        entities = self.getNearbyEntities()
+        if agentPos == None or entities == None:
+            return None
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            if entity.type == mobType.value:
+            if entity.type == entityType.value:
                 entityPos = entity.position
                 distanceToPig = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToPig < nearestDistance:

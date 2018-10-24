@@ -5,6 +5,7 @@
 from datetime import datetime
 import os
 import time
+from Constants import *
 
 class Logger:
     """
@@ -67,6 +68,23 @@ class Logger:
         Internal method that marks the last ran command as having finished.
         """
         Logger.__lastCommandFinished = True
+
+    @staticmethod
+    def logInitialState(agent):
+        # Define all starting entities
+        entities = agent.getNearbyEntities()
+        for entity in entities:
+            entityId = "{}-{}".format(entity.type, entity.id)
+            if entity.type not in MobType.__members__:  # Is an agent
+                Logger.__pushStatement__("entities-{}-agent".format(entityId))
+            else:   # Is a mob
+                Logger.__pushStatement__("entities-{}-{}".format(entityId, entity.type))
+        Logger.__pushStatement__("START\n")
+
+    @staticmethod
+    def logFinalState():
+        # TODO
+        return
 
     @staticmethod
     def logMoveToStart(agent, entity):
