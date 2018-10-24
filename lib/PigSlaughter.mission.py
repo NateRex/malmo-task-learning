@@ -118,13 +118,11 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    nearestPig = companion_agent.getNearestMobPosition(MobType.Pig)
+    nearestPig = companion_agent.getNearestMob(MobType.Pig)
     if nearestPig != None:
-        companion_agent.moveToPosition(nearestPig.position)
-    else:
-        companion_agent.stopMoving()
-        companion_agent.stopChangingAngle()
+        companion_agent.moveToEntity(nearestPig)
     # ====================================================================================================================
 
+Logger.flushToFile()
 print()
 print("Mission ended")

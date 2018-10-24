@@ -20,6 +20,7 @@ class Agent:
     def __init__(self):
         self.host = MalmoPython.AgentHost()
         self.lastWorldState = None
+        self.lastMovedTo = None     # Id of the entity we last moved to
 
     def isMissionActive(self):
         """
@@ -36,6 +37,15 @@ class Agent:
         if len(agentState.observations) > 0:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
+
+    def getId(self):
+        """
+        Returns the unique identifier for this agent. Returns none if unsuccessful.
+        """
+        agentState = self.getObservations()
+        if agentState == None:
+            return None
+        return "{}-{}".format(agentState["Name"], agentState["nearby_entities"][0]["id"])  # Agent itself is always the first entity closeby
 
     def getPosition(self):
         """
@@ -222,7 +232,7 @@ class Agent:
         """
         self.host.sendCommand("use 0")
 
-    def getNearestMobPosition(self, mobType):
+    def getNearestMob(self, mobType):
         """
         Returns a named EntityInfo tuple of the nearest mob of a specific type within a 10x10 area around this agent.
         Returns None if no mob of that type is within the area.
@@ -231,11 +241,11 @@ class Agent:
         agentPos = self.getPosition()
         if worldState == None or agentPos == None:
             return None
-        entities = [EntityInfo(Vector(k["x"], k["y"], k["z"]), k["name"], k.get("quantity")) for k in worldState["nearby_entities"]]
+        entities = [EntityInfo(k["id"], k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            if entity.name == mobType.value:
+            if entity.type == mobType.value:
                 entityPos = entity.position
                 distanceToPig = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToPig < nearestDistance:
@@ -302,9 +312,9 @@ class Agent:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
         self.startChangingYaw(rate)
-        if rate < 0.25:
+        if rate < 0.1:
             return True
-        welse:
+        else:
             return False
 
     def __changePitchAngleToFacePosition__(self, targetPosition):
@@ -357,7 +367,7 @@ class Agent:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
         self.startChangingPitch(rate)
-        if rate < 0.25:
+        if rate < 0.1:
             return True
         else:
             return False
@@ -378,7 +388,6 @@ class Agent:
         if agentPos == None:
             return False  
         
-        # Logger.logMoveToStart(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))
         isLookingAtTarget = self.lookAt(targetPosition)
         if not isLookingAtTarget:
             self.stopMoving()
@@ -388,11 +397,22 @@ class Agent:
 
         if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
             self.stopMoving()
-            # Logger.logMoveToFinish(self, LoggableCommand(AgentCommands.MoveTo, MoveToArgs(agentPos, targetPosition)))  # Finished moving.. log post-conditions
             return True
         else:
             self.startMoving(1)
             return False
+
+    def moveToEntity(self, entity):
+        """
+        Begin continuously moving & turning to reach a desired entity that was found from observations.
+        Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
+        """
+        Logger.logMoveToStart(self, entity)
+        if self.moveToPosition(entity.position):
+            Logger.logMoveToFinish(self, entity)
+            self.lastMovedTo = "{}-{}".format(entity.type, entity.id)
+            return True
+        return False
 
     def craft(self, item, recipe):
         """
