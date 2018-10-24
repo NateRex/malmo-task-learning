@@ -15,7 +15,8 @@ class Logger:
     an action.
     """
     __contents = ""
-    __lastCommand = None     # A possible action that was started but has not yet finished
+    __declaredEntityIds = []        # A list of entity ids for entities that have already been declared in the log
+    __lastCommand = None            # A possible action that was started but has not yet finished
     __lastCommandFinished = False   # Indicates whether the last command finished to completion
 
     @staticmethod
@@ -70,21 +71,33 @@ class Logger:
         Logger.__lastCommandFinished = True
 
     @staticmethod
+    def __logNewEntity__(entity):
+        """
+        Internal method that logs the definition of a new entity, and adds its id to the list of declared entities.
+        """
+        entityId = "{}-{}".format(entity.type, entity.id)
+        if entityId in Logger.__declaredEntityIds:  # We already logged this entity
+            return
+
+        if entity.type not in MobType.__members__:  # Is an agent
+            Logger.__pushStatement__("entities-{}-agent".format(entityId))
+        else:   # Is a mob
+            Logger.__pushStatement__("entities-{}-{}".format(entityId, entity.type))
+        Logger.__declaredEntityIds.append(entityId)
+
+    @staticmethod
     def logInitialState(agent):
         # Define all starting entities
         entities = agent.getNearbyEntities()
         for entity in entities:
-            entityId = "{}-{}".format(entity.type, entity.id)
-            if entity.type not in MobType.__members__:  # Is an agent
-                Logger.__pushStatement__("entities-{}-agent".format(entityId))
-            else:   # Is a mob
-                Logger.__pushStatement__("entities-{}-{}".format(entityId, entity.type))
+            Logger.__logNewEntity__(entity)
+
         Logger.__pushStatement__("START\n")
 
     @staticmethod
     def logFinalState():
+        Logger.__pushStatement__("\nEND")
         # TODO
-        return
 
     @staticmethod
     def logMoveToStart(agent, entity):
@@ -101,6 +114,9 @@ class Logger:
         command = ("moveto", agentId, entityId)
         if Logger.__commandAlreadyStarted__(command):
             return
+
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logNewEntity__(entity)
 
         # Pre-conditions
         if agent.lastMovedTo != None:
@@ -151,7 +167,7 @@ class Logger:
         Outputs the current JSON log string to a file located a the 'logs' directory within the current working
         directory. The file name is determined by the current date and time.
         """
-        fileName = datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S') + "_log.json"
+        fileName = datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S') + ".log"
         filePath = "logs"
         if not os.path.isdir(filePath):
             os.mkdir(filePath)
