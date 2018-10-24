@@ -123,10 +123,9 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     nearestPig = companion_agent.getClosestEntityByType(MobType.Pig)
     if nearestPig != None:
-        companion_agent.moveToEntity(nearestPig)
+        companion_agent.moveTo(nearestPig)
     else:
-        companion_agent.stopMoving()
-        companion_agent.stopChangingAngle()
+        companion_agent.stopAllMovement()
     # ====================================================================================================================
 
 # Log final state and flush the log

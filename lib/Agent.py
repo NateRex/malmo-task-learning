@@ -129,108 +129,103 @@ class Agent:
                 numberFound += currentItem["quantity"]
         return numberFound
 
-    def sendCommand(self, command):
-        """
-        Execute a primitive AgentHost-recognized command.
-        """
-        self.host.sendCommand(command)
-
-    def startMoving(self, speed):
+    def __startMoving__(self, speed):
         """
         Start moving backwards or forwards at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("move {}".format(speed))
 
-    def stopMoving(self):
+    def __stopMoving__(self):
         """
         Stop moving forwards/backwards.
         """
         self.host.sendCommand("move 0")
 
-    def startStrafing(self, speed):
+    def __startStrafing__(self, speed):
         """
         Start moving left or right continuously at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("strafe {}".format(speed))
 
-    def stopStrafing(self, speed):
+    def __stopStrafing__(self, speed):
         """
         Stop moving left/right.
         """
         self.host.sendCommand("strafe 0")
 
-    def startChangingPitch(self, speed):
+    def __startChangingPitch__(self, speed):
         """
         Start tilting the agent's head up or down continuously at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("pitch {}".format(speed))
 
-    def stopChangingPitch(self):
+    def __stopChangingPitch__(self):
         """
         Stop tilting the agent's head up/down.
         """
         self.host.sendCommand("pitch 0")
 
-    def startChangingYaw(self, speed):
+    def __startChangingYaw__(self, speed):
         """
         Start turning continuously to the left or right at a specific speed. Accepted values range from -1 to 1.
         """
         self.host.sendCommand("turn {}".format(speed))
 
-    def stopChangingYaw(self):
+    def __stopChangingYaw__(self):
         """
         Stop turning left/right.
         """
         self.host.sendCommand("turn 0")
 
-    def stopChangingAngle(self):
-        """
-        Stop any turning left/right and up/down.
-        """
-        self.stopChangingYaw()
-        self.stopChangingPitch()
-
-    def startJumping(self):
+    def __startJumping__(self):
         """
         Start jumping continuously.
         """
         self.host.sendCommand("jump 1")
 
-    def stopJumping(self):
+    def __stopJumping__(self):
         """
         Stop jumping.
         """
         self.host.sendCommand("jump 0")
 
-    def startCrouching(self):
+    def __startCrouching__(self):
         """
         Start crouching continuously.
         """
         self.host.sendCommand("crouch 1")
 
-    def stopCrouching(self):
+    def __stopCrouching__(self):
         """
         Stop crouching.
         """
         self.host.sendCommand("crouch 0")
 
-    def startAttacking(self):
+    def __startAttacking__(self):
         """
         Start attacking continuously.
         """
         self.host.sendCommand("attack 1")
 
-    def startUsingItem(self):
+    def __startUsingItem__(self):
         """
         Begin continuously using the item in the currently selected hotbar slot.
         """
         self.host.sendCommand("use 1")
 
-    def stopUsingItem(self):
+    def __stopUsingItem__(self):
         """
         Stop using the item in the currently selected hotbar slot.
         """
         self.host.sendCommand("use 0")
+
+    def stopAllMovement(self):
+        """
+        Stops any form of movement by this agent, including yaw/pitch turning and walking.
+        """
+        self.__stopChangingYaw__()
+        self.__stopChangingPitch__()
+        self.__stopMoving__()
 
     def getNearbyEntities(self):
         """
@@ -321,7 +316,7 @@ class Agent:
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
-        self.startChangingYaw(rate)
+        self.__startChangingYaw__(rate)
         if rate < 0.1:
             return True
         else:
@@ -376,20 +371,20 @@ class Agent:
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
-        self.startChangingPitch(rate)
+        self.__startChangingPitch__(rate)
         if rate < 0.1:
             return True
         else:
             return False
 
-    def lookAt(self, targetPosition):
+    def lookAtPosition(self, targetPosition):
         """
         Begin continuously turning/looking to face a Vector position.
         Returns true if the agent is currently looking at the target. Returns false otherwise.
         """
         return self.__changeYawAngleToFacePosition__(targetPosition) and self.__changePitchAngleToFacePosition__(targetPosition)
 
-    def moveToPosition(self, targetPosition):
+    def __moveToPosition__(self, targetPosition):
         """
         Begin continuously moving & turning to reach a desired Vector position (within 2-3 blocks).
         Returns true if the agent is currently facing and at the desired target. Returns false otherwise.
@@ -398,27 +393,27 @@ class Agent:
         if agentPos == None:
             return False  
         
-        isLookingAtTarget = self.lookAt(targetPosition)
+        isLookingAtTarget = self.lookAtPosition(targetPosition)
         if not isLookingAtTarget:
-            self.stopMoving()
+            self.__stopMoving__()
             return False
 
         distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
 
         if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
-            self.stopMoving()
+            self.__stopMoving__()
             return True
         else:
-            self.startMoving(1)
+            self.__startMoving__(1)
             return False
 
-    def moveToEntity(self, entity):
+    def moveTo(self, entity):
         """
         Begin continuously moving & turning to reach a desired entity that was found from observations.
         Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
         """
         Logger.logMoveToStart(self, entity)
-        if self.moveToPosition(entity.position):
+        if self.__moveToPosition__(entity.position):
             Logger.logMoveToFinish(self, entity)
             self.lastMovedTo = entity.id
             return True
