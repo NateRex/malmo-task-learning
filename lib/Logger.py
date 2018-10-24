@@ -75,27 +75,35 @@ class Logger:
         """
         Internal method that logs the definition of a new entity, and adds its id to the list of declared entities.
         """
-        entityId = "{}-{}".format(entity.type, entity.id)
-        if entityId in Logger.__declaredEntityIds:  # We already logged this entity
+        if entity.id in Logger.__declaredEntityIds:  # We already logged this entity
             return
 
         if entity.type not in MobType.__members__:  # Is an agent
-            Logger.__pushStatement__("entities-{}-agent".format(entityId))
+            Logger.__pushStatement__("entities-{}-agent".format(entity.id))
         else:   # Is a mob
-            Logger.__pushStatement__("entities-{}-{}".format(entityId, entity.type))
-        Logger.__declaredEntityIds.append(entityId)
+            Logger.__pushStatement__("entities-{}-{}".format(entity.id, entity.type))
+        Logger.__declaredEntityIds.append(entity.id)
 
     @staticmethod
-    def logInitialState(agent):
+    def logInitialState(agents):
+        """
+        Given the list of agents for a mission, log the starting state for the environment in the log.
+        """
         # Define all starting entities
-        entities = agent.getNearbyEntities()
-        for entity in entities:
-            Logger.__logNewEntity__(entity)
+        for agent in agents:
+            entities = agent.getNearbyEntities()
+            if entities == None:
+                return
+            for entity in entities:
+                Logger.__logNewEntity__(entity)
 
         Logger.__pushStatement__("START\n")
 
     @staticmethod
     def logFinalState():
+        """
+        Log the end state for the environment in the log.
+        """
         Logger.__pushStatement__("\nEND")
         # TODO
 
@@ -105,13 +113,12 @@ class Logger:
         Log the preconditions and action identifier for the MoveTo command, provided that it is unique
         from the previous action.
         """
-        entityId = "{}-{}".format(entity.type, entity.id)
         agentId = agent.getId()
         if agentId == None:
             return
 
         # Ensure this is not a repeat call to do what we were already doing
-        command = ("moveto", agentId, entityId)
+        command = ("moveto", agentId, entity.id)
         if Logger.__commandAlreadyStarted__(command):
             return
 
@@ -123,7 +130,7 @@ class Logger:
             Logger.__pushStatement__("agent_at-{}-{}".format(agentId, agent.lastMovedTo))
 
         # Action
-        Logger.__pushStatement__("!MOVETO-{}-{}".format(agentId, entityId))
+        Logger.__pushStatement__("!MOVETO-{}-{}".format(agentId, entity.id))
         Logger.__markCommandStarted__(command)
 
     @staticmethod
@@ -131,7 +138,6 @@ class Logger:
         """
         Log the postconditions for the MoveTo command, since it has ran to completion before executing another command.
         """
-        entityId = "{}-{}".format(entity.type, entity.id)
         agentId = agent.getId()
         if agentId == None:
             return
@@ -140,7 +146,7 @@ class Logger:
         if Logger.__lastCommandFinished:
             return
 
-        Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entityId))
+        Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
         Logger.__markCommandFinished__()
 
 

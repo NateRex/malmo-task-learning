@@ -45,7 +45,7 @@ class Agent:
         agentState = self.getObservations()
         if agentState == None:
             return None
-        return "{}-{}".format(agentState["Name"], agentState["nearby_entities"][0]["id"])  # Agent itself is always the first entity closeby
+        return "{}{}".format(agentState["Name"], agentState["nearby_entities"][0]["id"]).replace("-", "")  # Agent itself is always the first entity closeby
 
     def getPosition(self):
         """
@@ -240,7 +240,7 @@ class Agent:
         worldState = self.getObservations()
         if worldState == None:
             return None
-        entities = [EntityInfo(k["id"], k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
+        entities = [EntityInfo("{}{}".format(k["name"], k["id"]).replace("-", ""), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
         return entities
 
     def getClosestEntityByType(self, entityType):
@@ -420,7 +420,7 @@ class Agent:
         Logger.logMoveToStart(self, entity)
         if self.moveToPosition(entity.position):
             Logger.logMoveToFinish(self, entity)
-            self.lastMovedTo = "{}-{}".format(entity.type, entity.id)
+            self.lastMovedTo = entity.id
             return True
         return False
 
