@@ -20,6 +20,7 @@ class Agent:
     def __init__(self):
         self.host = MalmoPython.AgentHost()
         self.lastWorldState = None
+        self.lastLookedAt = None    # Id of the entity we last looked at
         self.lastMovedTo = None     # Id of the entity we last moved to
 
     def isMissionActive(self):
@@ -378,12 +379,25 @@ class Agent:
         else:
             return False
 
-    def lookAtPosition(self, targetPosition):
+    def __lookAtPosition__(self, targetPosition):
         """
         Begin continuously turning/looking to face a Vector position.
         Returns true if the agent is currently looking at the target. Returns false otherwise.
         """
         return self.__changeYawAngleToFacePosition__(targetPosition) and self.__changePitchAngleToFacePosition__(targetPosition)
+
+    def lookAt(self, entity):
+        """
+        Begin continuously turning/looking to face the specified entity.
+        Returns true if the agent is currently facing the entity. Returns false otherwise.
+        """
+        Logger.logLookAtStart(self, entity)
+        isLookingAt = self.__lookAtPosition__(entity.position)
+        if isLookingAt:
+            Logger.logLookAtFinish(self, entity)
+            self.lastLookedAt = entity.id
+            return True
+        return False
 
     def __moveToPosition__(self, targetPosition):
         """
@@ -393,15 +407,10 @@ class Agent:
         agentPos = self.getPosition()
         if agentPos == None:
             return False  
-        
-        isLookingAtTarget = self.lookAtPosition(targetPosition)
-        if not isLookingAtTarget:
-            self.__stopMoving__()
-            return False
 
         distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
 
-        if distance < 2.8:     # Already at the desired location (just make sure we are facing correct way)
+        if distance < 2.8:  # Moving "to" a position is really moving "up to it" while facing it
             self.__stopMoving__()
             return True
         else:
@@ -414,6 +423,14 @@ class Agent:
         Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
         """
         Logger.logMoveToStart(self, entity)
+
+        # Look at the target
+        isLookingAtTarget = self.lookAt(entity)
+        if not isLookingAtTarget:
+            self.__stopMoving__()
+            return False
+        
+        # Move to the target
         if self.__moveToPosition__(entity.position):
             Logger.logMoveToFinish(self, entity)
             self.lastMovedTo = entity.id

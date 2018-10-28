@@ -54,7 +54,7 @@ class Logger:
         return True
 
     @staticmethod
-    def __logNewEntity__(entity):
+    def __logEntity__(entity):
         """
         Internal method that logs the definition of a new entity, and adds its id to the list of declared entities.
         """
@@ -78,7 +78,7 @@ class Logger:
             if entities == None:
                 return
             for entity in entities:
-                Logger.__logNewEntity__(entity)
+                Logger.__logEntity__(entity)
 
         Logger.__pushStatement__("START\n")
 
@@ -101,18 +101,67 @@ class Logger:
         if agentId == None:
             return
 
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logEntity__(entity)
+
         if Logger.__lastClosestEntity == None or entity.id != Logger.__lastClosestEntity.id:
             Logger.__pushStatement__("closest_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
             Logger.__lastClosestEntity = entity
 
+    __lastLookAt = None             # Keep track of the last lookAt executed to avoid repeat logging
+    __lastLookAtDidFinish = False   # Keep track of whether or not lookAt has finished to log post-conditions
+
+    @staticmethod
+    def logLookAtStart(agent, entity):
+        """
+        Log the preconditions and action identifier for the LookAt command, provided that it is not a repeat
+        call of the previous LookAt command.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        # Ensure this is not a repeat call to do what we were already doing
+        command = Action("lookat", [agentId, entity.id])
+        if Logger.__lastLookAt != None and Logger.__areActionsEqual__(Logger.__lastLookAt, command):
+            return
+
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logEntity__(entity)
+
+        # Pre-conditions
+        if agent.lastLookedAt != None:
+            Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, agent.lastLookedAt))
+
+        # Action
+        Logger.__pushStatement__("!LOOKAT-{}-{}".format(agentId, entity.id))
+        Logger.__lastLookAt = command
+        Logger.__lastLookAtDidFinish = False
+
+    @staticmethod
+    def logLookAtFinish(agent, entity):
+        """
+        Log the postconditions for the LookAt command, since it has ran to completion before looking elsewhere
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        # Did command already run to completion (and was therefore postconditions were logged)?
+        if Logger.__lastLookAtDidFinish:
+            return
+
+        Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
+        Logger.__lastLookAtDidFinish = True
+
     __lastMoveTo = None             # Keep track of the last moveTo executed to avoid repeat logging
     __lastMoveToDidFinish = False   # Keep track of whether or not moveTo has finished to log post-conditions
-
+    
     @staticmethod
     def logMoveToStart(agent, entity):
         """
-        Log the preconditions and action identifier for the MoveTo command, provided that it is unique
-        from the previous action.
+        Log the preconditions and action identifier for the MoveTo command, provided that it is not a repeat
+        call of the previous LookAt command.
         """
         agentId = agent.getId()
         if agentId == None:
@@ -124,32 +173,32 @@ class Logger:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logNewEntity__(entity)
+        Logger.__logEntity__(entity)
 
         # Pre-conditions
         if agent.lastMovedTo != None:
-            Logger.__pushStatement__("agent_at-{}-{}".format(agentId, agent.lastMovedTo))
+            Logger.__pushStatement__("agent_located_at-{}-{}".format(agentId, agent.lastMovedTo))
 
         # Action
         Logger.__pushStatement__("!MOVETO-{}-{}".format(agentId, entity.id))
         Logger.__lastMoveTo = command
+        Logger.__lastMoveToDidFinish = False
 
     @staticmethod
     def logMoveToFinish(agent, entity):
         """
-        Log the postconditions for the MoveTo command, since it has ran to completion before executing another command.
+        Log the postconditions for the MoveTo command, since it has ran to completion before moving elsewhere.
         """
         agentId = agent.getId()
         if agentId == None:
             return
 
-        # Command already ran to completion
+        # Did command already run to completion (and was therefore postconditions were logged)?
         if Logger.__lastMoveToDidFinish:
             return
 
-        Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("agent_located_at-{}-{}".format(agentId, entity.id))
         Logger.__lastMoveToDidFinish = True
-
 
     @staticmethod
     def logCraft(agent, command):
