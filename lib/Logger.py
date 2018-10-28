@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import time
 from Constants import *
+from Utils import *
 
 class Logger:
     """
@@ -14,10 +15,8 @@ class Logger:
     from a corresponding action method, such that the trace output is produced as a direct result of performing
     an action.
     """
-    __contents = ""
+    __contents = ""                 # The string containing the entire log
     __declaredEntityIds = []        # A list of entity ids for entities that have already been declared in the log
-    __lastCommand = None            # A possible action that was started but has not yet finished
-    __lastCommandFinished = False   # Indicates whether the last command finished to completion
 
     @staticmethod
     def clear():
@@ -41,34 +40,18 @@ class Logger:
         Logger.__contents += value + "\n"
 
     @staticmethod
-    def __commandAlreadyStarted__(command):
+    def __areActionsEqual__(actionA, actionB):
         """
-        Internal method that returns true if the given command is a repeat of the last command that was started and has not yet finished.
-        Returns false otherwise.
+        Internal method for determining whether two actions are equivalent.
         """
-        if Logger.__lastCommand == None:
+        if actionA.type != actionB.type:
             return False
-        if len(command) != len(Logger.__lastCommand):
+        if len(actionA.args) != len(actionB.args):
             return False
-        for i in range(0, len(command)):
-            if type(command[i]) != type(Logger.__lastCommand[i]) or command[i] != Logger.__lastCommand[i]:
+        for i in range(0, len(actionA.args)):
+            if type(actionA.args[i]) != type(actionB.args[i]) or actionA.args[i] != actionB.args[i]:
                 return False
-        return True 
-
-    @staticmethod
-    def __markCommandStarted__(command):
-        """
-        Internal method that marks a new command as having been started.
-        """
-        Logger.__lastCommand = command
-        Logger.__lastCommandFinished = False
-
-    @staticmethod
-    def __markCommandFinished__():
-        """
-        Internal method that marks the last ran command as having finished.
-        """
-        Logger.__lastCommandFinished = True
+        return True
 
     @staticmethod
     def __logNewEntity__(entity):
@@ -122,6 +105,9 @@ class Logger:
             Logger.__pushStatement__("closest_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
             Logger.__lastClosestEntity = entity
 
+    __lastMoveTo = None             # Keep track of the last moveTo executed to avoid repeat logging
+    __lastMoveToDidFinish = False   # Keep track of whether or not moveTo has finished to log post-conditions
+
     @staticmethod
     def logMoveToStart(agent, entity):
         """
@@ -133,8 +119,8 @@ class Logger:
             return
 
         # Ensure this is not a repeat call to do what we were already doing
-        command = ("moveto", agentId, entity.id)
-        if Logger.__commandAlreadyStarted__(command):
+        command = Action("moveto", [agentId, entity.id])
+        if Logger.__lastMoveTo != None and Logger.__areActionsEqual__(Logger.__lastMoveTo, command):
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
@@ -146,7 +132,7 @@ class Logger:
 
         # Action
         Logger.__pushStatement__("!MOVETO-{}-{}".format(agentId, entity.id))
-        Logger.__markCommandStarted__(command)
+        Logger.__lastMoveTo = command
 
     @staticmethod
     def logMoveToFinish(agent, entity):
@@ -158,11 +144,11 @@ class Logger:
             return
 
         # Command already ran to completion
-        if Logger.__lastCommandFinished:
+        if Logger.__lastMoveToDidFinish:
             return
 
         Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
-        Logger.__markCommandFinished__()
+        Logger.__lastMoveToDidFinish = True
 
 
     @staticmethod

@@ -12,6 +12,7 @@ from collections import namedtuple
 
 Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
 EntityInfo = namedtuple("EntityInfo", "id type position quantity")   # Information for an entity observed by an agent
+Action = namedtuple("Action", "type args")
 
 # ==============================================================================================
 # Classes
