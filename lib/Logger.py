@@ -107,6 +107,21 @@ class Logger:
         Logger.__pushStatement__("\nEND")
         # TODO
 
+    __lastClosestEntity = None
+
+    @staticmethod
+    def logClosestEntity(agent, entity):
+        """
+        Log the closest entity to the agent given.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        if Logger.__lastClosestEntity == None or entity.id != Logger.__lastClosestEntity.id:
+            Logger.__pushStatement__("closest_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
+            Logger.__lastClosestEntity = entity
+
     @staticmethod
     def logMoveToStart(agent, entity):
         """

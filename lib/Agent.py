@@ -258,6 +258,7 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
+        Logger.logClosestEntity(self, nearestEntity)
         return nearestEntity
 
     def __changeYawAngleToFacePosition__(self, targetPosition):

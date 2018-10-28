@@ -32,7 +32,7 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 45000, "Player", Vector(0, 4, 0), Direction.North)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 25000, "Player", Vector(0, 4, 0), Direction.North)
 scenarioBuilder.addAgent("Companion", Vector(0, 4, -15), Direction.South)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
