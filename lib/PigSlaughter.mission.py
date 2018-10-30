@@ -42,7 +42,8 @@ scenarioBuilder.environment.addLine(Vector(-2, 4, 1), Vector(2, 4, 1), BlockType
 scenarioBuilder.environment.addLine(Vector(-2, 4, -25), Vector(2, 4, -25), BlockType.Fence)
 scenarioBuilder.environment.addBlock(Vector(0, 3, -22), BlockType.Mob_spawner, MobType.Pig)
 
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond, ItemSlot.HotBar._1, 64)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.Stick, ItemSlot.HotBar._2, 3)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_leggings, ItemSlot.Armor.Leggings)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_chestplate, ItemSlot.Armor.Chestplate)
@@ -118,14 +119,21 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Log initial state
 Logger.logInitialState([companion_agent, player_agent])
 
+counter = 0
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
+    if counter < 3:
+        companion_agent.craft(ItemType.Diamond_sword, [RecipeItem(ItemType.Diamond, 2), RecipeItem(ItemType.Stick, 1)])
     nearestPig = companion_agent.getClosestEntityByType(MobType.Pig)
     if nearestPig != None:
         companion_agent.moveTo(nearestPig)
+        companion_agent.attack(nearestPig)
     else:
         companion_agent.stopAllMovement()
+
+    counter += 1
     # ====================================================================================================================
 
 # Log final state and flush the log

@@ -68,17 +68,34 @@ class Logger:
         Logger.__declaredEntityIds.append(entity.id)
 
     @staticmethod
+    def __logAgentInventory__(agent):
+        """
+        Internal method that logs everything that an agent has in their inventory.
+        """
+        agentId = agent.getId()
+        inventory = agent.getInventoryJson()
+        if agentId == None or inventory == None:
+            return
+
+        for i in range(0, len(inventory)):
+            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, inventory[i]["type"]))
+
+    @staticmethod
     def logInitialState(agents):
         """
         Given the list of agents for a mission, log the starting state for the environment in the log.
         """
-        # Define all starting entities
         for agent in agents:
             entities = agent.getNearbyEntities()
             if entities == None:
                 return
+
+            # Define all starting nearby entities to this agent
             for entity in entities:
                 Logger.__logEntity__(entity)
+
+            # Log out this agent's starting inventory
+            Logger.__logAgentInventory__(agent)
 
         Logger.__pushStatement__("START\n")
 
@@ -114,7 +131,7 @@ class Logger:
     @staticmethod
     def logLookAtStart(agent, entity):
         """
-        Log the preconditions and action identifier for the LookAt command, provided that it is not a repeat
+        Log the preconditions and action for the LookAt command, provided that it is not a repeat
         call of the previous LookAt command.
         """
         agentId = agent.getId()
@@ -160,7 +177,7 @@ class Logger:
     @staticmethod
     def logMoveToStart(agent, entity):
         """
-        Log the preconditions and action identifier for the MoveTo command, provided that it is not a repeat
+        Log the preconditions and action for the MoveTo command, provided that it is not a repeat
         call of the previous LookAt command.
         """
         agentId = agent.getId()
@@ -201,21 +218,40 @@ class Logger:
         Logger.__lastMoveToDidFinish = True
 
     @staticmethod
-    def logCraft(agent, command):
+    def logCraft(agent, item, recipeItems):
         """
-        Log the preconditions and action identifier for the Craft command, provided that it is unique
-        from the previous action.
+        Log the preconditions, action, and postconditions for the Craft command.
         """
-        if Logger.__commandAlreadyStarted__(command):
+        agentId = agent.getId()
+        if agentId == None:
             return
-        # TODO: If Logger.__currentCommand != None... do some wrap up of old command
-        for recipeItem in command.args.recipe:
-            Logger.__pushStatement__("agent_has-{}-{}".format("PLACEHOLDER", recipeItem.value))
-        Logger.__pushStatement__("!CRAFT-{}-{}".format("PLACEHOLDER", command.item.value))
-        for recipeItem in command.args.recipe:
-            if agent.amountOfItemInInventory(recipeItem) <= 0:
-                Logger.__pushStatement__("agent_not_have-{}-{}".format("PLACEHOLDER", recipeItem.value))
-        Logger.__pushStatement__("agent_has-{}-{}".format("PLACEHOLDER", command.item.value))
+
+        # Action
+        Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, item.value))
+
+        # Postconditions
+        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.value))
+        for recipeItem in recipeItems:
+            if agent.amountOfItemInInventory(recipeItem.type) <= 0:
+                Logger.__pushStatement__("agent_not_have-{}-{}".format(agentId, recipeItem.value))
+
+    __lastAttack = None     # Keep track of the last entity we attacked to avoid unnecessary repeat logs
+
+    @staticmethod
+    def logAttack(agent, entity, didKill):
+        """
+        Log the action and possible postconditions for the Attack command.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        # Action
+        Logger.__pushStatement__("!ATTACK-{}-{}".format(agentId, entity.id))
+
+        # Postconditions
+        if didKill:
+            Logger.__pushStatement__("is_dead-{}".format(entity.id))
 
     @staticmethod
     def flushToFile():

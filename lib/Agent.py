@@ -6,6 +6,7 @@
 import MalmoPython
 import json
 import math
+import time
 from Utils import *
 from Logger import *
 from Constants import *
@@ -58,9 +59,9 @@ class Agent:
             return None
         return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
 
-    def getInventory(self):
+    def getInventoryJson(self):
         """
-        Returns an array of inventory items that this agent is currently carrying.
+        Returns an array of JSON inventory items that this agent is currently carrying.
         If no observations have occurred, returns None.
         """
         agentState = self.getObservations()
@@ -83,7 +84,7 @@ class Agent:
         Internal method that returns the next hotbar index (0-based) that is empty.
         If there is no such slot available, returns -1.
         """
-        inventory = self.getInventory()
+        inventory = self.getInventoryJson()
         if inventory == None:
             return -1
 
@@ -105,7 +106,7 @@ class Agent:
         Internal method that returns the inventory index of the specified item in this agent's inventory.
         Returns -1 if the agent does not carry that item.
         """
-        inventory = self.getInventory()
+        inventory = self.getInventoryJson()
         if inventory == None:
             return -1
         
@@ -119,7 +120,7 @@ class Agent:
         """
         Returns the quantity of a particular item in this agent's inventory. Returns 0 on error.
         """
-        inventory = self.getInventory()
+        inventory = self.getInventoryJson()
         if inventory == None:
             return 0
         
@@ -208,6 +209,12 @@ class Agent:
         """
         self.host.sendCommand("attack 1")
 
+    def __stopAttacking__(self):
+        """
+        Stop attacking.
+        """
+        self.host.sendCommand("attack 0")
+
     def __startUsingItem__(self):
         """
         Begin continuously using the item in the currently selected hotbar slot.
@@ -227,6 +234,7 @@ class Agent:
         self.__stopChangingYaw__()
         self.__stopChangingPitch__()
         self.__stopMoving__()
+        self.__stopAttacking__()
 
     def getNearbyEntities(self):
         """
@@ -410,7 +418,7 @@ class Agent:
 
         distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
 
-        if distance < 2.8:  # Moving "to" a position is really moving "up to it" while facing it
+        if distance <= STRIKING_DISTANCE:  # Moving "to" a position is really moving "up to it" while facing it
             self.__stopMoving__()
             return True
         else:
@@ -437,20 +445,65 @@ class Agent:
             return True
         return False
 
-    def craft(self, item, recipe):
+    def craft(self, item, recipeItems):
         """
-        Craft an item using the ingredients list of RecipeItems given.
+        Craft an item from other items in this agent's inventory. This requires providing a list of RecipeItems.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
-        initialAmt = self.amountOfItemInInventory(item)
-        self.host.sendCommand("craft {}".format(item))
-        newAmt = self.amountOfItemInInventory(item)
-        if (newAmt > initialAmt):
-            Logger.logCraft(self, LoggableCommand(AgentCommands.Craft, CraftArgs(item, recipe)))
-            return True
-        else:
-            return False
+        # TODO: Fix so that we can immediately observe the crafted item
+        for recipeItem in recipeItems:
+            amtOfItem = self.amountOfItemInInventory(recipeItem.type)
+            if amtOfItem < recipeItem.quantity:
+                return False
+
+        self.host.sendCommand("craft {}".format(item.value))
+        Logger.logCraft(self, item, recipeItems)
+        return True
     
+    def attack(self, entity):
+        """
+        Attack an entity using the currently equipped item, provided that it is within striking distance. This method
+        calls LookAt if it is necessary for the agent to turn to face the entity.
+        """
+        startAgentState = self.getObservations()
+        agentPos = self.getPosition()
+        if startAgentState == None or agentPos == None:
+            return False
+
+        prevNumberOfKills = startAgentState["MobsKilled"]
+        
+        # Check if we are in striking distance
+        distance = MathExt.distanceBetweenPoints(agentPos, entity.position)
+        if distance > STRIKING_DISTANCE:
+            self.__stopAttacking__()
+            return False
+
+        # Ensure we are looking at the target
+        isLookingAtTarget = self.lookAt(entity)
+        if not isLookingAtTarget:
+            self.__stopAttacking__()
+            return False
+
+        self.__startAttacking__()
+
+        # Give the attack command a moment to run before checking to see if we killed the entity
+        time.sleep(0.05)
+        finishAgentState = self.getObservations()
+        if finishAgentState == None:
+            Logger.logAttack(self, entity, False)
+            return True
+
+        newNumberOfKills = finishAgentState["MobsKilled"]
+        if newNumberOfKills > prevNumberOfKills:
+            Logger.logAttack(self, entity, True)
+        else:
+            Logger.logAttack(self, entity, False)
+        return True
+        
+
+        
+
+
     def equip(self, item):
         """
         Changes the currently equipped item to something in this agent's inventory. This can cause items to be
