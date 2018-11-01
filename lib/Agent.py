@@ -536,3 +536,68 @@ class Agent:
             return True
         
         return False
+
+    def moveToPlayer(self, player):
+        """
+        Begin continuously moving & turning to reach a desired entity that was found from observations.
+        Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
+        """
+        #Logger.logMoveToStart(self, player)
+
+        # Look at the target
+        isLookingAtTarget = self.lookAtPlayer(player)
+        if not isLookingAtTarget:
+            self.__stopMoving__()
+            return False
+        
+        # Move to the target
+        if self.__moveToPosition__(player):
+            #Logger.logMoveToFinish(self, player)
+            #self.lastMovedTo = player.id
+            return True
+        return False
+
+    def lookAtPlayer(self, player):
+        """
+        Begin continuously turning/looking to face the specified entity.
+        Returns true if the agent is currently facing the entity. Returns false otherwise.
+        """
+        #Logger.logLookAtStart(self, player)
+        isLookingAt = self.__lookAtPosition__(player)
+        if isLookingAt:
+            #Logger.logLookAtFinish(self, player)
+            #self.lastLookedAt = player.id
+            return True
+        return False
+
+    def __throwItem__(self):
+        """
+        Throws item in hand forward
+        """
+        self.host.sendCommand("discardCurrentItem")
+
+    def __placeItemAt__(self, location):
+        """
+        Places an item at a location in the hotbar.
+        Returns true if successful
+        """
+        itemIdx = self.__locationOfItemInInventory__(item)
+        if itemIdx == -1:
+            return False
+        if location < 9 and location >= 0:
+            self.host.sendCommand("swapInventoryItems {} {}".format(location, itemIdx))
+            #self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
+            #self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            return True
+
+    def giveItem(self, item):
+        """
+        Give an item to a player that is in inventory.
+        Returns none if the item wasn't in inventory.
+        """
+        if self.amountOfItemInInventory(item) > 0:
+            self.equip(item)
+            if self.__locationOfItemInInventory__(item) == self.getCurrentHotbarIndex():
+                self.__throwItem__()
+        else:
+            return None
