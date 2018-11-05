@@ -47,7 +47,7 @@ class Agent:
         agentState = self.getObservations()
         if agentState == None:
             return None
-        return "{}{}".format(agentState["Name"], agentState["nearby_entities"][0]["id"]).replace("-", "")  # Agent itself is always the first entity closeby
+        return agentState["Name"]
 
     def getPosition(self):
         """
@@ -382,7 +382,7 @@ class Agent:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
         self.__startChangingPitch__(rate)
-        if rate < 0.1:
+        if rate <= .25:
             return True
         else:
             return False
@@ -431,15 +431,10 @@ class Agent:
         Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
         """
         Logger.logMoveToStart(self, entity)
-
-        # Look at the target
-        isLookingAtTarget = self.lookAt(entity)
-        if not isLookingAtTarget:
-            self.__stopMoving__()
-            return False
         
         # Move to the target
-        if self.__moveToPosition__(entity.position):
+        isAt = self.__moveToPosition__(entity.position)
+        if isAt:
             Logger.logMoveToFinish(self, entity)
             self.lastMovedTo = entity.id
             return True
@@ -499,10 +494,6 @@ class Agent:
         else:
             Logger.logAttack(self, entity, False)
         return True
-        
-
-        
-
 
     def equip(self, item):
         """

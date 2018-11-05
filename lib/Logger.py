@@ -104,7 +104,7 @@ class Logger:
         """
         Log the end state for the environment in the log.
         """
-        Logger.__pushStatement__("\nEND")
+        Logger.__pushStatement__("END")
         # TODO
 
     __lastClosestEntity = None
@@ -169,6 +169,7 @@ class Logger:
             return
 
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("")    # Add a newline
         Logger.__lastLookAtDidFinish = True
 
     __lastMoveTo = None             # Keep track of the last moveTo executed to avoid repeat logging
@@ -193,8 +194,10 @@ class Logger:
         Logger.__logEntity__(entity)
 
         # Pre-conditions
+        if agent.lastLookedAt != None:
+            Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, agent.lastLookedAt))
         if agent.lastMovedTo != None:
-            Logger.__pushStatement__("agent_located_at-{}-{}".format(agentId, agent.lastMovedTo))
+            Logger.__pushStatement__("agent_at-{}-{}".format(agentId, agent.lastMovedTo))
 
         # Action
         Logger.__pushStatement__("!MOVETO-{}-{}".format(agentId, entity.id))
@@ -214,7 +217,8 @@ class Logger:
         if Logger.__lastMoveToDidFinish:
             return
 
-        Logger.__pushStatement__("agent_located_at-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("")    # Add newline
         Logger.__lastMoveToDidFinish = True
 
     @staticmethod
@@ -234,6 +238,7 @@ class Logger:
         for recipeItem in recipeItems:
             if agent.amountOfItemInInventory(recipeItem.type) <= 0:
                 Logger.__pushStatement__("agent_not_have-{}-{}".format(agentId, recipeItem.value))
+        Logger.__pushStatement__("")    # Add a newline
 
     __lastAttack = None     # Keep track of the last entity we attacked to avoid unnecessary repeat logs
 
@@ -252,6 +257,8 @@ class Logger:
         # Postconditions
         if didKill:
             Logger.__pushStatement__("is_dead-{}".format(entity.id))
+
+        Logger.__pushStatement__("")    # Add a newline
 
     @staticmethod
     def flushToFile():
