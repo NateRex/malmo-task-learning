@@ -54,6 +54,20 @@ class Logger:
         return True
 
     @staticmethod
+    def __logAgent__(agent):
+        """
+        Internal method that logs the definition of a new agentm and adds its id information to the list of declared entities.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+        if agentId in Logger.__declaredEntityIds:   # We already logged this agent
+            return
+
+        Logger.__pushStatement__("agent-{}".format(agentId))
+        Logger.__declaredEntityIds.append(agentId)
+
+    @staticmethod
     def __logEntity__(entity):
         """
         Internal method that logs the definition of a new entity, and adds its id to the list of declared entities.
@@ -61,11 +75,9 @@ class Logger:
         if entity.id in Logger.__declaredEntityIds:  # We already logged this entity
             return
 
-        if entity.type not in MobType.__members__:  # Is an agent
-            Logger.__pushStatement__("entities-{}-agent".format(entity.id))
-        else:   # Is a mob
-            Logger.__pushStatement__("entities-{}-{}".format(entity.id, entity.type))
-        Logger.__declaredEntityIds.append(entity.id)
+        if entity.type in MobType.__members__:  # Avoid redeclaring agents as entities
+            Logger.__pushStatement__("entities-{}-{}".format(entity.type, entity.id))
+            Logger.__declaredEntityIds.append(entity.id)
 
     @staticmethod
     def __logAgentInventory__(agent):
@@ -230,14 +242,18 @@ class Logger:
         if agentId == None:
             return
 
+        # Preconditions
+        for recipeItem in recipeItems:
+            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, recipeItem.value))
+
         # Action
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, item.value))
 
         # Postconditions
         Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.value))
         for recipeItem in recipeItems:
-            if agent.amountOfItemInInventory(recipeItem.type) <= 0:
-                Logger.__pushStatement__("agent_not_have-{}-{}".format(agentId, recipeItem.value))
+            if agent.amountOfItemInInventory(recipeItem) <= 0:
+                Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, recipeItem.value))
         Logger.__pushStatement__("")    # Add a newline
 
     __lastAttack = None     # Keep track of the last entity we attacked to avoid unnecessary repeat logs

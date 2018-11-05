@@ -30,21 +30,30 @@ class Agent:
         """
         return self.host.peekWorldState().is_mission_running
 
-    def getObservations(self):
+    def getObservation(self):
         """
         Returns the entire world state containing the most recent observations as a JSON object.
-        If no new observations have occurred since the previous call to this method, returns None.
         """
         agentState = self.host.getWorldState()
         if len(agentState.observations) > 0:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
 
+    def waitForNextObservation(self):
+        """
+        Wait for the next new observation that is received from the MalmoPlatform API, and return it.
+        """
+        agentState = self.host.getWorldState()
+        while agentState.number_of_observations_since_last_state <= 0:
+            agentState = self.host.getWorldState()
+        self.lastWorldState = json.loads(agentState.observations[-1].text)
+        return self.lastWorldState
+
     def getId(self):
         """
         Returns the unique identifier for this agent. Returns none if unsuccessful.
         """
-        agentState = self.getObservations()
+        agentState = self.getObservation()
         if agentState == None:
             return None
         return agentState["Name"]
@@ -54,7 +63,7 @@ class Agent:
         Returns the Vector position of this agent.
         If no observations have occurred, returns None.
         """
-        agentState = self.getObservations()
+        agentState = self.getObservation()
         if agentState == None:
             return None
         return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
@@ -64,7 +73,7 @@ class Agent:
         Returns an array of JSON inventory items that this agent is currently carrying.
         If no observations have occurred, returns None.
         """
-        agentState = self.getObservations()
+        agentState = self.getObservation()
         if agentState == None:
             return None
         return agentState["inventory"]
@@ -74,7 +83,7 @@ class Agent:
         Returns the hotbar index (0-based) that this agent currently has selected.
         If unable to determine the currently used hotbar index, returns -1.
         """
-        agentState = self.getObservations()
+        agentState = self.getObservation()
         if agentState == None:
             return -1
         return agentState["currentItemIndex"]
@@ -241,7 +250,7 @@ class Agent:
         Returns a list of named EntityInfo tuples of all entities within a 20x20 area around this agent.
         Returns None on error.
         """
-        worldState = self.getObservations()
+        worldState = self.getObservation()
         if worldState == None:
             return None
         entities = [EntityInfo("{}{}".format(k["name"], k["id"]).replace("-", ""), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
@@ -275,7 +284,7 @@ class Agent:
         Begin continuously turning to face a Vector position relative to the agent's current position.
         Returns true if the agent is currently facing the target. Returns false otherwise.
         """
-        worldState = self.getObservations()
+        worldState = self.getObservation()
         agentPos = self.getPosition()
         if worldState == None or agentPos == None:
             return False    
@@ -337,7 +346,7 @@ class Agent:
         Begin continuously changing pitch of this agent to face a particular Vector position.
         Returns true if the agent is currently facing the target. Returns false otherwise.
         """
-        worldState = self.getObservations()
+        worldState = self.getObservation()
         agentPos = self.getPosition()
         if worldState == None or agentPos == None:
             return False  
@@ -445,22 +454,22 @@ class Agent:
         Craft an item from other items in this agent's inventory. This requires providing a list of RecipeItems.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
-        # TODO: Fix so that we can immediately observe the crafted item
-        for recipeItem in recipeItems:
-            amtOfItem = self.amountOfItemInInventory(recipeItem.type)
-            if amtOfItem < recipeItem.quantity:
-                return False
-
+        amtBefore = self.amountOfItemInInventory(item)
         self.host.sendCommand("craft {}".format(item.value))
-        Logger.logCraft(self, item, recipeItems)
-        return True
+        self.waitForNextObservation()
+        amtAfter = self.amountOfItemInInventory(item)
+        if amtAfter > amtBefore:
+            Logger.logCraft(self, item, recipeItems)
+            return True
+        else:
+            return False
     
     def attack(self, entity):
         """
         Attack an entity using the currently equipped item, provided that it is within striking distance. This method
         calls LookAt if it is necessary for the agent to turn to face the entity.
         """
-        startAgentState = self.getObservations()
+        startAgentState = self.getObservation()
         agentPos = self.getPosition()
         if startAgentState == None or agentPos == None:
             return False
@@ -483,7 +492,7 @@ class Agent:
 
         # Give the attack command a moment to run before checking to see if we killed the entity
         time.sleep(0.05)
-        finishAgentState = self.getObservations()
+        finishAgentState = self.getObservation()
         if finishAgentState == None:
             Logger.logAttack(self, entity, False)
             return True
