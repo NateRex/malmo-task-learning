@@ -41,8 +41,8 @@ scenarioBuilder.environment.addLine(Vector(3, 4, -1), Vector(3, 4, -20), BlockTy
 scenarioBuilder.environment.addLine(Vector(-19, 4, -2), Vector(2, 4, -2), BlockType.Fence)
 scenarioBuilder.environment.addLine(Vector(-19, 4, -20), Vector(2, 4, -20), BlockType.Fence)
 
-scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Cow)
-scenarioBuilder.environment.addMob(Vector(-10, 4, -15), MobType.Cow)
+scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Peaceful.Cow)
+scenarioBuilder.environment.addMob(Vector(-10, 4, -15), MobType.Peaceful.Cow)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 
@@ -117,7 +117,7 @@ hunt = 0
 moreBeef = 0
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    nearestCowPos = companion_agent.getClosestEntityByType(MobType.Cow)
+    nearestCowPos = companion_agent.getClosestEntityByType(MobType.Peaceful.Cow)
     currentPos = companion_agent.getPosition()
     playerPos = player_agent.getPosition()
 
