@@ -328,6 +328,10 @@ class Logger:
         if agentId == None:
             return
 
+        # Preconditions
+        Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
+
         # Action
         Logger.__pushStatement__("!ATTACK-{}-{}".format(agentId, entity.id))
 

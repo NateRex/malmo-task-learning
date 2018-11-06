@@ -39,7 +39,7 @@ class Agent:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
 
-    def waitForNextObservation(self):
+    def __waitForNextObservation__(self):
         """
         Waits for the observations of this agent to change.
         """
@@ -49,11 +49,10 @@ class Agent:
         self.lastWorldState = json.loads(agentState.observations[-1].text)
         return
 
-    def waitForInventoryChange(self):
+    def __waitForInventoryChange__(self, oldInventory):
         """
-        Waits for the inventory of this agent to change.
+        Waits for the inventory of this agent to change, in comparison to the old inventory given.
         """
-        oldInventory = self.getInventoryJson()
         while True:
             newInventory = self.getInventoryJson()
             if len(oldInventory) != len(newInventory):
@@ -62,6 +61,36 @@ class Agent:
                 for key in oldInventory[i]:
                     if type(oldInventory[i][key]) != type(newInventory[i][key]) or oldInventory[i][key] != newInventory[i][key]:
                         return
+
+    def __getDamageDealt__(self):
+        """
+        Returns the amount of damage this agent has dealt. Returns None if no observations are available.
+        """
+        agentState = self.getObservation()
+        if agentState != None:
+            return agentState["DamageDealt"]
+        else:
+            return None
+
+    def __getMobsKilled__(self):
+        """
+        Returns the number of mobs this agent has killed. Returns None if no observations are available.
+        """
+        agentState = self.getObservation()
+        if agentState != None:
+            return agentState["MobsKilled"]
+        else:
+            return None
+
+    def __waitForDamageDealtChange__(self, oldDamageAmount):
+        """
+        Waits for the amount of dealt damage of this agent to change, in comparison to the old damage amount given.
+        """
+        while True:
+            newDamageAmount = self.__getDamageDealt__()
+            if oldDamageAmount != newDamageAmount:
+                return
+        return
 
     def getId(self):
         """
@@ -160,7 +189,7 @@ class Agent:
         """
         self.host.sendCommand("move {}".format(speed))
 
-    def __stopMoving__(self):
+    def stopMoving(self):
         """
         Stop moving forwards/backwards.
         """
@@ -201,6 +230,13 @@ class Agent:
         Stop turning left/right.
         """
         self.host.sendCommand("turn 0")
+    
+    def stopTurning(self):
+        """
+        Stop turning left/right and up/down.
+        """
+        self.__stopChangingYaw__()
+        self.__stopChangingPitch__()
 
     def __startJumping__(self):
         """
@@ -232,7 +268,7 @@ class Agent:
         """
         self.host.sendCommand("attack 1")
 
-    def __stopAttacking__(self):
+    def stopAttacking(self):
         """
         Stop attacking.
         """
@@ -254,10 +290,9 @@ class Agent:
         """
         Stops any form of movement by this agent, including yaw/pitch turning and walking.
         """
-        self.__stopChangingYaw__()
-        self.__stopChangingPitch__()
-        self.__stopMoving__()
-        self.__stopAttacking__()
+        self.stopTurning()
+        self.stopMoving()
+        self.stopAttacking()
 
     def getNearbyEntities(self):
         """
@@ -361,10 +396,9 @@ class Agent:
         Logger.logClosestHarmfulEntity(self, entity)
         return nearestEntity
 
-    def __changeYawAngleToFacePosition__(self, targetPosition):
+    def __getYawRateToFacePosition__(self, targetPosition):
         """
-        Begin continuously turning to face a Vector position relative to the agent's current position.
-        Returns true if the agent is currently facing the target. Returns false otherwise.
+        Obtain a rate in which to turn along the yaw angle to face a given target position.
         """
         worldState = self.getObservation()
         agentPos = self.getPosition()
@@ -417,16 +451,11 @@ class Agent:
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
-        self.__startChangingYaw__(rate)
-        if rate < 0.1:
-            return True
-        else:
-            return False
+        return rate
 
-    def __changePitchAngleToFacePosition__(self, targetPosition):
+    def __getPitchRateToFacePosition__(self, targetPosition):
         """
-        Begin continuously changing pitch of this agent to face a particular Vector position.
-        Returns true if the agent is currently facing the target. Returns false otherwise.
+        Obtain a rate in which to turn along the pitch angle to face the given target position.
         """
         worldState = self.getObservation()
         agentPos = self.getPosition()
@@ -472,18 +501,30 @@ class Agent:
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
-        self.__startChangingPitch__(rate)
-        if rate <= .25:
-            return True
-        else:
+        return rate
+
+    def __isLookingAt__(self, targetPosition):
+        """
+        Returns true if this agent is currently looking in the proximity of the target position.
+        """
+        yawRate = self.__getYawRateToFacePosition__(targetPosition)
+        if abs(yawRate) > .25:
             return False
+        pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
+        if abs(pitchRate) > .25:
+            return False
+        return True
 
     def __lookAtPosition__(self, targetPosition):
         """
         Begin continuously turning/looking to face a Vector position.
         Returns true if the agent is currently looking at the target. Returns false otherwise.
         """
-        return self.__changeYawAngleToFacePosition__(targetPosition) and self.__changePitchAngleToFacePosition__(targetPosition)
+        yawRate = self.__getYawRateToFacePosition__(targetPosition)
+        pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
+        self.__startChangingYaw__(yawRate)
+        self.__startChangingPitch__(pitchRate)
+        return abs(yawRate) <= .25 and abs(pitchRate) <= .25
 
     def lookAt(self, entity):
         """
@@ -510,7 +551,7 @@ class Agent:
         distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
 
         if distance <= STRIKING_DISTANCE:  # Moving "to" a position is really moving "up to it" while facing it
-            self.__stopMoving__()
+            self.stopMoving()
             return True
         else:
             self.__startMoving__(1)
@@ -521,6 +562,12 @@ class Agent:
         Begin continuously moving & turning to reach a desired entity that was found from observations.
         Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
         """
+        # Precondition: We are looking at target
+        isLooking = self.__isLookingAt__(entity.position)
+        if not isLooking:
+            self.stopMoving()
+            return False
+
         Logger.logMoveToStart(self, entity)
         
         # Move to the target
@@ -536,9 +583,13 @@ class Agent:
         Craft an item from other items in this agent's inventory. This requires providing a list of RecipeItems.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
+        oldInventory = self.getInventoryJson()
+        if oldInventory == None:
+            return False
+
         amtBefore = self.amountOfItemInInventory(item)
         self.host.sendCommand("craft {}".format(item.value))
-        self.waitForInventoryChange()
+        self.__waitForInventoryChange__(oldInventory)
         amtAfter = self.amountOfItemInInventory(item)
         if amtAfter > amtBefore:
             Logger.logCraft(self, item, recipeItems)
@@ -551,39 +602,33 @@ class Agent:
         Attack an entity using the currently equipped item, provided that it is within striking distance. This method
         calls LookAt if it is necessary for the agent to turn to face the entity.
         """
-        startAgentState = self.getObservation()
         agentPos = self.getPosition()
-        if startAgentState == None or agentPos == None:
+        oldMobsKilled = self.__getMobsKilled__()
+        oldDamageDealt = self.__getDamageDealt__()
+        if agentPos == None or oldMobsKilled == None or oldDamageDealt == None:
             return False
 
-        prevNumberOfKills = startAgentState["MobsKilled"]
-        
-        # Check if we are in striking distance
+        # Precondition: We are looking at target
+        isLooking = self.__isLookingAt__(entity.position)
+        if not isLooking:
+            self.stopAttacking()
+            return False
+
+        # Precondition: We are at the target
         distance = MathExt.distanceBetweenPoints(agentPos, entity.position)
         if distance > STRIKING_DISTANCE:
-            self.__stopAttacking__()
-            return False
-
-        # Ensure we are looking at the target
-        isLookingAtTarget = self.lookAt(entity)
-        if not isLookingAtTarget:
-            self.__stopAttacking__()
+            self.stopAttacking()
             return False
 
         self.__startAttacking__()
+        # self.__waitForDamageDealtChange__(oldDamageDealt)
+        newMobsKilled = self.__getMobsKilled__()
 
-        # Give the attack command a moment to run before checking to see if we killed the entity
-        time.sleep(0.05)
-        finishAgentState = self.getObservation()
-        if finishAgentState == None:
-            Logger.logAttack(self, entity, False)
-            return True
-
-        newNumberOfKills = finishAgentState["MobsKilled"]
-        if newNumberOfKills > prevNumberOfKills:
+        if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, entity, True)
         else:
             Logger.logAttack(self, entity, False)
+
         return True
 
     def equip(self, item):
@@ -629,7 +674,7 @@ class Agent:
         # Look at the target
         isLookingAtTarget = self.lookAtPlayer(player)
         if not isLookingAtTarget:
-            self.__stopMoving__()
+            self.stopMoving()
             return False
         
         # Move to the target
