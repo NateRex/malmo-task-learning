@@ -86,11 +86,11 @@ class Agent:
         """
         Waits for the amount of dealt damage of this agent to change, in comparison to the old damage amount given.
         """
+        print(json.dumps(self.getObservation()))
         while True:
             newDamageAmount = self.__getDamageDealt__()
             if oldDamageAmount != newDamageAmount:
                 return
-        return
 
     def getId(self):
         """
@@ -621,7 +621,8 @@ class Agent:
             return False
 
         self.__startAttacking__()
-        # self.__waitForDamageDealtChange__(oldDamageDealt)
+        self.stopAllMovement()  # Momentarily stop everything to check if we killed the entity
+        time.sleep(0.6)
         newMobsKilled = self.__getMobsKilled__()
 
         if newMobsKilled > oldMobsKilled:
