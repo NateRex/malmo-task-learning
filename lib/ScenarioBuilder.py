@@ -25,43 +25,43 @@ class EnvironmentBuilder:
         """
         Allow for the natural spawning of animals & villagers.
         """
-        self.__allowedMobs.add(MobType.Pig.value)
-        self.__allowedMobs.add(MobType.Sheep.value)
-        self.__allowedMobs.add(MobType.Cow.value)
-        self.__allowedMobs.add(MobType.Chicken.value)
-        self.__allowedMobs.add(MobType.Ozelot.value)
-        self.__allowedMobs.add(MobType.Rabbit.value)
-        self.__allowedMobs.add(MobType.Villager.value)
+        self.__allowedMobs.add(MobType.Peaceful.Pig.value)
+        self.__allowedMobs.add(MobType.Peaceful.Sheep.value)
+        self.__allowedMobs.add(MobType.Peaceful.Cow.value)
+        self.__allowedMobs.add(MobType.Peaceful.Chicken.value)
+        self.__allowedMobs.add(MobType.Peaceful.Ozelot.value)
+        self.__allowedMobs.add(MobType.Peaceful.Rabbit.value)
+        self.__allowedMobs.add(MobType.Peaceful.Villager.value)
 
     def turnOffAnimalSpawning(self):
         """
         Disallow the natural spawning of animals & villagers.
         """
-        self.__allowedMobs.discard(MobType.Pig.value)
-        self.__allowedMobs.discard(MobType.Sheep.value)
-        self.__allowedMobs.discard(MobType.Cow.value)
-        self.__allowedMobs.discard(MobType.Chicken.value)
-        self.__allowedMobs.discard(MobType.Ozelot.value)
-        self.__allowedMobs.discard(MobType.Rabbit.value)
-        self.__allowedMobs.discard(MobType.Villager.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Pig.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Sheep.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Cow.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Chicken.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Ozelot.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Rabbit.value)
+        self.__allowedMobs.discard(MobType.Peaceful.Villager.value)
 
     def turnOnMonsterSpawning(self):
         """
         Allow for the natural spawning of monsters.
         """
-        self.__allowedMobs.add(MobType.Spider.value)
-        self.__allowedMobs.add(MobType.Zombie.value)
-        self.__allowedMobs.add(MobType.Skeleton.value)
-        self.__allowedMobs.add(MobType.Creeper.value)
+        self.__allowedMobs.add(MobType.Hostile.Spider.value)
+        self.__allowedMobs.add(MobType.Hostile.Zombie.value)
+        self.__allowedMobs.add(MobType.Hostile.Skeleton.value)
+        self.__allowedMobs.add(MobType.Hostile.Creeper.value)
 
     def turnOffMonsterSpawning(self):
         """
         Disallow for the natural spawning of monsters.
         """
-        self.__allowedMobs.discard(MobType.Spider.value)
-        self.__allowedMobs.discard(MobType.Zombie.value)
-        self.__allowedMobs.discard(MobType.Skeleton.value)
-        self.__allowedMobs.discard(MobType.Creeper.value)
+        self.__allowedMobs.discard(MobType.Hostile.Spider.value)
+        self.__allowedMobs.discard(MobType.Hostile.Zombie.value)
+        self.__allowedMobs.discard(MobType.Hostile.Skeleton.value)
+        self.__allowedMobs.discard(MobType.Hostile.Creeper.value)
 
     def addCube(self, point0, point1, blockType, variant = None):
         """

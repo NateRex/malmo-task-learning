@@ -75,7 +75,7 @@ class Logger:
         if entity.id in Logger.__declaredEntityIds:  # We already logged this entity
             return
 
-        if entity.type in MobType.__members__:  # Avoid redeclaring agents as entities
+        if entity.type in MobType.Hostile.__members__ or entity.type in MobType.Peaceful.__members__:  # Avoid redeclaring agents as entities
             Logger.__pushStatement__("entities-{}-{}".format(entity.type, entity.id))
             Logger.__declaredEntityIds.append(entity.id)
 
@@ -136,6 +136,67 @@ class Logger:
         if Logger.__lastClosestEntity == None or entity.id != Logger.__lastClosestEntity.id:
             Logger.__pushStatement__("closest_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
             Logger.__lastClosestEntity = entity
+
+    __lastClosestEntitiesByType = []    # Stores an array of the last closest entity logged for each type
+
+    @staticmethod
+    def logClosestEntityByType(agent, entity):
+        """
+        Log the closest entity of a specific type to the agent given.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logEntity__(entity)
+
+        for i in range(0, len(Logger.__lastClosestEntitiesByType)):
+            if entity.type == Logger.__lastClosestEntitiesByType[i].type:
+                if entity.id != Logger.__lastClosestEntitiesByType[i].id:   # Previously logged of this entity type and they differ
+                    Logger.__pushStatement__("closest_{}-{}-{}".format(entity.type, agentId, entity.id))
+                    Logger.__lastClosestEntitiesByType[i] = entity
+                else:   # Previously logged of this entity type and the entity is the same
+                    return
+
+        Logger.__pushStatement__("closest_{}-{}-{}".format(entity.type, agentId, entity.id))
+        Logger.__lastClosestEntitiesByType.append(entity)    
+
+    __lastClosestPeacefulEntity = None
+
+    @staticmethod
+    def logClosestPeacefulEntity(agent, entity):
+        """
+        Log the closest peaceful entity to the agent given.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logEntity__(entity)
+
+        if Logger.__lastClosestPeacefulEntity == None or entity.id != Logger.__lastClosestPeacefulEntity.id:
+            Logger.__pushStatement__("closest_peaceful_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
+            Logger.__lastClosestPeacefulEntity = entity
+
+    __lastClosestHarmfulEntity = None
+
+    @staticmethod
+    def logClosestHarmfulEntity(agent, entity):
+        """
+        Log the closest harmful entity to the agent given.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logEntity__(entity)
+
+        if Logger.__lastClosestHarmfulEntity == None or entity.id != Logger.__lastClosestHarmfulEntity.id:
+            Logger.__pushStatement__("closest_harmful_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
+            Logger.__lastClosestHarmfulEntity = entity
 
     __lastLookAt = None             # Keep track of the last lookAt executed to avoid repeat logging
     __lastLookAtDidFinish = False   # Keep track of whether or not lookAt has finished to log post-conditions

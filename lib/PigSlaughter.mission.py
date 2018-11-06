@@ -40,7 +40,7 @@ scenarioBuilder.environment.addLine(Vector(-3, 4, 1), Vector(-3, 4, -25), BlockT
 scenarioBuilder.environment.addLine(Vector(3, 4, 1), Vector(3, 4, -25), BlockType.Fence)
 scenarioBuilder.environment.addLine(Vector(-2, 4, 1), Vector(2, 4, 1), BlockType.Fence)
 scenarioBuilder.environment.addLine(Vector(-2, 4, -25), Vector(2, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addBlock(Vector(0, 3, -22), BlockType.Mob_spawner, MobType.Pig)
+scenarioBuilder.environment.addBlock(Vector(0, 3, -22), BlockType.Mob_spawner, MobType.Peaceful.Pig)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond, ItemSlot.HotBar._3, 6)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Stick, ItemSlot.HotBar._4, 3)
@@ -129,7 +129,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         numberOfSwordsCrafted += 1
         continue
 
-    nearestPig = companion_agent.getClosestEntityByType(MobType.Pig)
+    nearestPig = companion_agent.getClosestEntityByType(MobType.Peaceful.Pig)
     if nearestPig == None:
         companion_agent.stopAllMovement()
         continue

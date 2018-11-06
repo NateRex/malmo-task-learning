@@ -122,6 +122,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     playerPos = player_agent.getPosition()
 
     if nearestCowPos != None and hunt == 0:
+        companion_agent.lookAt(nearestCowPos)
         companion_agent.moveTo(nearestCowPos)
         companion_agent.attack(nearestCowPos)
     if playerPos != None and companion_agent.amountOfItemInInventory(ItemType.Beef) > 0:

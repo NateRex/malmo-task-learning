@@ -41,13 +41,27 @@ class Agent:
 
     def waitForNextObservation(self):
         """
-        Wait for the next new observation that is received from the MalmoPlatform API, and return it.
+        Waits for the observations of this agent to change.
         """
         agentState = self.host.getWorldState()
         while agentState.number_of_observations_since_last_state <= 0:
             agentState = self.host.getWorldState()
         self.lastWorldState = json.loads(agentState.observations[-1].text)
-        return self.lastWorldState
+        return
+
+    def waitForInventoryChange(self):
+        """
+        Waits for the inventory of this agent to change.
+        """
+        oldInventory = self.getInventoryJson()
+        while True:
+            newInventory = self.getInventoryJson()
+            if len(oldInventory) != len(newInventory):
+                return
+            for i in range(0, len(oldInventory)):
+                for key in oldInventory[i]:
+                    if type(oldInventory[i][key]) != type(newInventory[i][key]) or oldInventory[i][key] != newInventory[i][key]:
+                        return
 
     def getId(self):
         """
@@ -256,6 +270,28 @@ class Agent:
         entities = [EntityInfo("{}{}".format(k["name"], k["id"]).replace("-", ""), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
         return entities
 
+    def getClosestEntity(self):
+        """
+        Returns a named EntityInfo tuple of the nearest entity within a 20x20 area of this agent.
+        Returns none if no such entity exists.
+        """
+        agentPos = self.getPosition()
+        entities = self.getNearbyEntities()
+        if agentPos == None or entities == None:
+            return None
+        nearestDistance = 1000000
+        nearestEntity = None
+        for i in range(1, len(entities)):   # First entity is always the agent itself
+            entity = entities[i]
+            entityPos = entity.position
+            distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+            if distanceToEntity < nearestDistance:
+                nearestDistance = distanceToEntity
+                nearestEntity = entity
+        if nearestEntity == None:
+            return None
+        Logger.logClosestEntity(self, entity)
+
     def getClosestEntityByType(self, entityType):
         """
         Returns a named EntityInfo tuple of the nearest entity of a specific type within a 20x20 area around this agent.
@@ -270,13 +306,59 @@ class Agent:
         for entity in entities:
             if entity.type == entityType.value:
                 entityPos = entity.position
-                distanceToPig = MathExt.distanceBetweenPoints(agentPos, entityPos)
-                if distanceToPig < nearestDistance:
-                    nearestDistance = distanceToPig
+                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+                if distanceToEntity < nearestDistance:
+                    nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestEntity(self, nearestEntity)
+        Logger.logClosestEntityByType(self, nearestEntity)
+        return nearestEntity
+
+    def getClosestPeacefulEntity(self):
+        """
+        Returns a named EntityInfo tuple of the nearest peaceful entity within a 20x20 area of this agent.
+        Returns None if no such entity exists.
+        """
+        agentPos = self.getPosition()
+        entities = self.getNearbyEntities()
+        if agentPos == None or entities == None:
+            return None
+        nearestDistance = 1000000
+        nearestEntity = None
+        for entity in entities:
+            if entity.type in MobType.Peaceful:
+                entityPos = entity.position
+                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+                if distanceToEntity < nearestDistance:
+                    nearestDistance = distanceToEntity
+                    nearestEntity = entity
+        if nearestEntity == None:
+            return None
+        Logger.logClosestPeacefulEntity(self, entity)
+        return nearestEntity
+
+    def getClosestHarmfulEntity(self):
+        """
+        Returns a named EntityInfo tuple of the nearest harmful entity within a 20x20 area of this agent.
+        Returns None if no such entity exists.
+        """
+        agentPos = self.getPosition()
+        entities = self.getNearbyEntities()
+        if agentPos == None or entities == None:
+            return None
+        nearestDistance = 1000000
+        nearestEntity = None
+        for entity in entities:
+            if entity.type in MobType.Hostile:
+                entityPos = entity.position
+                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+                if distanceToEntity < nearestDistance:
+                    nearestDistance = distanceToEntity
+                    nearestEntity = entity
+        if nearestEntity == None:
+            return None
+        Logger.logClosestHarmfulEntity(self, entity)
         return nearestEntity
 
     def __changeYawAngleToFacePosition__(self, targetPosition):
@@ -456,7 +538,7 @@ class Agent:
         """
         amtBefore = self.amountOfItemInInventory(item)
         self.host.sendCommand("craft {}".format(item.value))
-        self.waitForNextObservation()
+        self.waitForInventoryChange()
         amtAfter = self.amountOfItemInInventory(item)
         if amtAfter > amtBefore:
             Logger.logCraft(self, item, recipeItems)

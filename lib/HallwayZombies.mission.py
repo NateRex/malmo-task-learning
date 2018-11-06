@@ -34,9 +34,9 @@ scenarioBuilder.addAgent("Companion", Vector(0, 5, -10), Direction.North)
 scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
 scenarioBuilder.environment.addCube(Vector(-3, 4, 2), Vector(3, 8, -35), BlockType.Mossy_cobblestone)
 scenarioBuilder.environment.addCube(Vector(-2, 5, 1), Vector(2, 7, -34), BlockType.Air)
-scenarioBuilder.environment.addMob(Vector(-1, 5, -33), MobType.Zombie)
-scenarioBuilder.environment.addMob(Vector(1, 5, -33), MobType.Zombie)
-scenarioBuilder.environment.addMob(Vector(0, 5, -25), MobType.Zombie)
+scenarioBuilder.environment.addMob(Vector(-1, 5, -33), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(1, 5, -33), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(0, 5, -25), MobType.Hostile.Zombie)
 for i in range(0, 31):
     if i % 5 == 0:
         scenarioBuilder.environment.addBlock(Vector(-3, 6, -i), BlockType.Torch)
@@ -118,7 +118,7 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     companion_agent.startAttacking()    # attack continuously
-    nearestZombie = companion_agent.getNearestMobPosition(MobType.Zombie)
+    nearestZombie = companion_agent.getNearestMobPosition(MobType.Hostile.Zombie)
     if nearestZombie != None:
         companion_agent.lookAt(nearestZombie.position)
     else:
