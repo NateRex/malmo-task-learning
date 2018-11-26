@@ -129,7 +129,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         numberOfSwordsCrafted += 1
         continue
 
-    nearestPig = companion_agent.getClosestEntityByType(MobType.Peaceful.Pig)
+    nearestPig = companion_agent.getClosestPeacefulEntity()
     if nearestPig == None:
         companion_agent.stopAllMovement()
         continue

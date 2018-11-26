@@ -17,7 +17,7 @@ class Agent:
     Wrapper class for a Malmo agent for executing complex commands with corresponding logging.
     To access the Malmo AgentHost object, use the 'host' member.
     """
-
+    
     def __init__(self):
         self.host = MalmoPython.AgentHost()
         self.lastWorldState = None
@@ -327,29 +327,6 @@ class Agent:
             return None
         Logger.logClosestEntity(self, entity)
 
-    def getClosestEntityByType(self, entityType):
-        """
-        Returns a named EntityInfo tuple of the nearest entity of a specific type within a 20x20 area around this agent.
-        Returns None if no entity of that type is within the area.
-        """
-        agentPos = self.getPosition()
-        entities = self.getNearbyEntities()
-        if agentPos == None or entities == None:
-            return None
-        nearestDistance = 1000000
-        nearestEntity = None
-        for entity in entities:
-            if entity.type == entityType.value:
-                entityPos = entity.position
-                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
-                if distanceToEntity < nearestDistance:
-                    nearestDistance = distanceToEntity
-                    nearestEntity = entity
-        if nearestEntity == None:
-            return None
-        Logger.logClosestEntityByType(self, nearestEntity)
-        return nearestEntity
-
     def getClosestPeacefulEntity(self):
         """
         Returns a named EntityInfo tuple of the nearest peaceful entity within a 20x20 area of this agent.
@@ -362,7 +339,7 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            if entity.type in MobType.Peaceful:
+            if entity.type in MobType.Peaceful.__members__:
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -385,7 +362,7 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            if entity.type in MobType.Hostile:
+            if entity.type in MobType.Hostile.__members__:
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -664,6 +641,13 @@ class Agent:
             return True
         
         return False
+
+
+
+
+
+
+
 
     def moveToPlayer(self, player):
         """

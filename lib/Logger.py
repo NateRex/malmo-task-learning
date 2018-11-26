@@ -15,8 +15,9 @@ class Logger:
     from a corresponding action method, such that the trace output is produced as a direct result of performing
     an action.
     """
-    __contents = ""                 # The string containing the entire log
+    __contents = []                 # The string containing the entire log
     __declaredEntityIds = []        # A list of entity ids for entities that have already been declared in the log
+    __needNewline = True            # Whether or not a newline is needed before logging a new action
 
     @staticmethod
     def clear():
@@ -37,7 +38,16 @@ class Logger:
         """
         Internal method for pushing a new statement onto the trace log.
         """
-        Logger.__contents += value + "\n"
+        Logger.__contents.append(value)
+
+    @staticmethod
+    def __pushNewline__():
+        """
+        Ensures that the previous statement is a newline, otherwise, appends one.
+        """
+        if Logger.__needNewline and Logger.__contents[len(Logger.__contents) - 1] != "":
+            Logger.__contents.append("")
+        Logger.__needNewline = True
 
     @staticmethod
     def __areActionsEqual__(actionA, actionB):
@@ -78,6 +88,8 @@ class Logger:
         if entity.type in MobType.Hostile.__members__ or entity.type in MobType.Peaceful.__members__:  # Avoid redeclaring agents as entities
             Logger.__pushStatement__("entities-{}-{}".format(entity.type, entity.id))
             Logger.__declaredEntityIds.append(entity.id)
+        
+        Logger.__needNewline = False
 
     @staticmethod
     def __logAgentInventory__(agent):
@@ -90,6 +102,7 @@ class Logger:
             return
 
         for i in range(0, len(inventory)):
+            print(inventory[i])
             Logger.__pushStatement__("agent_has-{}-{}".format(agentId, inventory[i]["type"]))
 
     @staticmethod
@@ -109,16 +122,16 @@ class Logger:
             # Log out this agent's starting inventory
             Logger.__logAgentInventory__(agent)
 
-        Logger.__pushStatement__("START\n")
+        Logger.__pushStatement__("START")
+        Logger.__pushNewline__()
 
     @staticmethod
     def logFinalState():
         """
         Log the end state for the environment in the log.
         """
-        Logger.__pushStatement__("")    # Add a newline
+        Logger.__pushNewline__()
         Logger.__pushStatement__("END")
-        # TODO
 
     __lastClosestEntity = None
 
@@ -138,29 +151,7 @@ class Logger:
             Logger.__pushStatement__("closest_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
             Logger.__lastClosestEntity = entity
 
-    __lastClosestEntitiesByType = []    # Stores an array of the last closest entity logged for each type
-
-    @staticmethod
-    def logClosestEntityByType(agent, entity):
-        """
-        Log the closest entity of a specific type to the agent given.
-        """
-        agentId = agent.getId()
-        if agentId == None:
-            return
-
-        # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logEntity__(entity)
-
-        for i in range(0, len(Logger.__lastClosestEntitiesByType)):
-            if entity.type == Logger.__lastClosestEntitiesByType[i].type:
-                if entity.id != Logger.__lastClosestEntitiesByType[i].id:   # Previously logged of this entity type and they differ
-                    Logger.__pushStatement__("closest_{}-{}-{}".format(entity.type, agentId, entity.id))
-                    Logger.__lastClosestEntitiesByType[i] = entity
-                return
-
-        Logger.__pushStatement__("closest_{}-{}-{}".format(entity.type, agentId, entity.id))
-        Logger.__lastClosestEntitiesByType.append(entity)    
+        Logger.__needNewline = False
 
     __lastClosestPeacefulEntity = None
 
@@ -180,6 +171,8 @@ class Logger:
             Logger.__pushStatement__("closest_peaceful_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
             Logger.__lastClosestPeacefulEntity = entity
 
+        Logger.__needNewline = False
+
     __lastClosestHarmfulEntity = None
 
     @staticmethod
@@ -197,6 +190,8 @@ class Logger:
         if Logger.__lastClosestHarmfulEntity == None or entity.id != Logger.__lastClosestHarmfulEntity.id:
             Logger.__pushStatement__("closest_harmful_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
             Logger.__lastClosestHarmfulEntity = entity
+
+        Logger.__needNewline = False
 
     __lastLookAt = None             # Keep track of the last lookAt executed to avoid repeat logging
     __lastLookAtDidFinish = False   # Keep track of whether or not lookAt has finished to log post-conditions
@@ -216,8 +211,9 @@ class Logger:
         if Logger.__lastLookAt != None and Logger.__areActionsEqual__(Logger.__lastLookAt, command):
             return
 
+        Logger.__pushNewline__()
+
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__pushStatement__("")    # Add a newline
         Logger.__logEntity__(entity)
 
         # Pre-conditions
@@ -244,6 +240,7 @@ class Logger:
 
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
         Logger.__lastLookAtDidFinish = True
+        Logger.__pushNewline__()
 
     __lastMoveTo = None             # Keep track of the last moveTo executed to avoid repeat logging
     __lastMoveToDidFinish = False   # Keep track of whether or not moveTo has finished to log post-conditions
@@ -263,8 +260,9 @@ class Logger:
         if Logger.__lastMoveTo != None and Logger.__areActionsEqual__(Logger.__lastMoveTo, command):
             return
 
+        Logger.__pushNewline__()
+
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__pushStatement__("")    # Add a newline
         Logger.__logEntity__(entity)
 
         # Pre-conditions
@@ -293,6 +291,7 @@ class Logger:
 
         Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
         Logger.__lastMoveToDidFinish = True
+        Logger.__pushNewline__()
 
     @staticmethod
     def logCraft(agent, item, recipeItems):
@@ -303,8 +302,9 @@ class Logger:
         if agentId == None:
             return
 
+        Logger.__pushNewline__()
+
         # Preconditions
-        Logger.__pushStatement__("")    # Add a newline
         for recipeItem in recipeItems:
             Logger.__pushStatement__("agent_has-{}-{}".format(agentId, recipeItem.value))
 
@@ -317,6 +317,9 @@ class Logger:
             if agent.amountOfItemInInventory(recipeItem) <= 0:
                 Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, recipeItem.value))
 
+        Logger.__pushNewline__()
+        
+
     __lastAttack = None     # Keep track of the last entity we attacked to avoid unnecessary repeat logs
 
     @staticmethod
@@ -328,8 +331,9 @@ class Logger:
         if agentId == None:
             return
 
+        Logger.__pushNewline__()
+
         # Preconditions
-        Logger.__pushStatement__("")    # Add a newline
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
         Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
 
@@ -339,6 +343,8 @@ class Logger:
         # Postconditions
         if didKill:
             Logger.__pushStatement__("is_dead-{}".format(entity.id))
+
+        Logger.__pushNewline__()
 
     @staticmethod
     def flushToFile():
@@ -352,7 +358,7 @@ class Logger:
             os.mkdir(filePath)
         filePath = os.path.join(filePath, fileName)
         logFile = open(filePath, "w+")
-        logFile.write(Logger.__contents)
+        logFile.write("\n".join(Logger.__contents))
         logFile.close()
         print("Mission log output has been saved to: " + filePath)
         Logger.clear()
