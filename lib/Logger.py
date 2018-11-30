@@ -97,12 +97,15 @@ class Logger:
         Internal method that logs everything that an agent has in their inventory.
         """
         agentId = agent.getId()
-        inventory = agent.getInventoryJson()
-        if agentId == None or inventory == None:
+        agentInventoryJson = agent.getInventoryJson()
+        if agentId == None or agentInventoryJson == None:
             return
 
-        for i in range(0, len(inventory)):
-            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, inventory[i]["type"]))
+        agent.inventory.update(agentInventoryJson)    # Make sure this agent's inventory is up-to-date
+        itemIds = agent.inventory.getAllItemIds()
+
+        for itemId in itemIds:
+            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemId))
 
     @staticmethod
     def logInitialState(agents):

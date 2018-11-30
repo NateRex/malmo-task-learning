@@ -26,16 +26,6 @@ class Agent:
         self.lastLookedAt = None    # Id of the entity we last looked at
         self.lastMovedTo = None     # Id of the entity we last moved to
 
-    def initialize(self):
-        """
-        This method should be called before beginning the mission loop in a scenario.
-        It updates the agent's starting inventory from the environment, and ensures the agent
-        can be logged as part of the initial state.
-        """
-        self.waitForNextObservation()
-        inventoryJson = self.getInventoryJson()
-        self.inventory.update(inventoryJson)
-
     def isMissionActive(self):
         """
         Returns true if this agent's mission is still running.
@@ -550,7 +540,7 @@ class Agent:
         itemTypesUsed = []
         itemIdsUsed = []
         for recipeItem in recipeItems:
-            itemIds = self.inventory.getItemIds(recipeItem.type)
+            itemIds = self.inventory.getItemTypeIds(recipeItem.type)
             for i in range(0, recipeItem.quantity):
                 itemTypesUsed.append(recipeItem.type)
                 itemIdsUsed.append(itemIds[i])

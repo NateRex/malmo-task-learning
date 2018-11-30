@@ -117,8 +117,6 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-player_agent.initialize()
-companion_agent.initialize()
 Logger.logInitialState([companion_agent, player_agent])
 
 numberOfSwordsCrafted = 0

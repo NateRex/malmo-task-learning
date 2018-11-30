@@ -66,7 +66,17 @@ class AgentInventory:
             return
         self.__inventory__[item.value].remove(itemId)
 
-    def getItemIds(self, item):
+    def getAllItemIds(self):
+        """
+        Returns a list of all of the item ids in this inventory.
+        """
+        itemIds = []
+        for itemType in self.__inventory__:
+            for itemId in self.__inventory__[itemType]:
+                itemIds.append(itemId)
+        return itemIds
+
+    def getItemTypeIds(self, item):
         """
         Returns a list of item ids currently in this inventory for a specific item type.
         """
