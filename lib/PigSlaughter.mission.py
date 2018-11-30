@@ -117,6 +117,8 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
+player_agent.initialize()
+companion_agent.initialize()
 Logger.logInitialState([companion_agent, player_agent])
 
 numberOfSwordsCrafted = 0
@@ -125,7 +127,7 @@ numberOfSwordsCrafted = 0
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     if numberOfSwordsCrafted < 3:
-        companion_agent.craft(ItemType.Diamond_sword, [ItemType.Diamond, ItemType.Stick])
+        companion_agent.craft(ItemType.Diamond_sword, [RecipeItem(ItemType.Diamond, 2), RecipeItem(ItemType.Stick, 1)])
         numberOfSwordsCrafted += 1
         continue
 

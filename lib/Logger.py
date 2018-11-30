@@ -102,7 +102,6 @@ class Logger:
             return
 
         for i in range(0, len(inventory)):
-            print(inventory[i])
             Logger.__pushStatement__("agent_has-{}-{}".format(agentId, inventory[i]["type"]))
 
     @staticmethod
@@ -294,7 +293,7 @@ class Logger:
         Logger.__pushNewline__()
 
     @staticmethod
-    def logCraft(agent, item, recipeItems):
+    def logCraft(agent, itemCrafted, itemsUsed):
         """
         Log the preconditions, action, and postconditions for the Craft command.
         """
@@ -305,17 +304,16 @@ class Logger:
         Logger.__pushNewline__()
 
         # Preconditions
-        for recipeItem in recipeItems:
-            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, recipeItem.value))
+        for item in itemsUsed:
+            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item))
 
         # Action
-        Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, item.value))
+        Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted))
 
         # Postconditions
-        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.value))
-        for recipeItem in recipeItems:
-            if agent.amountOfItemInInventory(recipeItem) <= 0:
-                Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, recipeItem.value))
+        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemCrafted))
+        for item in itemsUsed:
+            Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item))
 
         Logger.__pushNewline__()
         

@@ -10,6 +10,7 @@ import time
 from Utils import *
 from Logger import *
 from Constants import *
+from AgentInventory import *
 
 
 class Agent:
@@ -20,9 +21,20 @@ class Agent:
     
     def __init__(self):
         self.host = MalmoPython.AgentHost()
+        self.inventory = AgentInventory()
         self.lastWorldState = None
         self.lastLookedAt = None    # Id of the entity we last looked at
         self.lastMovedTo = None     # Id of the entity we last moved to
+
+    def initialize(self):
+        """
+        This method should be called before beginning the mission loop in a scenario.
+        It updates the agent's starting inventory from the environment, and ensures the agent
+        can be logged as part of the initial state.
+        """
+        self.waitForNextObservation()
+        inventoryJson = self.getInventoryJson()
+        self.inventory.update(inventoryJson)
 
     def isMissionActive(self):
         """
@@ -39,58 +51,17 @@ class Agent:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
 
-    def __waitForNextObservation__(self):
+    def waitForNextObservation(self):
         """
         Waits for the observations of this agent to change.
         """
         agentState = self.host.getWorldState()
-        while agentState.number_of_observations_since_last_state <= 0:
+        observationsPassed = agentState.number_of_observations_since_last_state
+        while observationsPassed <= 0:
             agentState = self.host.getWorldState()
+            observationsPassed = agentState.number_of_observations_since_last_state
         self.lastWorldState = json.loads(agentState.observations[-1].text)
         return
-
-    def __waitForInventoryChange__(self, oldInventory):
-        """
-        Waits for the inventory of this agent to change, in comparison to the old inventory given.
-        """
-        while True:
-            newInventory = self.getInventoryJson()
-            if len(oldInventory) != len(newInventory):
-                return
-            for i in range(0, len(oldInventory)):
-                for key in oldInventory[i]:
-                    if type(oldInventory[i][key]) != type(newInventory[i][key]) or oldInventory[i][key] != newInventory[i][key]:
-                        return
-
-    def __getDamageDealt__(self):
-        """
-        Returns the amount of damage this agent has dealt. Returns None if no observations are available.
-        """
-        agentState = self.getObservation()
-        if agentState != None:
-            return agentState["DamageDealt"]
-        else:
-            return None
-
-    def __getMobsKilled__(self):
-        """
-        Returns the number of mobs this agent has killed. Returns None if no observations are available.
-        """
-        agentState = self.getObservation()
-        if agentState != None:
-            return agentState["MobsKilled"]
-        else:
-            return None
-
-    def __waitForDamageDealtChange__(self, oldDamageAmount):
-        """
-        Waits for the amount of dealt damage of this agent to change, in comparison to the old damage amount given.
-        """
-        print(json.dumps(self.getObservation()))
-        while True:
-            newDamageAmount = self.__getDamageDealt__()
-            if oldDamageAmount != newDamageAmount:
-                return
 
     def getId(self):
         """
@@ -110,6 +81,26 @@ class Agent:
         if agentState == None:
             return None
         return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
+
+    def getDamageDealt(self):
+        """
+        Returns the amount of damage this agent has dealt out to other entities.
+        If no observations have occurred, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["DamageDealt"]
+
+    def getMobsKilled(self):
+        """
+        Returns the number of mobs this agent has killed.
+        If no observations have occurred, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["MobsKilled"]
 
     def getInventoryJson(self):
         """
@@ -167,21 +158,6 @@ class Agent:
             if currentItem["type"] == item.value:
                 return currentItem["index"] 
         return -1
-
-    def amountOfItemInInventory(self, item):
-        """
-        Returns the quantity of a particular item in this agent's inventory. Returns 0 on error.
-        """
-        inventory = self.getInventoryJson()
-        if inventory == None:
-            return 0
-        
-        numberFound = 0
-        for i in range(0, len(inventory)):
-            currentItem = inventory[i]
-            if currentItem["type"] == item.value:
-                numberFound += currentItem["quantity"]
-        return numberFound
 
     def __startMoving__(self, speed):
         """
@@ -560,19 +536,36 @@ class Agent:
         Craft an item from other items in this agent's inventory. This requires providing a list of RecipeItems.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
-        oldInventory = self.getInventoryJson()
-        if oldInventory == None:
+        inventoryJson = self.getInventoryJson()
+        if inventoryJson == None:
             return False
+        self.inventory.update(inventoryJson) # update the inventory in case we picked up any new items by chance
 
-        amtBefore = self.amountOfItemInInventory(item)
+        # Precondition - We have enough of each recipe item in our inventory
+        for recipeItem in recipeItems:
+            if self.inventory.amountOfItem(recipeItem.type) < recipeItem.quantity:
+                return False
+
+        # Get a list of the items to be used
+        itemTypesUsed = []
+        itemIdsUsed = []
+        for recipeItem in recipeItems:
+            itemIds = self.inventory.getItemIds(recipeItem.type)
+            for i in range(0, recipeItem.quantity):
+                itemTypesUsed.append(recipeItem.type)
+                itemIdsUsed.append(itemIds[i])
+
+        # Craft the item and add it to our inventory, recording its id
         self.host.sendCommand("craft {}".format(item.value))
-        self.__waitForInventoryChange__(oldInventory)
-        amtAfter = self.amountOfItemInInventory(item)
-        if amtAfter > amtBefore:
-            Logger.logCraft(self, item, recipeItems)
-            return True
-        else:
-            return False
+        itemCrafted = self.inventory.addItem(item)
+
+        # Remove the items used from the inventory
+        for i in range(0, len(itemTypesUsed)):
+            self.inventory.removeItem(itemTypesUsed[i], itemIdsUsed[i])
+
+        # Log the successful crafting of the item
+        Logger.logCraft(self, itemCrafted, itemIdsUsed)
+        return True
     
     def attack(self, entity):
         """
@@ -580,9 +573,8 @@ class Agent:
         calls LookAt if it is necessary for the agent to turn to face the entity.
         """
         agentPos = self.getPosition()
-        oldMobsKilled = self.__getMobsKilled__()
-        oldDamageDealt = self.__getDamageDealt__()
-        if agentPos == None or oldMobsKilled == None or oldDamageDealt == None:
+        oldMobsKilled = self.getMobsKilled()
+        if agentPos == None or oldMobsKilled == None:
             return False
 
         # Precondition: We are looking at target
@@ -600,7 +592,7 @@ class Agent:
         self.__startAttacking__()
         self.stopAllMovement()  # Momentarily stop everything to check if we killed the entity
         time.sleep(0.6)
-        newMobsKilled = self.__getMobsKilled__()
+        newMobsKilled = self.getMobsKilled()
 
         if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, entity, True)
