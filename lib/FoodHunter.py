@@ -117,7 +117,7 @@ hunt = 0
 moreBeef = 0
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    nearestCowPos = companion_agent.getClosestEntityByType(MobType.Peaceful.Cow)
+    nearestCowPos = companion_agent.getClosestPeacefulEntity()
     currentPos = companion_agent.getPosition()
     playerPos = player_agent.getPosition()
 
@@ -125,7 +125,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         companion_agent.lookAt(nearestCowPos)
         companion_agent.moveTo(nearestCowPos)
         companion_agent.attack(nearestCowPos)
-    if playerPos != None and companion_agent.amountOfItemInInventory(ItemType.Beef) > 0:
+    if playerPos != None and companion_agent.inventory.amountOfItem(ItemType.Beef) > 0:
         companion_agent.moveToPlayer(playerPos)
         hunt = 1
     if playerPos != None and currentPos != None and MathExt.distanceBetweenPoints(currentPos, playerPos) < 4 and hunt == 1:
@@ -133,7 +133,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         companion_agent.giveItem(ItemType.Beef)
         companion_agent.equip(ItemType.Diamond_sword)
         moreBeef = 1
-    if player_agent.amountOfItemInInventory(ItemType.Beef) > 0 and moreBeef == 1:
+    if player_agent.inventory.amountOfItem(ItemType.Beef) > 0 and moreBeef == 1:
         moreBeef = 0
         hunt = 0
     # ====================================================================================================================
