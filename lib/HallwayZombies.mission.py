@@ -49,10 +49,10 @@ for i in range(0, 31):
         scenarioBuilder.environment.addBlock(Vector(3, 6, -i), BlockType.Torch)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_leggings, ItemSlot.Armor.Leggings)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_chestplate, ItemSlot.Armor.Chestplate)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_helmet, ItemSlot.Armor.Helmet)
+#scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
+#scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_leggings, ItemSlot.Armor.Leggings)
+#scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_chestplate, ItemSlot.Armor.Chestplate)
+#scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_helmet, ItemSlot.Armor.Helmet)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -131,6 +131,9 @@ start_time = time.time()
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
 
+    player_agent.stats.checkHealth(player_agent)
+    companion_agent.stats.checkHealth(companion_agent)
+
     # Agent Code
     nearestZombie = companion_agent.getClosestHarmfulEntity()
     if nearestZombie != None:
@@ -150,10 +153,14 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
 
     # ====================================================================================================================
 
-time.sleep(0.5)
+print()
+player_agent.stats.logStats(player_agent)
+companion_agent.stats.logStats(companion_agent)
+companion_agent.stats.printStats(companion_agent)
+player_agent.stats.printStats(player_agent)
 
 # Log final state and flush the log
 Logger.logFinalState()
-Logger.flushToFile()
+# Logger.flushToFile()
 print()
 print("Mission ended")

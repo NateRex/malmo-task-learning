@@ -11,6 +11,7 @@ from Utils import *
 from Logger import *
 from Constants import *
 from AgentInventory import *
+from Stats import *
 
 
 class Agent:
@@ -25,6 +26,7 @@ class Agent:
         self.lastWorldState = None
         self.lastLookedAt = None    # Id of the entity we last looked at
         self.lastMovedTo = None     # Id of the entity we last moved to
+        self.stats = Stats()
 
     def isMissionActive(self):
         """
@@ -91,6 +93,15 @@ class Agent:
         if agentState == None:
             return None
         return agentState["MobsKilled"]
+
+    def getCurrentHealth(self):
+        """
+        Returns the current health of the agent.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState[u'Life']
 
     def getInventoryJson(self):
         """
