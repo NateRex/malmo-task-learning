@@ -198,6 +198,12 @@ class AgentBuilder:
         <SimpleCraftCommands/>
         <MissionQuitCommands/>
         <ContinuousMovementCommands/>
+        <ObservationFromGrid>
+            <Grid name="floor11x11">
+                <min x="-5" y="-1" z="-5"/>
+                <max x="5" y="1" z="5"/>
+            </Grid>
+        </ObservationFromGrid>
         <ObservationFromNearbyEntities>
             <Range name="nearby_entities" xrange="25" yrange="2" zrange="25" />
         </ObservationFromNearbyEntities>
@@ -275,7 +281,7 @@ class ScenarioBuilder:
             
                 <ServerHandlers>
                         {}
-                        <ServerQuitFromTimeUp timeLimitMs="{}"/>
+                        <ServerQuitFromTimeUp timeLimitMs="{}" description="out_of_time"/>
                     <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
             </ServerSection>

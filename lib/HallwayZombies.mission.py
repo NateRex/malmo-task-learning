@@ -28,18 +28,25 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
+#scenarioBuilder = ScenarioBuilder("Test Scenario", 40000, "Player", Vector(0, 5, 0), Direction.North)
 scenarioBuilder = ScenarioBuilder("Test Scenario", 40000, "Player", Vector(0, 5, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", Vector(0, 5, -10), Direction.North)
+scenarioBuilder.addAgent("Companion", Vector(0.5, 5, -3.5), Direction.North)
 
-scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
+scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
 scenarioBuilder.environment.addCube(Vector(-3, 4, 2), Vector(3, 8, -35), BlockType.Mossy_cobblestone)
 scenarioBuilder.environment.addCube(Vector(-2, 5, 1), Vector(2, 7, -34), BlockType.Air)
+scenarioBuilder.environment.addBlock(Vector(0, 4, -5), BlockType.Diamond_block)
+#scenarioBuilder.environment.addBlock(Vector(2, 4, -7), BlockType.Diamond_block)
+#scenarioBuilder.environment.addBlock(Vector(-2, 4, -7), BlockType.Diamond_block)
 scenarioBuilder.environment.addMob(Vector(-1, 5, -33), MobType.Hostile.Zombie)
 scenarioBuilder.environment.addMob(Vector(1, 5, -33), MobType.Hostile.Zombie)
 scenarioBuilder.environment.addMob(Vector(0, 5, -25), MobType.Hostile.Zombie)
+scenarioBuilder.environment.turnOffAnimalSpawning()
+scenarioBuilder.environment.turnOffMonsterSpawning()
 for i in range(0, 31):
     if i % 5 == 0:
         scenarioBuilder.environment.addBlock(Vector(-3, 6, -i), BlockType.Torch)
+        scenarioBuilder.environment.addBlock(Vector(3, 6, -i), BlockType.Torch)
 
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
@@ -90,7 +97,7 @@ def safeWaitForStart(agent_hosts):
     print("Waiting for the mission to start", end=' ')
     start_flags = [False for a in agent_hosts]
     start_time = time.time()
-    time_out = 120  # Allow two minutes for mission to start.
+    time_out = 50  # Allow two minutes for mission to start.
     while not all(start_flags) and time.time() - start_time < time_out:
         states = [a.peekWorldState() for a in agent_hosts]
         start_flags = [w.has_mission_begun for w in states]
@@ -114,16 +121,39 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
+# Log Initial State
+Logger.logInitialState([companion_agent, player_agent])
+
+# Used to calculate time of previous attack
+start_time = time.time()
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
-    companion_agent.startAttacking()    # attack continuously
-    nearestZombie = companion_agent.getNearestMobPosition(MobType.Hostile.Zombie)
+
+    # Agent Code
+    nearestZombie = companion_agent.getClosestHarmfulEntity()
     if nearestZombie != None:
-        companion_agent.lookAt(nearestZombie.position)
+        companion_agent.stopAllMovement()
+        companion_agent.lookAt(nearestZombie)
+        companion_agent.attack(nearestZombie)
     else:
-        companion_agent.stopChangingAngle()
+        nearestBlock = companion_agent.getClosestBlockLocation(BlockType.Diamond_block)
+        if nearestBlock != None:
+            lookingAt = companion_agent.lookAt(nearestBlock)
+            if lookingAt:
+                companion_agent.stopTurning()
+                companion_agent.moveTo(nearestBlock)
+            else:
+                companion_agent.stopAllMovement()
+                companion_agent.stopTurning()
+
     # ====================================================================================================================
 
+time.sleep(0.5)
+
+# Log final state and flush the log
+Logger.logFinalState()
+Logger.flushToFile()
 print()
 print("Mission ended")

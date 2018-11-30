@@ -339,6 +339,53 @@ class Agent:
         Logger.logClosestHarmfulEntity(self, entity)
         return nearestEntity
 
+    def getClosestBlockLocation(self, blockType):
+        """
+        Returns the  nearest block of a given type as an entity.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return self.getPosition
+        currentPos = self.getPosition()
+
+        # Get observation grid of nearby blocks
+        grid = agentState.get(u'floor11x11', 0)
+
+        # The number of the block in the grid
+        block = 200
+        x = 200
+        y = 200
+        z = 200
+        for i in range(0, 363):
+            # If a block of a given type is found
+            if grid[i] == blockType.value:
+                tempX = (i % 11) - 5
+                tempY = -1
+                tempZ = ((i - (i%11)) / 11) % 11 - 5
+                if i > 120 and i < 241:
+                    tempY = 0
+                elif i > 240:
+                    tempY = 1
+
+                # If new block is closer to companion than the previous one, return this block
+                if (abs(tempX) + abs(tempZ)) + abs(tempY) < (abs(x) + abs(z)) + abs(tempY):
+                    block = i
+                    x = tempX
+                    y = tempY
+                    z = tempZ
+
+        # If no block is found, return none
+        if block == 200:
+            return None
+
+        # Calculate the position of the block and return it as an entity
+        x = x + currentPos.x - (currentPos.x % 1) + 0.5
+        y = y + currentPos.y - 1
+        z = z + currentPos.z - (currentPos.z % 1) + 0.5
+        blockPos = Vector(x, y, z)
+        blockEnt = EntityInfo(blockType.value + str(blockPos.x) + str(blockPos.y) + str(blockPos.z), blockType.value, blockPos, 1)
+        return blockEnt
+
     def __getYawRateToFacePosition__(self, targetPosition):
         """
         Obtain a rate in which to turn along the yaw angle to face a given target position.
