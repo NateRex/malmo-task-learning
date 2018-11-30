@@ -162,5 +162,4 @@ player_agent.stats.printStats(player_agent)
 # Log final state and flush the log
 Logger.logFinalState()
 # Logger.flushToFile()
-print()
 print("Mission ended")

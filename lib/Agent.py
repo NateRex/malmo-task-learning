@@ -94,6 +94,66 @@ class Agent:
             return None
         return agentState["MobsKilled"]
 
+    def getPlayersKilled(self):
+        """
+        Returns the number of players this agent has killed.
+        If no observations have occured, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["PlayersKilled"]
+
+    def getTimeAlive(self):
+        """
+        Returns the time the agent has been alive for
+        If no observations have occured, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["TimeAlive"]
+
+    def getCurrentFoodState(self):
+        """
+        Returns the hunger level of the agent.
+        If no observations have occured, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["Food"]
+
+    def getCurrentScore(self):
+        """
+        Returns the score of the agent.
+        If no observations have occured, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["Score"]
+
+    def getCurrentXP(self):
+        """
+        Returns the xp of the agent.
+        If no observations have occured, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["XP"]
+
+    def getCurrentDistanceTravelled(self):
+        """
+        Returns the distance travelled by the agent.
+        If no observations have occured, returns None.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState["DistanceTravelled"]
+
     def getCurrentHealth(self):
         """
         Returns the current health of the agent.
@@ -101,7 +161,16 @@ class Agent:
         agentState = self.getObservation()
         if agentState == None:
             return None
-        return agentState[u'Life']
+        return agentState["Life"]
+
+    def getCurrentHunger(self):
+        """
+        Returns the current hunger of the agent.
+        """
+        agentState = self.getObservation()
+        if agentState == None:
+            return None
+        return agentState[u'Hunger']
 
     def getInventoryJson(self):
         """
@@ -391,7 +460,7 @@ class Agent:
 
         # Calculate the position of the block and return it as an entity
         x = x + currentPos.x - (currentPos.x % 1) + 0.5
-        y = y + currentPos.y - 1
+        y = y + currentPos.y - (currentPos.y % 1) - 1
         z = z + currentPos.z - (currentPos.z % 1) + 0.5
         blockPos = Vector(x, y, z)
         blockEnt = EntityInfo(blockType.value + str(blockPos.x) + str(blockPos.y) + str(blockPos.z), blockType.value, blockPos, 1)
