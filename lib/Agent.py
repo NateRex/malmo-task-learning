@@ -537,24 +537,22 @@ class Agent:
                 return False
 
         # Get a list of the items to be used
-        itemTypesUsed = []
-        itemIdsUsed = []
+        itemsUsed = []
         for recipeItem in recipeItems:
-            itemIds = self.inventory.getItemTypeIds(recipeItem.type)
+            items = self.inventory.getItemsByType(recipeItem.type)
             for i in range(0, recipeItem.quantity):
-                itemTypesUsed.append(recipeItem.type)
-                itemIdsUsed.append(itemIds[i])
+                itemsUsed.append(items[i])
 
         # Craft the item and add it to our inventory, recording its id
         self.host.sendCommand("craft {}".format(item.value))
         itemCrafted = self.inventory.addItem(item)
 
         # Remove the items used from the inventory
-        for i in range(0, len(itemTypesUsed)):
-            self.inventory.removeItem(itemTypesUsed[i], itemIdsUsed[i])
+        for itemUsed in itemsUsed:
+            self.inventory.removeItem(itemUsed)
 
         # Log the successful crafting of the item
-        Logger.logCraft(self, itemCrafted, itemIdsUsed)
+        Logger.logCraft(self, itemCrafted, itemsUsed)
         return True
     
     def attack(self, entity):

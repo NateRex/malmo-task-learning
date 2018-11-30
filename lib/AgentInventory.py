@@ -2,6 +2,8 @@
 # This file holds the AgentInventory class for dynamically storing the items held by a player,
 # along with corresponding ids used when generating log traces.
 # ==============================================================================================
+from Utils import *
+
 class AgentInventory:
     """
     Class containing all of the inventory items an Agent is currently in possession of.
@@ -38,7 +40,7 @@ class AgentInventory:
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.__inventory__[itemType].append("{}{}".format(itemType, self.__getId__()))
+                    self.__inventory__[itemType].append(Item("{}{}".format(itemType, self.__getId__()), itemType))
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
@@ -48,41 +50,44 @@ class AgentInventory:
             if len(inventory) == 0:
                 itemsLeft = False
 
-    def addItem(self, item):
+    def addItem(self, itemType):
         """
-        Add an item of a specific type to this inventory. Returns the id of the item added.
+        Add an item of a specific type to this inventory. Returns the item.
         """
-        if item.value not in self.__inventory__:
-            self.__inventory__[item.value] = []
-        itemId = "{}{}".format(item.value, self.__getId__())
-        self.__inventory__[item.value].append(itemId)
-        return itemId
+        if itemType.value not in self.__inventory__:
+            self.__inventory__[itemType.value] = []
+        itemId = "{}{}".format(itemType.value, self.__getId__())
+        self.__inventory__[itemType.value].append(Item(itemId, itemType.value))
+        return Item(itemId, itemType.value)
 
-    def removeItem(self, item, itemId):
+    def removeItem(self, item):
         """
-        Removes an item of a specific type and id from this inventory.
+        Removes an item from this inventory.
         """
-        if item.value not in self.__inventory__:
+        if item.type not in self.__inventory__:
             return
-        self.__inventory__[item.value].remove(itemId)
+        for i in range(0, len(self.__inventory__[item.type])):
+            if self.__inventory__[item.type][i].id == item.id:
+                self.__inventory__[item.type].pop(i)
+                return
 
-    def getAllItemIds(self):
+    def getAllItems(self):
         """
-        Returns a list of all of the item ids in this inventory.
+        Returns a list of all of the items in this inventory.
         """
-        itemIds = []
+        items = []
         for itemType in self.__inventory__:
-            for itemId in self.__inventory__[itemType]:
-                itemIds.append(itemId)
-        return itemIds
+            for item in self.__inventory__[itemType]:
+                items.append(item)
+        return items
 
-    def getItemTypeIds(self, item):
+    def getItemsByType(self, itemType):
         """
-        Returns a list of item ids currently in this inventory for a specific item type.
+        Returns a list of all of the items in this inventory for a specific type.
         """
-        if item.value not in self.__inventory__:
+        if itemType.value not in self.__inventory__:
             return []
-        return self.__inventory__[item.value]
+        return self.__inventory__[itemType.value]
 
     def amountOfItem(self, item):
         """

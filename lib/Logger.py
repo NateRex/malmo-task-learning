@@ -102,10 +102,10 @@ class Logger:
             return
 
         agent.inventory.update(agentInventoryJson)    # Make sure this agent's inventory is up-to-date
-        itemIds = agent.inventory.getAllItemIds()
+        items = agent.inventory.getAllItems()
 
-        for itemId in itemIds:
-            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemId))
+        for item in items:
+            Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, item.type, item.id))
 
     @staticmethod
     def logInitialState(agents):
@@ -308,15 +308,15 @@ class Logger:
 
         # Preconditions
         for item in itemsUsed:
-            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item))
+            Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, item.type, item.id))
 
         # Action
-        Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted))
+        Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
-        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemCrafted))
+        Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, itemCrafted.type, itemCrafted.id))
         for item in itemsUsed:
-            Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item))
+            Logger.__pushStatement__("agent_lost-{}-{}-{}".format(agentId, item.type, item.id))
 
         Logger.__pushNewline__()
         
