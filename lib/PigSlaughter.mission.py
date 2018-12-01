@@ -135,14 +135,14 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         continue
 
     # Look at nearest pig
-    isLookingAt = companion_agent.lookAt(nearestPig)
+    isLookingAt = companion_agent.lookAtEntity(nearestPig)
     if not isLookingAt:
         companion_agent.stopMoving()
         companion_agent.stopAttacking()
         continue
     
     # Move to nearest pig
-    isAt = companion_agent.moveTo(nearestPig)
+    isAt = companion_agent.moveToEntity(nearestPig)
     if not isAt:
         companion_agent.stopAttacking()
         continue

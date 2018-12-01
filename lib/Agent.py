@@ -625,7 +625,7 @@ class Agent:
         self.__startChangingPitch__(pitchRate)
         return abs(yawRate) <= .25 and abs(pitchRate) <= .25
 
-    def lookAtMob(self, mob):
+    def lookAtEntity(self, mob):
         """
         Begin continuously turning/looking to face the specified mob.
         Returns true if the agent is currently facing the entity. Returns false otherwise.
@@ -695,7 +695,7 @@ class Agent:
             self.__startMoving__(1)
             return False
 
-    def moveToMob(self, mob):
+    def moveToEntity(self, mob):
         """
         Begin continuously moving & turning to reach a desired mob that was found from observations.
         Returns true if the agent is currently at the specified mob. Returns false otherwise.
