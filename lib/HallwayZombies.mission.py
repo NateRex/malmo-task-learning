@@ -135,11 +135,11 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     companion_agent.stats.checkHealth(companion_agent)
 
     # Agent Code
-    nearestZombie = companion_agent.getClosestHarmfulEntity()
+    nearestZombie = companion_agent.getClosestHarmfulMob()
     if nearestZombie != None:
         companion_agent.stopAllMovement()
         companion_agent.lookAt(nearestZombie)
-        companion_agent.attack(nearestZombie)
+        companion_agent.attackMob(nearestZombie)
     else:
         nearestBlock = companion_agent.getClosestBlockLocation(BlockType.Diamond_block)
         if nearestBlock != None:

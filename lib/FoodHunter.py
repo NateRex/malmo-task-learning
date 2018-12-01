@@ -117,14 +117,14 @@ hunt = 0
 moreBeef = 0
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    nearestCowPos = companion_agent.getClosestPeacefulEntity()
+    nearestCowPos = companion_agent.getClosestFoodMob()
     currentPos = companion_agent.getPosition()
     playerPos = player_agent.getPosition()
 
     if nearestCowPos != None and hunt == 0:
         companion_agent.lookAt(nearestCowPos)
         companion_agent.moveTo(nearestCowPos)
-        companion_agent.attack(nearestCowPos)
+        companion_agent.attackMob(nearestCowPos)
     if playerPos != None and companion_agent.inventory.amountOfItem(ItemType.Beef) > 0:
         companion_agent.moveToPlayer(playerPos)
         hunt = 1
