@@ -763,7 +763,7 @@ class Agent:
         # Get a list of the items to be used
         itemsUsed = []
         for recipeItem in recipeItems:
-            items = self.inventory.getItemsByType(recipeItem.type)
+            items = self.inventory.getAllItemsOfType(recipeItem.type)
             for i in range(0, recipeItem.quantity):
                 itemsUsed.append(items[i])
 
@@ -855,8 +855,12 @@ class Agent:
         Returns true if successful, and false otherwise.
         """
         agentPos = agent.getPosition()
-        if agentPos == None:
+        inventoryJson = agent.getInventoryJson()
+        if agentPos == None or inventoryJson == None:
             return False
+
+        # Update the inventory object in case we recently picked up any new items
+        self.inventory.update(inventoryJson)
 
         # Precondition: We have atleast one item of that type
         if self.inventory.amountOfItem(item) == 0:
@@ -867,7 +871,14 @@ class Agent:
         if not isAt:
             return False
 
+        # Remove one item of that type from this agent's inventory
+        inventoryItem = self.inventory.getItem(item)
+        if inventoryItem == None:
+            return False
+        self.inventory.removeItem(inventoryItem)
+        agent.inventory.addItem(inventoryItem.type, inventoryItem.id)
+
         self.equip(item)
         self.__throwItem__()
-        Logger.logGiveItemToAgent(item, agent)
+        Logger.logGiveItemToAgent(self, inventoryItem, agent)
         return True
