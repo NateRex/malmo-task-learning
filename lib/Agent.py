@@ -351,10 +351,10 @@ class Agent:
         entities = [EntityInfo("{}{}".format(k["name"], k["id"]).replace("-", ""), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
         return entities
 
-    def getClosestEntity(self):
+    def getClosestMob(self):
         """
-        Returns a named EntityInfo tuple of the nearest entity within a 20x20 area of this agent.
-        Returns none if no such entity exists.
+        Returns a named EntityInfo tuple of the nearest mob within a 20x20 area of this agent.
+        Returns none if no such mob exists.
         """
         agentPos = self.getPosition()
         entities = self.getNearbyEntities()
@@ -362,21 +362,21 @@ class Agent:
             return None
         nearestDistance = 1000000
         nearestEntity = None
-        for i in range(1, len(entities)):   # First entity is always the agent itself
-            entity = entities[i]
-            entityPos = entity.position
-            distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
-            if distanceToEntity < nearestDistance:
-                nearestDistance = distanceToEntity
-                nearestEntity = entity
+        for entity in entities:   # First entity is always the agent itself
+            if entity.type in MobType.Peaceful.__members__ or entity.type in MobType.Hostile.__members__:
+                entityPos = entity.position
+                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+                if distanceToEntity < nearestDistance:
+                    nearestDistance = distanceToEntity
+                    nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestEntity(self, entity)
+        Logger.logClosestMob(self, entity)
 
-    def getClosestPeacefulEntity(self):
+    def getClosestPeacedfulMob(self):
         """
-        Returns a named EntityInfo tuple of the nearest peaceful entity within a 20x20 area of this agent.
-        Returns None if no such entity exists.
+        Returns a named EntityInfo tuple of the nearest peaceful mob within a 20x20 area of this agent.
+        Returns None if no such mob exists.
         """
         agentPos = self.getPosition()
         entities = self.getNearbyEntities()
@@ -393,13 +393,13 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestPeacefulEntity(self, entity)
+        Logger.logClosestPeacefulMob(self, entity)
         return nearestEntity
 
-    def getClosestHarmfulEntity(self):
+    def getClosestHarmfulMob(self):
         """
-        Returns a named EntityInfo tuple of the nearest harmful entity within a 20x20 area of this agent.
-        Returns None if no such entity exists.
+        Returns a named EntityInfo tuple of the nearest harmful mob within a 20x20 area of this agent.
+        Returns None if no such mob exists.
         """
         agentPos = self.getPosition()
         entities = self.getNearbyEntities()
@@ -416,7 +416,30 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestHarmfulEntity(self, entity)
+        Logger.logClosestHarmfulMob(self, entity)
+        return nearestEntity
+
+    def getClosestFoodMob(self):
+        """
+        Returns a named EntityInfo tuple of the nearest food mob within a 20x20 area of this agent.
+        Returns None if no such mob exists.
+        """
+        agentPos = self.getPosition()
+        entities = self.getNearbyEntities()
+        if agentPos == None or entities == None:
+            return None
+        nearestDistance = 1000000
+        nearestEntity = None
+        for entity in entities:
+            if entity.type in MobType.Food.__members__:
+                entityPos = entity.position
+                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+                if distanceToEntity < nearestDistance:
+                    nearestDistance = distanceToEntity
+                    nearestEntity = entity
+        if nearestEntity == None:
+            return None
+        Logger.logClosestFoodMob(self, entity)
         return nearestEntity
 
     def getClosestBlockLocation(self, blockType):
@@ -682,37 +705,41 @@ class Agent:
         Logger.logCraft(self, itemCrafted, itemsUsed)
         return True
     
-    def attack(self, entity):
+    def attackMob(self, mob):
         """
-        Attack an entity using the currently equipped item, provided that it is within striking distance. This method
-        calls LookAt if it is necessary for the agent to turn to face the entity.
+        Attack a mob using the currently equipped item, provided that it is within striking distance. This method
+        calls LookAt if it is necessary for the agent to turn to face the mob.
         """
         agentPos = self.getPosition()
         oldMobsKilled = self.getMobsKilled()
         if agentPos == None or oldMobsKilled == None:
             return False
 
+        # Precondition: The provided entity is a mob
+        if mob.type not in MobType.Peaceful.__members__ and mob.type not in MobType.Hostile.__members__:
+            return False
+
         # Precondition: We are looking at target
-        isLooking = self.__isLookingAt__(entity.position)
+        isLooking = self.__isLookingAt__(mob.position)
         if not isLooking:
             self.stopAttacking()
             return False
 
         # Precondition: We are at the target
-        distance = MathExt.distanceBetweenPoints(agentPos, entity.position)
+        distance = MathExt.distanceBetweenPoints(agentPos, mob.position)
         if distance > STRIKING_DISTANCE:
             self.stopAttacking()
             return False
 
         self.__startAttacking__()
-        self.stopAllMovement()  # Momentarily stop everything to check if we killed the entity
-        time.sleep(0.6)
+        self.stopAllMovement()  # Momentarily stop all movement to check if we killed the entity
+        time.sleep(.8)  # Force a momentary pause to give time for mob to register as being dead
         newMobsKilled = self.getMobsKilled()
 
         if newMobsKilled > oldMobsKilled:
-            Logger.logAttack(self, entity, True)
+            Logger.logAttack(self, mob, True)
         else:
-            Logger.logAttack(self, entity, False)
+            Logger.logAttack(self, mob, False)
 
         return True
 
