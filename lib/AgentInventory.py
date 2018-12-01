@@ -3,6 +3,7 @@
 # along with corresponding ids used when generating log traces.
 # ==============================================================================================
 from Utils import *
+from Logger import *
 
 class AgentInventory:
     """
@@ -40,7 +41,7 @@ class AgentInventory:
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.__inventory__[itemType].append(Item("{}{}".format(itemType, self.__getId__()), itemType))
+                    self.addItem(itemType)
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
@@ -50,15 +51,19 @@ class AgentInventory:
             if len(inventory) == 0:
                 itemsLeft = False
 
-    def addItem(self, itemType):
+    def addItem(self, itemType, itemId = None):
         """
         Add an item of a specific type to this inventory. Returns the item.
+        If the item already had an id, provide it to this method. Otherwise, a new
+        global id for the item will be generated.
         """
         if itemType.value not in self.__inventory__:
             self.__inventory__[itemType.value] = []
-        itemId = "{}{}".format(itemType.value, self.__getId__())
-        self.__inventory__[itemType.value].append(Item(itemId, itemType.value))
-        return Item(itemId, itemType.value)
+        itemId = itemId if itemId != None else "{}{}".format(itemType.value, self.__getId__())
+        item = Item(itemId, itemType.value)
+        self.__inventory__[itemType.value].append(item)
+        Logger.logNewItem(item) # Log the new item 'into existence'
+        return item
 
     def removeItem(self, item):
         """
@@ -81,13 +86,23 @@ class AgentInventory:
                 items.append(item)
         return items
 
-    def getItemsByType(self, itemType):
+    def getAllItemsOfType(self, itemType):
         """
         Returns a list of all of the items in this inventory for a specific type.
         """
         if itemType.value not in self.__inventory__:
             return []
         return self.__inventory__[itemType.value]
+
+    def getItem(self, itemType):
+        """
+        Returns an item in this inventory of a specific type. Returns None if no item for that type exists in this inventory.
+        """
+        if itemType.value not in self.__inventory__:
+            return None
+        if len(self.__inventory__[itemType.value]) == 0:
+            return None
+        return self.__inventory__[itemType.value][0]
 
     def amountOfItem(self, item):
         """
