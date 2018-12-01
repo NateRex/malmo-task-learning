@@ -332,6 +332,12 @@ class Agent:
         """
         self.host.sendCommand("use 0")
 
+    def __throwItem__(self):
+        """
+        Throws item currently equipped.
+        """
+        self.host.sendCommand("discardCurrentItem")
+
     def stopAllMovement(self):
         """
         Stops any form of movement by this agent, including yaw/pitch turning and walking.
@@ -619,18 +625,57 @@ class Agent:
         self.__startChangingPitch__(pitchRate)
         return abs(yawRate) <= .25 and abs(pitchRate) <= .25
 
-    def lookAt(self, entity):
+    def lookAtMob(self, mob):
         """
-        Begin continuously turning/looking to face the specified entity.
+        Begin continuously turning/looking to face the specified mob.
         Returns true if the agent is currently facing the entity. Returns false otherwise.
         """
-        Logger.logLookAtStart(self, entity)
-        isLookingAt = self.__lookAtPosition__(entity.position)
+        Logger.logLookAtStart(self, mob)
+
+        # Look at the target
+        isLookingAt = self.__lookAtPosition__(mob.position)
         if isLookingAt:
-            Logger.logLookAtFinish(self, entity)
-            self.lastLookedAt = entity.id
+            Logger.logLookAtFinish(self, mob)
+            self.lastLookedAt = mob.id
             return True
         return False
+
+    def lookAtAgent(self, agent):
+        """
+        Begin continuously turning/looking to face the specified agent.
+        Returns true if the agent is currently facing the agent. Returns false otherwise.
+        """
+        agentId = agent.getId()
+        agentPos = agent.getPosition()
+        if agentId == None or agentPos == None:
+            return False
+
+        # Represent the agent as an EntityInfo tuple
+        agentEntity = EntityInfo(agentId, "agent", agentPos, 1)
+
+        Logger.logLookAtStart(self, agentEntity)
+
+        # Look at the target
+        isLookingAt = self.__lookAtPosition__(agentPos)
+        if isLookingAt:
+            Logger.logLookAtFinish(self, agentEntity)
+            self.lastLookedAt = agentId
+            return True
+        return False
+
+    def __isAt__(self, targetPosition):
+        """
+        Returns true if this agent is currently at the target position.
+        """
+        agentPos = self.getPosition()
+        if agentPos == None:
+            return False
+
+        distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
+        if distance > STRIKING_DISTANCE:
+            return False
+        
+        return True
 
     def __moveToPosition__(self, targetPosition):
         """
@@ -650,24 +695,53 @@ class Agent:
             self.__startMoving__(1)
             return False
 
-    def moveTo(self, entity):
+    def moveToMob(self, mob):
         """
-        Begin continuously moving & turning to reach a desired entity that was found from observations.
-        Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
+        Begin continuously moving & turning to reach a desired mob that was found from observations.
+        Returns true if the agent is currently at the specified mob. Returns false otherwise.
         """
         # Precondition: We are looking at target
-        isLooking = self.__isLookingAt__(entity.position)
+        isLooking = self.__isLookingAt__(mob.position)
         if not isLooking:
             self.stopMoving()
             return False
 
-        Logger.logMoveToStart(self, entity)
+        Logger.logMoveToStart(self, mob)
         
         # Move to the target
-        isAt = self.__moveToPosition__(entity.position)
+        isAt = self.__moveToPosition__(mob.position)
         if isAt:
-            Logger.logMoveToFinish(self, entity)
-            self.lastMovedTo = entity.id
+            Logger.logMoveToFinish(self, mob)
+            self.lastMovedTo = mob.id
+            return True
+        return False
+
+    def moveToAgent(self, agent):
+        """
+        Begin continuously moving & turning to reach the specified agent.
+        Returns true if the agent is currently at the agent. Returns false otherwise.
+        """
+        agentId = agent.getId()
+        agentPos = agent.getPosition()
+        if agentId == None or agentPos == None:
+            return False
+        
+        # Represent the agent as an EntityInfo tuple
+        agentEntity = EntityInfo(agentId, "agent", agentPos, 1)
+
+        # Precondition: We are looking at target
+        isLooking = self.__isLookingAt__(agentPos)
+        if not isLooking:
+            self.stopMoving()
+            return False
+
+        Logger.logMoveToStart(self, agentEntity)
+        
+        # Move to the target
+        isAt = self.__moveToPosition__(agentPos)
+        if isAt:
+            Logger.logMoveToFinish(self, agentEntity)
+            self.lastMovedTo = agentId
             return True
         return False
 
@@ -710,9 +784,8 @@ class Agent:
         Attack a mob using the currently equipped item, provided that it is within striking distance. This method
         calls LookAt if it is necessary for the agent to turn to face the mob.
         """
-        agentPos = self.getPosition()
         oldMobsKilled = self.getMobsKilled()
-        if agentPos == None or oldMobsKilled == None:
+        if oldMobsKilled == None:
             return False
 
         # Precondition: The provided entity is a mob
@@ -726,8 +799,8 @@ class Agent:
             return False
 
         # Precondition: We are at the target
-        distance = MathExt.distanceBetweenPoints(agentPos, mob.position)
-        if distance > STRIKING_DISTANCE:
+        isAt = self.__isAt__(mob.position)
+        if not isAt:
             self.stopAttacking()
             return False
 
@@ -776,74 +849,25 @@ class Agent:
         
         return False
 
-
-
-
-
-
-
-
-    def moveToPlayer(self, player):
+    def giveItemToAgent(self, item, agent):
         """
-        Begin continuously moving & turning to reach a desired entity that was found from observations.
-        Returns true if the agent is currently facing and at the specified entity. Returns false otherwise.
+        Give an item in this agent's inventory to another agent.
+        Returns true if successful, and false otherwise.
         """
-        #Logger.logMoveToStart(self, player)
-
-        # Look at the target
-        isLookingAtTarget = self.lookAtPlayer(player)
-        if not isLookingAtTarget:
-            self.stopMoving()
+        agentPos = agent.getPosition()
+        if agentPos == None:
             return False
-        
-        # Move to the target
-        if self.__moveToPosition__(player):
-            #Logger.logMoveToFinish(self, player)
-            #self.lastMovedTo = player.id
-            return True
-        return False
 
-    def lookAtPlayer(self, player):
-        """
-        Begin continuously turning/looking to face the specified entity.
-        Returns true if the agent is currently facing the entity. Returns false otherwise.
-        """
-        #Logger.logLookAtStart(self, player)
-        isLookingAt = self.__lookAtPosition__(player)
-        if isLookingAt:
-            #Logger.logLookAtFinish(self, player)
-            #self.lastLookedAt = player.id
-            return True
-        return False
-
-    def __throwItem__(self):
-        """
-        Throws item in hand forward
-        """
-        self.host.sendCommand("discardCurrentItem")
-
-    def __placeItemAt__(self, location):
-        """
-        Places an item at a location in the hotbar.
-        Returns true if successful
-        """
-        itemIdx = self.__locationOfItemInInventory__(item)
-        if itemIdx == -1:
+        # Precondition: We have atleast one item of that type
+        if self.inventory.amountOfItem(item) == 0:
             return False
-        if location < 9 and location >= 0:
-            self.host.sendCommand("swapInventoryItems {} {}".format(location, itemIdx))
-            #self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
-            #self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
-            return True
 
-    def giveItem(self, item):
-        """
-        Give an item to a player that is in inventory.
-        Returns none if the item wasn't in inventory.
-        """
-        if self.amountOfItemInInventory(item) > 0:
-            self.equip(item)
-            if self.__locationOfItemInInventory__(item) == self.getCurrentHotbarIndex():
-                self.__throwItem__()
-        else:
-            return None
+        # Precondition: We are at the agent
+        isAt = self.__isAt__(agentPos)
+        if not isAt:
+            return False
+
+        self.equip(item)
+        self.__throwItem__()
+        Logger.logGiveItemToAgent(item, agent)
+        return True
