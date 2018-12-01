@@ -78,7 +78,7 @@ class Logger:
         Logger.__declaredEntityIds.append(agentId)
 
     @staticmethod
-    def __logItem__(item):
+    def logNewItem(item):
         """
         Internal method that logs the definition of a new item, and adds its id to the list of declared entities.
         """
@@ -116,7 +116,7 @@ class Logger:
         if entity.type in MobType.Hostile.__members__ or entity.type in MobType.Peaceful.__members__:
             Logger.__logMob__(entity)
         elif entity.type in ItemType.__members__:
-            Logger.__logItem__(entity)
+            Logger.logNewItem(entity)
         
         Logger.__needNewline = False
 
@@ -134,8 +134,8 @@ class Logger:
         items = agent.inventory.getAllItems()
 
         for item in items:
-            Logger.__logItem__(item)    # We might not have logged this item yet
-            Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, item.type, item.id))
+            Logger.logNewItem(item)    # We might not have logged this item yet
+            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
 
     @staticmethod
     def logInitialState(agents):
@@ -366,15 +366,15 @@ class Logger:
 
         # Preconditions
         for item in itemsUsed:
-            Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, item.type, item.id))
+            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
 
         # Action
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
-        Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, itemCrafted.type, itemCrafted.id))
+        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemCrafted.id))
         for item in itemsUsed:
-            Logger.__pushStatement__("agent_lost-{}-{}-{}".format(agentId, item.type, item.id))
+            Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
 
         Logger.__pushNewline__()
         
@@ -384,7 +384,7 @@ class Logger:
     @staticmethod
     def logAttack(agent, entity, didKill):
         """
-        Log the action and possible postconditions for the Attack command.
+        Log the preconditions, action, and possible postconditions for the Attack command.
         """
         agentId = agent.getId()
         if agentId == None:
@@ -402,6 +402,32 @@ class Logger:
         # Postconditions
         if didKill:
             Logger.__pushStatement__("is_dead-{}".format(entity.id))
+
+        Logger.__pushNewline__()
+
+    @staticmethod
+    def logGiveItemToAgent(sourceAgent, item, targetAgent):
+        """
+        Log the preconditions, action, and possible postconditions for the GiveItem command.
+        """
+        sourceAgentId = sourceAgent.getId()
+        targetAgentId = targetAgent.getId()
+        if sourceAgentId == None or targetAgentId == None:
+            return
+
+        Logger.__pushNewline__()
+
+        # Preconditions
+        Logger.__pushStatement__("agent_looking_at-{}-{}".format(sourceAgentId, targetAgentId))
+        Logger.__pushStatement__("agent_at-{}-{}".format(sourceAgentId, targetAgentId))
+        Logger.__pushStatement__("agent_has-{}-{}".format(sourceAgentId, item.id))
+
+        # Action
+        Logger.__pushStatement__("!GIVEITEM-{}-{}-{}".format(sourceAgentId, item.id, targetAgentId))
+
+        # Postconditions
+        Logger.__pushStatement__("agent_lost-{}-{}".format(sourceAgentId, item.id))
+        Logger.__pushStatement__("agent_has-{}-{}".format(targetAgentId, item.id))
 
         Logger.__pushNewline__()
 
