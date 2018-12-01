@@ -78,6 +78,34 @@ class Logger:
         Logger.__declaredEntityIds.append(agentId)
 
     @staticmethod
+    def __logItem__(item):
+        """
+        Internal method that logs the definition of a new item, and adds its id to the list of declared entities.
+        """
+        if item.id in Logger.__declaredEntityIds:   # We already logged this item
+            return
+
+        if item.type in ItemType.__members__:
+            Logger.__pushStatement__("items-{}-{}".format(item.type, item.id))
+            Logger.__declaredEntityIds.append(item.id)
+        
+        Logger.__needNewline = False
+
+    @staticmethod
+    def __logMob__(mob):
+        """
+        Internal method that logs the definition of a new mob, and adds its id to the list of declared entities.
+        """
+        if mob.id in Logger.__declaredEntityIds:    # We already logged this mob
+            return
+        
+        if mob.type in MobType.Hostile.__members__ or mob.type in MobType.Peaceful.__members__:
+            Logger.__pushStatement__("mobs-{}-{}".format(mob.type, mob.id))
+            Logger.__declaredEntityIds.append(mob.id)
+        
+        Logger.__needNewline = False
+
+    @staticmethod
     def __logEntity__(entity):
         """
         Internal method that logs the definition of a new entity, and adds its id to the list of declared entities.
@@ -85,9 +113,10 @@ class Logger:
         if entity.id in Logger.__declaredEntityIds:  # We already logged this entity
             return
 
-        if entity.type in MobType.Hostile.__members__ or entity.type in MobType.Peaceful.__members__:  # Avoid redeclaring agents as entities
-            Logger.__pushStatement__("entities-{}-{}".format(entity.type, entity.id))
-            Logger.__declaredEntityIds.append(entity.id)
+        if entity.type in MobType.Hostile.__members__ or entity.type in MobType.Peaceful.__members__:
+            Logger.__logMob__(entity)
+        elif entity.type in ItemType.__members__:
+            Logger.__logItem__(entity)
         
         Logger.__needNewline = False
 
@@ -105,6 +134,7 @@ class Logger:
         items = agent.inventory.getAllItems()
 
         for item in items:
+            Logger.__logItem__(item)    # We might not have logged this item yet
             Logger.__pushStatement__("agent_has-{}-{}-{}".format(agentId, item.type, item.id))
 
     @staticmethod
@@ -135,63 +165,91 @@ class Logger:
         Logger.__pushNewline__()
         Logger.__pushStatement__("END")
 
-    __lastClosestEntity = None
+    __lastClosestMob = None
 
     @staticmethod
-    def logClosestEntity(agent, entity):
+    def logClosestMob(agent, mob):
         """
-        Log the closest entity to the agent given.
+        Log the closest mob to the agent given.
         """
+        if mob.type not in MobType.Peaceful.__members__ and mob.type not in MobType.Hostile.__members__:
+            return
         agentId = agent.getId()
         if agentId == None:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logEntity__(entity)
+        Logger.__logMob__(mob)
 
-        if Logger.__lastClosestEntity == None or entity.id != Logger.__lastClosestEntity.id:
-            Logger.__pushStatement__("closest_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
-            Logger.__lastClosestEntity = entity
+        if Logger.__lastClosestMob == None or mob.id != Logger.__lastClosestMob.id:
+            Logger.__pushStatement__("closest_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__lastClosestMob = mob
 
         Logger.__needNewline = False
 
-    __lastClosestPeacefulEntity = None
+    __lastClosestPeacefulMob = None
 
     @staticmethod
-    def logClosestPeacefulEntity(agent, entity):
+    def logClosestPeacefulMob(agent, mob):
         """
         Log the closest peaceful entity to the agent given.
         """
+        if mob.type not in MobType.Peaceful.__members__:
+            return
         agentId = agent.getId()
         if agentId == None:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logEntity__(entity)
+        Logger.__logMob__(mob)
 
-        if Logger.__lastClosestPeacefulEntity == None or entity.id != Logger.__lastClosestPeacefulEntity.id:
-            Logger.__pushStatement__("closest_peaceful_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
-            Logger.__lastClosestPeacefulEntity = entity
+        if Logger.__lastClosestPeacefulMob == None or mob.id != Logger.__lastClosestPeacefulMob.id:
+            Logger.__pushStatement__("closest_peaceful_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__lastClosestPeacefulMob = mob
 
         Logger.__needNewline = False
 
-    __lastClosestHarmfulEntity = None
+    __lastClosestHarmfulMob = None
 
     @staticmethod
-    def logClosestHarmfulEntity(agent, entity):
+    def logClosestHarmfulMob(agent, mob):
         """
         Log the closest harmful entity to the agent given.
         """
+        if mob.type not in MobType.Hostile.__members__:
+            return
         agentId = agent.getId()
         if agentId == None:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logEntity__(entity)
+        Logger.__logMob__(mob)
 
-        if Logger.__lastClosestHarmfulEntity == None or entity.id != Logger.__lastClosestHarmfulEntity.id:
-            Logger.__pushStatement__("closest_harmful_entity-{}-{}-{}".format(agentId, entity.type, entity.id))
-            Logger.__lastClosestHarmfulEntity = entity
+        if Logger.__lastClosestHarmfulMob == None or mob.id != Logger.__lastClosestHarmfulMob.id:
+            Logger.__pushStatement__("closest_harmful_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__lastClosestHarmfulMob = mob
+
+        Logger.__needNewline = False
+
+    __lastClosestFoodMob = None
+
+    @staticmethod
+    def logClosestFoodMob(agent, mob):
+        """
+        Log the closest food mob to the agent given.
+        """
+        if mob.type not in MobType.Food.__members__:
+            return
+        agentId = agent.getId()
+        if agentId == None:
+            return
+        
+        # This might be an entity not previously declared in the log. Log it if so.
+        Logger.__logMob__(mob)
+
+        if Logger.__lastClosestFoodMob == None or mob.id != Logger.__lastClosestFoodMob.id:
+            Logger.__pushStatement__("closest_food_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__lastClosestFoodMob = mob
 
         Logger.__needNewline = False
 
