@@ -41,7 +41,7 @@ class AgentInventory:
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.addItem(itemType)
+                    self.addItem(itemType)  # This item was obtained not through action... needs id
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
@@ -59,11 +59,16 @@ class AgentInventory:
         """
         if itemType.value not in self.__inventory__:
             self.__inventory__[itemType.value] = []
-        itemId = itemId if itemId != None else "{}{}".format(itemType.value, self.__getId__())
-        item = Item(itemId, itemType.value)
-        self.__inventory__[itemType.value].append(item)
-        Logger.logNewItem(item) # Log the new item 'into existence'
-        return item
+        if itemId == None:
+            itemId = "{}{}".format(itemType.value, self.__getId__())
+            item = Item(itemId, itemType.value)
+            self.__inventory__[itemType.value].append(item)
+            Logger.logNewItem(item) # Log the new item 'into existence'
+            return item
+        else:
+            item = Item(itemId, itemType.value)
+            self.__inventory__[itemType.value].append(item)
+            return item
 
     def removeItem(self, item):
         """
