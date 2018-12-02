@@ -45,6 +45,8 @@ class Logger:
         """
         Ensures that the previous statement is a newline, otherwise, appends one.
         """
+        if len(Logger.__contents) == 0:
+            return
         if Logger.__needNewline and Logger.__contents[len(Logger.__contents) - 1] != "":
             Logger.__contents.append("")
         Logger.__needNewline = True
@@ -85,7 +87,7 @@ class Logger:
         if item.id in Logger.__declaredEntityIds:   # We already logged this item
             return
 
-        if item.type in ItemType.__members__:
+        if item.type in ItemType.All.__members__:
             Logger.__pushStatement__("items-{}-{}".format(item.type, item.id))
             Logger.__declaredEntityIds.append(item.id)
         
@@ -115,7 +117,7 @@ class Logger:
 
         if entity.type in MobType.All.__members__:
             Logger.__logMob__(entity)
-        elif entity.type in ItemType.__members__:
+        elif entity.type in ItemType.All.__members__:
             Logger.logNewItem(entity)
         
         Logger.__needNewline = False

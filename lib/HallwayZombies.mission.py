@@ -48,7 +48,7 @@ for i in range(0, 31):
         scenarioBuilder.environment.addBlock(Vector(-3, 6, -i), BlockType.Torch)
         scenarioBuilder.environment.addBlock(Vector(3, 6, -i), BlockType.Torch)
 
-scenarioBuilder.agents[1].addInventoryItem(ItemType.All.Diamond_sword, ItemSlot.HotBar._0)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_sword, ItemSlot.HotBar._0)
 #scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
 #scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_leggings, ItemSlot.Armor.Leggings)
 #scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_chestplate, ItemSlot.Armor.Chestplate)
@@ -146,7 +146,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
             lookingAt = companion_agent.lookAtEntity(nearestBlock)
             if lookingAt:
                 companion_agent.stopTurning()
-                companion_agent.moveToEntity(nearestBlock)
+                companion_agent.moveToMob(nearestBlock)
             else:
                 companion_agent.stopAllMovement()
                 companion_agent.stopTurning()

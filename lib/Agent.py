@@ -699,10 +699,10 @@ class Agent:
         
         return True
 
-    def __moveToPosition__(self, targetPosition):
+    def __moveWithinStrikingDistance__(self, targetPosition):
         """
-        Begin continuously moving & turning to reach a desired Vector position (within 2-3 blocks).
-        Returns true if the agent is currently facing and at the desired target. Returns false otherwise.
+        Begin continuously moving to reach a desired Vector position (within 2-3 blocks).
+        Returns true if the agent is currently at the desired target. Returns false otherwise.
         """
         agentPos = self.getPosition()
         if agentPos == None:
@@ -717,27 +717,72 @@ class Agent:
             self.__startMoving__(1)
             return False
 
-    def moveToEntity(self, entity):
+    def __moveToPosition__(self, targetPosition):
         """
-        Begin continuously moving & turning to reach a desired entity that was found from observations.
-        Returns true if the agent is currently at the specified entity. Returns false otherwise.
+        Begin continuously moving to reach a desired Vector position.
+        Returns true if the agent is currently at the desired target. Returns false otherwise.
         """
-        # Precondition: We are looking at target
-        isLooking = self.__isLookingAt__(entity.position)
+        agentPos = self.getPosition()
+        if agentPos == None:
+            return False
+
+        distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
+
+        if distance < 1:
+            self.stopMoving()
+            return True
+        else:
+            self.__startMoving__(1)
+            return False
+
+    def moveToMob(self, mob):
+        """
+        Begin continuously moving to reach the specified mob.
+        Returns true if the agent is currently within striking distance of the mob. Returns false otherwise.
+        """
+        # Precondition: We are looking at the target
+        isLooking = self.__isLookingAt__(mob.position)
         if not isLooking:
             self.stopMoving()
             return False
 
-        Logger.logMoveToStart(self, entity)
+        Logger.logMoveToStart(self, mob)
         
         # Move to the target
-        isAt = self.__moveToPosition__(entity.position)
+        isAt = self.__moveWithinStrikingDistance__(mob.position)
         if isAt:
-            if entity.type in ItemType.All: # If we moved to an item, it will be picked up!
-                self.inventory.addItem(entity.type, entity.id)
-            Logger.logMoveToFinish(self, entity)
-            self.lastMovedTo = entity.id
+            Logger.logMoveToFinish(self, mob)
+            self.lastMovedTo = mob.id
             return True
+        return False
+
+    def moveToItem(self, item):
+        """
+        Begin continuously moving to reach a the specified item.
+        Returns true if the agent is located at the item. Returns false otherwise.
+        """
+        # Precondition: We are looking at the target
+        isLooking = self.__isLookingAt__(item.position)
+        if not isLooking:
+            self.stopMoving()
+
+        Logger.logMoveToStart(self, item)
+
+        # Move to the target
+        isAt = self.__moveToPosition__(item.position)
+        if isAt:
+            self.inventory.addItem(item.type, item.id)  # We will have picked up the item!
+            Logger.logMoveToFinish(self, item)
+            self.lastMovedTo = item.id
+            return True
+        return False
+
+    def moveToBlock(self, block, exact = True):
+        """
+        Begin continuously moving to reach a specified block. Specify whether the agent should move exactly to the
+        block or face it within striking distance. Returns true if the agent has arrived. Returns false otherwise.
+        """
+        # TODO
         return False
 
     def moveToAgent(self, agent):
@@ -762,7 +807,7 @@ class Agent:
         Logger.logMoveToStart(self, agentEntity)
         
         # Move to the target
-        isAt = self.__moveToPosition__(agentPos)
+        isAt = self.__moveWithinStrikingDistance__(agentPos)
         if isAt:
             Logger.logMoveToFinish(self, agentEntity)
             self.lastMovedTo = agentId
@@ -839,6 +884,9 @@ class Agent:
         else:
             Logger.logAttack(self, mob, False)
 
+        # There is a chance we could have killed the mob, and immediately picked up its items... update our inventory
+        inventoryJson = self.getInventoryJson()
+        self.inventory.update(inventoryJson)
         return True
 
     def equip(self, item):
@@ -904,6 +952,8 @@ class Agent:
         agent.inventory.addItem(inventoryItem.type, inventoryItem.id)
 
         self.equip(item)
+        time.sleep(0.5) # There is a small delay in equipping an item
         self.__throwItem__()
+        time.sleep(2)   # Wait for agent to pick up item
         Logger.logGiveItemToAgent(self, inventoryItem, agent)
         return True

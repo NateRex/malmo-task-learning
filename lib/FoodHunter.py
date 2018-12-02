@@ -44,7 +44,7 @@ scenarioBuilder.environment.addLine(Vector(-19, 4, -20), Vector(2, 4, -20), Bloc
 scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Peaceful.Cow)
 scenarioBuilder.environment.addMob(Vector(-10, 4, -15), MobType.Peaceful.Cow)
 
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_sword, ItemSlot.HotBar._0)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -113,30 +113,42 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
-hunt = 0
-moreBeef = 0
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    nearestCowPos = companion_agent.getClosestFoodMob()
-    currentPos = companion_agent.getPosition()
-    playerPos = player_agent.getPosition()
+    # Make sure we have our diamond sword equipped
+    companion_agent.equip(ItemType.All.diamond_sword)
 
-    if nearestCowPos != None and hunt == 0:
-        companion_agent.lookAt(nearestCowPos)
-        companion_agent.moveToMob(nearestCowPos)
-        companion_agent.attackMob(nearestCowPos)
-    if playerPos != None and companion_agent.inventory.amountOfItem(ItemType.Beef) > 0:
-        companion_agent.moveToPlayer(playerPos)
-        hunt = 1
-    if playerPos != None and currentPos != None and MathExt.distanceBetweenPoints(currentPos, playerPos) < 4 and hunt == 1:
-        companion_agent.stopAllMovement()
-        companion_agent.giveItem(ItemType.Beef)
-        companion_agent.equip(ItemType.Diamond_sword)
-        moreBeef = 1
-    if player_agent.inventory.amountOfItem(ItemType.Beef) > 0 and moreBeef == 1:
-        moreBeef = 0
-        hunt = 0
-    # ====================================================================================================================
+    # If we have beef, go to the player and give it to them
+    if companion_agent.inventory.amountOfItem(ItemType.Food.beef) > 0:
+        if not companion_agent.lookAtAgent(player_agent):
+            continue
+        if not companion_agent.moveToAgent(player_agent):
+            continue
+        companion_agent.giveItemToAgent(ItemType.Food.beef, player_agent)
+        continue
+
+    # If there is beef laying on the ground nearby, go pick it up
+    closestFood = companion_agent.getClosestFoodItem()
+    if closestFood != None:
+        if not companion_agent.lookAtEntity(closestFood):
+            continue
+        if not companion_agent.moveToItem(closestFood):
+            continue
+        continue
+
+    # If there are cows nearby, go and harvest them
+    closestCow = companion_agent.getClosestFoodMob()
+    if closestCow != None:
+        if not companion_agent.lookAtEntity(closestCow):
+            continue
+        if not companion_agent.moveToMob(closestCow):
+            continue
+        if not companion_agent.attackMob(closestCow):
+            continue
+        continue
+    
+    # Nothing to do...
+    companion_agent.stopAllMovement()
 
 print()
 print("Mission ended")

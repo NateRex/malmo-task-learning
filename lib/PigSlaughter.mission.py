@@ -142,7 +142,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         continue
     
     # Move to nearest pig
-    isAt = companion_agent.moveToEntity(nearestPig)
+    isAt = companion_agent.moveToMob(nearestPig)
     if not isAt:
         companion_agent.stopAttacking()
         continue
