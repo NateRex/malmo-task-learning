@@ -57,6 +57,14 @@ class MathExt:
         return math.sqrt(math.pow(pointB.x - pointA.x, 2) + math.pow(pointB.y - pointA.y, 2) + math.pow(pointB.z - pointA.z, 2))
 
     @staticmethod
+    def distanceBetweenPointsXZ(pointA, pointB):
+        """
+        Returns the distance between two points, taking only the x-axis and z-axis into account.
+        Each point should be specified as a named Vector.
+        """
+        return math.sqrt(math.pow(pointB.x - pointA.x, 2) + math.pow(pointB.z - pointA.z, 2))
+
+    @staticmethod
     def vectorFromPoints(pointA, pointB):
         """
         Returns a Vector from point A to point B.

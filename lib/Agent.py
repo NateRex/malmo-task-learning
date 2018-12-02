@@ -13,7 +13,6 @@ from Constants import *
 from AgentInventory import *
 from Stats import *
 
-
 class Agent:
     """
     Wrapper class for a Malmo agent for executing complex commands with corresponding logging.
@@ -370,6 +369,7 @@ class Agent:
         nearestEntity = None
         for entity in entities:   # First entity is always the agent itself
             if entity.type in MobType.All.__members__:
+                Logger.logEntity(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -391,7 +391,9 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
+            Logger.logEntity(entity)
             if entity.type in MobType.Peaceful.__members__:
+                Logger.logEntity(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -414,7 +416,9 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
+            Logger.logEntity(entity)
             if entity.type in MobType.Hostile.__members__:
+                Logger.logEntity(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -438,6 +442,7 @@ class Agent:
         nearestEntity = None
         for entity in entities:
             if entity.type in MobType.Food.__members__:
+                Logger.logEntity(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -619,21 +624,27 @@ class Agent:
             rate = 1.0 * multiplier
         elif diff > 5:
             rate = .25 * multiplier
+        elif diff > 2:
+            rate = .05 * multiplier
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
-
         return rate
 
     def __isLookingAt__(self, targetPosition):
         """
         Returns true if this agent is currently looking in the proximity of the target position.
         """
+        # Our tolerance for angle differences depends on how close we are to the object
+        agentPos = self.getPosition()
+        distanceFromTarget = MathExt.distanceBetweenPoints(agentPos, targetPosition)
         yawRate = self.__getYawRateToFacePosition__(targetPosition)
-        if abs(yawRate) > .25:
-            return False
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
-        if abs(pitchRate) > .25:
-            return False
+        if distanceFromTarget > 7:
+            if abs(yawRate) > .25 or abs(pitchRate) > .25:
+                return False
+        else:
+            if abs(yawRate) > .8 or abs(pitchRate) > .8:
+                return False
         return True
 
     def __lookAtPosition__(self, targetPosition):
@@ -645,7 +656,7 @@ class Agent:
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
         self.__startChangingYaw__(yawRate)
         self.__startChangingPitch__(pitchRate)
-        return abs(yawRate) <= .25 and abs(pitchRate) <= .25
+        return abs(yawRate) <= .1 and abs(pitchRate) <= .1
 
     def lookAtEntity(self, entity):
         """
@@ -680,59 +691,47 @@ class Agent:
         # Look at the target
         isLookingAt = self.__lookAtPosition__(agentPos)
         if isLookingAt:
+            self.__stopChangingPitch__()
+            self.__stopChangingYaw__()
             Logger.logLookAtFinish(self, agentEntity)
             self.lastLookedAt = agentId
             return True
         return False
 
-    def __isAt__(self, targetPosition):
+    def __isAt__(self, targetPosition, tol = 0.5):
         """
-        Returns true if this agent is currently at the target position.
+        Returns true if this agent is currently at the target position (within the tolerance provided).
         """
         agentPos = self.getPosition()
         if agentPos == None:
             return False
 
-        distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
-        if distance > STRIKING_DISTANCE:
+        distance = MathExt.distanceBetweenPointsXZ(agentPos, targetPosition)
+        if distance > tol:
             return False
         
         return True
 
-    def __moveWithinStrikingDistance__(self, targetPosition):
-        """
-        Begin continuously moving to reach a desired Vector position (within 2-3 blocks).
-        Returns true if the agent is currently at the desired target. Returns false otherwise.
-        """
-        agentPos = self.getPosition()
-        if agentPos == None:
-            return False  
-
-        distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
-
-        if distance <= STRIKING_DISTANCE:  # Moving "to" a position is really moving "up to it" while facing it
-            self.stopMoving()
-            return True
-        else:
-            self.__startMoving__(1)
-            return False
-
-    def __moveToPosition__(self, targetPosition):
+    def __moveToPosition__(self, targetPosition, tol = 0.5, minDistance = 0.0):
         """
         Begin continuously moving to reach a desired Vector position.
+        Optionally specify a tolerance, as well as a minimum distance that the agent can be close to the target.
         Returns true if the agent is currently at the desired target. Returns false otherwise.
         """
         agentPos = self.getPosition()
         if agentPos == None:
             return False
 
-        distance = MathExt.distanceBetweenPoints(agentPos, targetPosition)
+        distance = MathExt.distanceBetweenPointsXZ(agentPos, targetPosition)
 
-        if distance < 1:
+        if distance < tol and distance > minDistance:
             self.stopMoving()
             return True
-        else:
+        elif distance > tol:
             self.__startMoving__(1)
+            return False
+        else:
+            self.__startMoving__(-1)
             return False
 
     def moveToMob(self, mob):
@@ -743,13 +742,13 @@ class Agent:
         # Precondition: We are looking at the target
         isLooking = self.__isLookingAt__(mob.position)
         if not isLooking:
-            self.stopMoving()
+            self.stopAllMovement()
             return False
 
         Logger.logMoveToStart(self, mob)
         
         # Move to the target
-        isAt = self.__moveWithinStrikingDistance__(mob.position)
+        isAt = self.__moveToPosition__(mob.position, STRIKING_DISTANCE)
         if isAt:
             Logger.logMoveToFinish(self, mob)
             self.lastMovedTo = mob.id
@@ -764,14 +763,14 @@ class Agent:
         # Precondition: We are looking at the target
         isLooking = self.__isLookingAt__(item.position)
         if not isLooking:
-            self.stopMoving()
+            self.stopAllMovement()
+            return False
 
         Logger.logMoveToStart(self, item)
 
         # Move to the target
-        isAt = self.__moveToPosition__(item.position)
+        isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE)
         if isAt:
-            self.inventory.addItem(item.type, item.id)  # We will have picked up the item!
             Logger.logMoveToFinish(self, item)
             self.lastMovedTo = item.id
             return True
@@ -801,13 +800,13 @@ class Agent:
         # Precondition: We are looking at target
         isLooking = self.__isLookingAt__(agentPos)
         if not isLooking:
-            self.stopMoving()
+            self.stopAllMovement()
             return False
 
         Logger.logMoveToStart(self, agentEntity)
         
         # Move to the target
-        isAt = self.__moveWithinStrikingDistance__(agentPos)
+        isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
             Logger.logMoveToFinish(self, agentEntity)
             self.lastMovedTo = agentId
@@ -819,34 +818,24 @@ class Agent:
         Craft an item from other items in this agent's inventory. This requires providing a list of RecipeItems.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
-        inventoryJson = self.getInventoryJson()
-        if inventoryJson == None:
-            return False
-        self.inventory.update(inventoryJson) # update the inventory in case we picked up any new items by chance
-
         # Precondition - We have enough of each recipe item in our inventory
         for recipeItem in recipeItems:
-            if self.inventory.amountOfItem(recipeItem.type) < recipeItem.quantity:
+            if self.inventory.amountOfItem(self, recipeItem.type) < recipeItem.quantity:
                 return False
 
         # Get a list of the items to be used
         itemsUsed = []
         for recipeItem in recipeItems:
-            items = self.inventory.getAllItemsOfType(recipeItem.type)
+            items = self.inventory.getAllItemsOfType(self, recipeItem.type)
             for i in range(0, recipeItem.quantity):
                 itemsUsed.append(items[i])
 
         # Craft the item and add it to our inventory, recording its id
         self.host.sendCommand("craft {}".format(item.value))
         self.waitForNextObservation()
-        itemCrafted = self.inventory.addItem(item)
-
-        # Remove the items used from the inventory
-        for itemUsed in itemsUsed:
-            self.inventory.removeItem(itemUsed)
 
         # Log the successful crafting of the item
-        Logger.logCraft(self, itemCrafted, itemsUsed)
+        Logger.logCraft(self, item, itemsUsed)
         return True
     
     def attackMob(self, mob):
@@ -869,9 +858,9 @@ class Agent:
             return False
 
         # Precondition: We are at the target
-        isAt = self.__isAt__(mob.position)
+        isAt = self.__isAt__(mob.position, STRIKING_DISTANCE)
         if not isAt:
-            self.stopAttacking()
+            self.stopAllMovement()
             return False
 
         self.__startAttacking__()
@@ -884,9 +873,6 @@ class Agent:
         else:
             Logger.logAttack(self, mob, False)
 
-        # There is a chance we could have killed the mob, and immediately picked up its items... update our inventory
-        inventoryJson = self.getInventoryJson()
-        self.inventory.update(inventoryJson)
         return True
 
     def equip(self, item):
@@ -928,28 +914,24 @@ class Agent:
         Returns true if successful, and false otherwise.
         """
         agentPos = agent.getPosition()
-        inventoryJson = agent.getInventoryJson()
-        if agentPos == None or inventoryJson == None:
+        if agentPos == None:
             return False
 
-        # Update the inventory object in case we recently picked up any new items
-        self.inventory.update(inventoryJson)
-
         # Precondition: We have atleast one item of that type
-        if self.inventory.amountOfItem(item) == 0:
+        if self.inventory.amountOfItem(self, item) == 0:
             return False
 
         # Precondition: We are at the agent
-        isAt = self.__isAt__(agentPos)
+        isAt = self.__isAt__(agentPos, GIVING_DISTANCE)
         if not isAt:
             return False
 
         # Remove one item of that type from this agent's inventory
-        inventoryItem = self.inventory.getItem(item)
+        inventoryItem = self.inventory.getItem(self, item)
         if inventoryItem == None:
             return False
         self.inventory.removeItem(inventoryItem)
-        agent.inventory.addItem(inventoryItem.type, inventoryItem.id)
+        agent.inventory.addItem(agent, item.value, inventoryItem.id)   # We must preserve the id in the agent's inventory
 
         self.equip(item)
         time.sleep(0.5) # There is a small delay in equipping an item

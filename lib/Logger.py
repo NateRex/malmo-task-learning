@@ -17,7 +17,6 @@ class Logger:
     """
     __contents = []                 # The string containing the entire log
     __declaredEntityIds = []        # A list of entity ids for entities that have already been declared in the log
-    __needNewline = True            # Whether or not a newline is needed before logging a new action
 
     @staticmethod
     def clear():
@@ -47,9 +46,8 @@ class Logger:
         """
         if len(Logger.__contents) == 0:
             return
-        if Logger.__needNewline and Logger.__contents[len(Logger.__contents) - 1] != "":
+        if Logger.__contents[len(Logger.__contents) - 1] != "":
             Logger.__contents.append("")
-        Logger.__needNewline = True
 
     @staticmethod
     def __areActionsEqual__(actionA, actionB):
@@ -80,7 +78,7 @@ class Logger:
         Logger.__declaredEntityIds.append(agentId)
 
     @staticmethod
-    def logNewItem(item):
+    def logItem(item):
         """
         Internal method that logs the definition of a new item, and adds its id to the list of declared entities.
         """
@@ -90,11 +88,9 @@ class Logger:
         if item.type in ItemType.All.__members__:
             Logger.__pushStatement__("items-{}-{}".format(item.type, item.id))
             Logger.__declaredEntityIds.append(item.id)
-        
-        Logger.__needNewline = False
 
     @staticmethod
-    def __logMob__(mob):
+    def logMob(mob):
         """
         Internal method that logs the definition of a new mob, and adds its id to the list of declared entities.
         """
@@ -104,40 +100,39 @@ class Logger:
         if mob.type in MobType.All.__members__:
             Logger.__pushStatement__("mobs-{}-{}".format(mob.type, mob.id))
             Logger.__declaredEntityIds.append(mob.id)
-        
-        Logger.__needNewline = False
 
     @staticmethod
-    def __logEntity__(entity):
+    def logEntity(entity):
         """
         Internal method that logs the definition of a new entity, and adds its id to the list of declared entities.
         """
         if entity.id in Logger.__declaredEntityIds:  # We already logged this entity
             return
 
-        if entity.type in MobType.All.__members__:
-            Logger.__logMob__(entity)
-        elif entity.type in ItemType.All.__members__:
-            Logger.logNewItem(entity)
-        
-        Logger.__needNewline = False
+        if entity.type in MobType.All.__members__:  # Mob entity
+            Logger.logMob(entity)
+        elif entity.type in ItemType.All.__members__:   # Item entity
+            Logger.logItem(entity)
 
     @staticmethod
-    def __logAgentInventory__(agent):
+    def logAquiredItem(agent, item):
         """
-        Internal method that logs everything that an agent has in their inventory.
+        Logs that an agent aquired the item specified.
         """
         agentId = agent.getId()
-        agentInventoryJson = agent.getInventoryJson()
-        if agentId == None or agentInventoryJson == None:
+        if agentId == None:
             return
+        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
 
-        agent.inventory.update(agentInventoryJson)    # Make sure this agent's inventory is up-to-date
-        items = agent.inventory.getAllItems()
-
-        for item in items:
-            Logger.logNewItem(item)    # We might not have logged this item yet
-            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
+    @staticmethod
+    def logLostItem(agent, item):
+        """
+        Logs that an agent lost the item specified.
+        """
+        agentId = agent.getId()
+        if agentId == None:
+            return
+        Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
 
     @staticmethod
     def logInitialState(agents):
@@ -145,16 +140,16 @@ class Logger:
         Given the list of agents for a mission, log the starting state for the environment in the log.
         """
         for agent in agents:
+            # Log the definition of this agent
+            Logger.__logAgent__(agent)
+
+            # Log all entities that the agent has identified nearby
             entities = agent.getNearbyEntities()
-            if entities == None:
-                return
-
-            # Define all starting nearby entities to this agent
-            for entity in entities:
-                Logger.__logEntity__(entity)
-
-            # Log out this agent's starting inventory
-            Logger.__logAgentInventory__(agent)
+            if entities != None:
+                for entity in entities:
+                    Logger.logEntity(entity)
+                    
+            # Note: Logging for agent inventory is managed from AgentInventory class
 
         Logger.__pushStatement__("START")
         Logger.__pushNewline__()
@@ -181,13 +176,11 @@ class Logger:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logMob__(mob)
+        Logger.logMob(mob)
 
         if Logger.__lastClosestMob == None or mob.id != Logger.__lastClosestMob.id:
             Logger.__pushStatement__("closest_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
             Logger.__lastClosestMob = mob
-
-        Logger.__needNewline = False
 
     __lastClosestPeacefulMob = None
 
@@ -203,13 +196,11 @@ class Logger:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logMob__(mob)
+        Logger.logMob(mob)
 
         if Logger.__lastClosestPeacefulMob == None or mob.id != Logger.__lastClosestPeacefulMob.id:
             Logger.__pushStatement__("closest_peaceful_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
             Logger.__lastClosestPeacefulMob = mob
-
-        Logger.__needNewline = False
 
     __lastClosestHarmfulMob = None
 
@@ -225,13 +216,11 @@ class Logger:
             return
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logMob__(mob)
+        Logger.logMob(mob)
 
         if Logger.__lastClosestHarmfulMob == None or mob.id != Logger.__lastClosestHarmfulMob.id:
             Logger.__pushStatement__("closest_harmful_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
             Logger.__lastClosestHarmfulMob = mob
-
-        Logger.__needNewline = False
 
     __lastClosestFoodMob = None
 
@@ -247,13 +236,11 @@ class Logger:
             return
         
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logMob__(mob)
+        Logger.logMob(mob)
 
         if Logger.__lastClosestFoodMob == None or mob.id != Logger.__lastClosestFoodMob.id:
             Logger.__pushStatement__("closest_food_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
             Logger.__lastClosestFoodMob = mob
-
-        Logger.__needNewline = False
 
     __lastLookAt = None             # Keep track of the last lookAt executed to avoid repeat logging
     __lastLookAtDidFinish = False   # Keep track of whether or not lookAt has finished to log post-conditions
@@ -276,11 +263,9 @@ class Logger:
         Logger.__pushNewline__()
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logEntity__(entity)
+        Logger.logEntity(entity)
 
-        # Pre-conditions
-        if agent.lastLookedAt != None:
-            Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, agent.lastLookedAt))
+        # Preconditions - None
 
         # Action
         Logger.__pushStatement__("!LOOKAT-{}-{}".format(agentId, entity.id))
@@ -325,7 +310,7 @@ class Logger:
         Logger.__pushNewline__()
 
         # This might be an entity not previously declared in the log. Log it if so.
-        Logger.__logEntity__(entity)
+        Logger.logEntity(entity)
 
         # Pre-conditions
         if agent.lastLookedAt != None:
@@ -368,16 +353,16 @@ class Logger:
 
         # Preconditions
         for item in itemsUsed:
-            Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
+            Logger.logAquiredItem(agent, item)
 
         # Action
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
         Logger.__pushStatement__("items-{}-{}".format(itemCrafted.type, itemCrafted.id))
-        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemCrafted.id))
+        Logger.logAquiredItem(agent, itemCrafted)
         for item in itemsUsed:
-            Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
+            Logger.logLostItem(agent, item)
 
         Logger.__pushNewline__()
         
@@ -423,14 +408,14 @@ class Logger:
         # Preconditions
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(sourceAgentId, targetAgentId))
         Logger.__pushStatement__("agent_at-{}-{}".format(sourceAgentId, targetAgentId))
-        Logger.__pushStatement__("agent_has-{}-{}".format(sourceAgentId, item.id))
+        Logger.logAquiredItem(sourceAgent, item)
 
         # Action
         Logger.__pushStatement__("!GIVEITEM-{}-{}-{}".format(sourceAgentId, item.id, targetAgentId))
 
         # Postconditions
-        Logger.__pushStatement__("agent_lost-{}-{}".format(sourceAgentId, item.id))
-        Logger.__pushStatement__("agent_has-{}-{}".format(targetAgentId, item.id))
+        Logger.logLostItem(sourceAgent, item)
+        Logger.logAquiredItem(targetAgent, item)
 
         Logger.__pushNewline__()
 

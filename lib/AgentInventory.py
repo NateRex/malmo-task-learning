@@ -22,54 +22,51 @@ class AgentInventory:
         AgentInventory.idCounter += 1
         return AgentInventory.idCounter
 
-    def update(self, inventory):
+    def update(self, agent):
         """
         Given an agent's inventory JSON from an observation, update this inventory to contain only the items found.
         """
-        itemsLeft = len(inventory) != 0
+        inventoryJson = agent.getInventoryJson()
+        itemsLeft = len(inventoryJson) != 0
         while (itemsLeft):
-            itemType = inventory[0]["type"]
-            numOfItemInObs = inventory[0]["quantity"]
+            itemType = inventoryJson[0]["type"]
+            numOfItemInObs = inventoryJson[0]["quantity"]
             if itemType not in self.__inventory__:  # Add an array of ids for this item type if it was never discovered
                 self.__inventory__[itemType] = []
             numOfItemInInv = len(self.__inventory__[itemType])
 
-            for i in range(1, len(inventory)):  # Loop over remaining items, and for each item of matching type, add to counter
-                if inventory[i]["type"] == itemType:
-                    numOfItemInObs += inventory[i]["quantity"]
-            inventory = [item for item in inventory if item["type"] != itemType] # Remove all of those inventory items
+            for i in range(1, len(inventoryJson)):  # Loop over remaining items, and for each item of matching type, add to counter
+                if inventoryJson[i]["type"] == itemType:
+                    numOfItemInObs += inventoryJson[i]["quantity"]
+            inventoryJson = [item for item in inventoryJson if item["type"] != itemType] # Remove all of those inventory items
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.addItem(itemType)  # This item was obtained not through action... needs id
+                    self.addItem(agent, itemType)  # This item was obtained not through action... needs id
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
                         self.__inventory__[itemType].pop(0)
 
             # Only perform another iteration if there are more items of different types that we have not yet checked
-            if len(inventory) == 0:
+            if len(inventoryJson) == 0:
                 itemsLeft = False
 
-    def addItem(self, itemType, itemId = None):
+    def addItem(self, agent, itemTypeStr, itemId = None):
         """
         Add an item of a specific type to this inventory. Returns the item.
         If the item already had an id, provide it to this method. Otherwise, a new
         global id for the item will be generated.
         """
-        if not isinstance(itemType, str):
-            itemType = itemType.value
-        if itemType not in self.__inventory__:
-            self.__inventory__[itemType] = []
+        if itemTypeStr not in self.__inventory__:
+            self.__inventory__[itemTypeStr] = []
         if itemId == None:
-            itemId = "{}{}".format(itemType, self.__getId__())
-            item = Item(itemId, itemType)
-            self.__inventory__[itemType].append(item)
-            return item
-        else:
-            item = Item(itemId, itemType)
-            self.__inventory__[itemType].append(item)
-            return item
+            itemId = "{}{}".format(itemTypeStr, self.__getId__())
+        item = Item(itemId, itemTypeStr)
+        Logger.logItem(item)
+        Logger.logAquiredItem(agent, item)
+        self.__inventory__[itemTypeStr].append(item)
+        return item
 
     def removeItem(self, item):
         """
@@ -82,46 +79,51 @@ class AgentInventory:
                 self.__inventory__[item.type].pop(i)
                 return
 
-    def getAllItems(self):
+    def getAllItems(self, agent):
         """
         Returns a list of all of the items in this inventory.
         """
+        self.update(agent)
         items = []
         for itemType in self.__inventory__:
             for item in self.__inventory__[itemType]:
                 items.append(item)
         return items
 
-    def getAllItemsOfType(self, itemType):
+    def getAllItemsOfType(self, agent, itemType):
         """
         Returns a list of all of the items in this inventory for a specific type.
         """
+        self.update(agent)
         if itemType.value not in self.__inventory__:
             return []
         return self.__inventory__[itemType.value]
 
-    def getItem(self, itemType):
+    def getItem(self, agent, itemType):
         """
         Returns an item in this inventory of a specific type. Returns None if no item for that type exists in this inventory.
         """
+        self.update(agent)
         if itemType.value not in self.__inventory__:
             return None
         if len(self.__inventory__[itemType.value]) == 0:
             return None
         return self.__inventory__[itemType.value][0]
 
-    def amountOfItem(self, item):
+    def amountOfItem(self, agent, item):
         """
         Returns the quantity of a type of item in this inventory.
         """
+        self.update(agent)
         if item.value not in self.__inventory__:
             return 0
         return len(self.__inventory__[item.value])
 
-    def printOut(self):
+    def printOut(self, agent):
         """
         DEBUG ONLY
         """
+        self.update(agent)
         for item in self.__inventory__:
             for itemId in self.__inventory__[item]:
                 print(itemId)

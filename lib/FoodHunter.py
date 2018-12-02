@@ -31,7 +31,7 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 40000, "Player", Vector(-15, 4, -16), Direction.North)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, "Player", Vector(-15, 4, -16), Direction.North)
 scenarioBuilder.addAgent("Companion", Vector(-15, 4, -15), Direction.South)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
@@ -113,16 +113,18 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
+# Log initial state
+Logger.logInitialState([player_agent, companion_agent])
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    # Make sure we have our diamond sword equipped
-    companion_agent.equip(ItemType.All.diamond_sword)
-
     # If we have beef, go to the player and give it to them
-    if companion_agent.inventory.amountOfItem(ItemType.Food.beef) > 0:
-        if not companion_agent.lookAtAgent(player_agent):
+    if companion_agent.inventory.amountOfItem(companion_agent, ItemType.Food.beef) > 0:
+        isLookingAt = companion_agent.lookAtAgent(player_agent)
+        if not isLookingAt:
             continue
-        if not companion_agent.moveToAgent(player_agent):
+        isAt = companion_agent.moveToAgent(player_agent)
+        if not isAt:
             continue
         companion_agent.giveItemToAgent(ItemType.Food.beef, player_agent)
         continue
@@ -130,25 +132,34 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # If there is beef laying on the ground nearby, go pick it up
     closestFood = companion_agent.getClosestFoodItem()
     if closestFood != None:
-        if not companion_agent.lookAtEntity(closestFood):
+        isLookingAt = companion_agent.lookAtEntity(closestFood)
+        if not isLookingAt:
             continue
-        if not companion_agent.moveToItem(closestFood):
+        isAt = companion_agent.moveToItem(closestFood)
+        if not isAt:
             continue
         continue
 
     # If there are cows nearby, go and harvest them
     closestCow = companion_agent.getClosestFoodMob()
     if closestCow != None:
-        if not companion_agent.lookAtEntity(closestCow):
+        companion_agent.equip(ItemType.All.diamond_sword)   # Make sure we have our diamond sword equipped
+        isLookingAt = companion_agent.lookAtEntity(closestCow)
+        if not isLookingAt:
             continue
-        if not companion_agent.moveToMob(closestCow):
+        isAt = companion_agent.moveToMob(closestCow)
+        if not isAt:
             continue
-        if not companion_agent.attackMob(closestCow):
+        didAttack = companion_agent.attackMob(closestCow)
+        if not didAttack:
             continue
         continue
     
     # Nothing to do...
     companion_agent.stopAllMovement()
 
+# Log final state and flush the log
+Logger.logFinalState()
+Logger.flushToFile()
 print()
 print("Mission ended")

@@ -5,7 +5,9 @@
 from enum import Enum
 
 NUMBER_OF_INVENTORY_SLOTS = 40
-STRIKING_DISTANCE = 3
+PICK_UP_ITEM_DISTANCE = 1.5
+STRIKING_DISTANCE = 3.5
+GIVING_DISTANCE = 4
 
 class BlockType(Enum):
     Air = "air"
