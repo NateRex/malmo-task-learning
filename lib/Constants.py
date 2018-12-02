@@ -7,6 +7,12 @@ from enum import Enum
 NUMBER_OF_INVENTORY_SLOTS = 40
 STRIKING_DISTANCE = 2.8
 
+class Entity(Enum):
+    Agent = "Agent"
+    Block = "Block"
+    Item = "Item"
+    Mob = "Mob"
+
 class BlockType(Enum):
     Air = "air"
     Stone = "stone"
