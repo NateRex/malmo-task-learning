@@ -57,17 +57,18 @@ class AgentInventory:
         If the item already had an id, provide it to this method. Otherwise, a new
         global id for the item will be generated.
         """
-        if itemType.value not in self.__inventory__:
-            self.__inventory__[itemType.value] = []
+        if not isinstance(itemType, str):
+            itemType = itemType.value
+        if itemType not in self.__inventory__:
+            self.__inventory__[itemType] = []
         if itemId == None:
-            itemId = "{}{}".format(itemType.value, self.__getId__())
-            item = Item(itemId, itemType.value)
-            self.__inventory__[itemType.value].append(item)
-            Logger.logNewItem(item) # Log the new item 'into existence'
+            itemId = "{}{}".format(itemType, self.__getId__())
+            item = Item(itemId, itemType)
+            self.__inventory__[itemType].append(item)
             return item
         else:
-            item = Item(itemId, itemType.value)
-            self.__inventory__[itemType.value].append(item)
+            item = Item(itemId, itemType)
+            self.__inventory__[itemType].append(item)
             return item
 
     def removeItem(self, item):

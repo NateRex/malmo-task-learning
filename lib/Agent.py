@@ -446,6 +446,7 @@ class Agent:
         if nearestEntity == None:
             return None
         Logger.logClosestFoodMob(self, entity)
+        print(entity.id)
         return nearestEntity
 
     def getClosestBlockLocation(self, blockType):
@@ -769,6 +770,7 @@ class Agent:
 
         # Craft the item and add it to our inventory, recording its id
         self.host.sendCommand("craft {}".format(item.value))
+        self.waitForNextObservation()
         itemCrafted = self.inventory.addItem(item)
 
         # Remove the items used from the inventory
@@ -806,7 +808,7 @@ class Agent:
 
         self.__startAttacking__()
         self.stopAllMovement()  # Momentarily stop all movement to check if we killed the entity
-        time.sleep(.8)  # Force a momentary pause to give time for mob to register as being dead
+        time.sleep(0.8)  # TODO: Figure out a better way to wait until the entity has either died or not
         newMobsKilled = self.getMobsKilled()
 
         if newMobsKilled > oldMobsKilled:

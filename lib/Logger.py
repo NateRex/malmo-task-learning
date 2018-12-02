@@ -372,6 +372,7 @@ class Logger:
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
+        Logger.__pushStatement__("items-{}-{}".format(itemCrafted.type, itemCrafted.id))
         Logger.__pushStatement__("agent_has-{}-{}".format(agentId, itemCrafted.id))
         for item in itemsUsed:
             Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
