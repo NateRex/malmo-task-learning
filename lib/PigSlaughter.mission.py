@@ -42,12 +42,12 @@ scenarioBuilder.environment.addLine(Vector(-2, 4, 1), Vector(2, 4, 1), BlockType
 scenarioBuilder.environment.addLine(Vector(-2, 4, -25), Vector(2, 4, -25), BlockType.Fence)
 scenarioBuilder.environment.addBlock(Vector(0, 3, -22), BlockType.Mob_spawner, MobType.Peaceful.Pig)
 
-scenarioBuilder.agents[1].addInventoryItem(ItemType.diamond, ItemSlot.HotBar._3, 6)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.stick, ItemSlot.HotBar._4, 3)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.diamond_boots, ItemSlot.Armor.Boots)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.diamond_leggings, ItemSlot.Armor.Leggings)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.diamond_chestplate, ItemSlot.Armor.Chestplate)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.diamond_helmet, ItemSlot.Armor.Helmet)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond, ItemSlot.HotBar._3, 6)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.stick, ItemSlot.HotBar._4, 3)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_leggings, ItemSlot.Armor.Leggings)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_chestplate, ItemSlot.Armor.Chestplate)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_helmet, ItemSlot.Armor.Helmet)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -125,7 +125,7 @@ numberOfSwordsCrafted = 0
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
     if numberOfSwordsCrafted < 3:
-        companion_agent.craft(ItemType.diamond_sword, [RecipeItem(ItemType.diamond, 2), RecipeItem(ItemType.stick, 1)])
+        companion_agent.craft(ItemType.All.diamond_sword, [RecipeItem(ItemType.All.diamond, 2), RecipeItem(ItemType.All.stick, 1)])
         numberOfSwordsCrafted += 1
         continue
 

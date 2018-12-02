@@ -48,7 +48,7 @@ for i in range(0, 31):
         scenarioBuilder.environment.addBlock(Vector(-3, 6, -i), BlockType.Torch)
         scenarioBuilder.environment.addBlock(Vector(3, 6, -i), BlockType.Torch)
 
-scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_sword, ItemSlot.HotBar._0)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.Diamond_sword, ItemSlot.HotBar._0)
 #scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_boots, ItemSlot.Armor.Boots)
 #scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_leggings, ItemSlot.Armor.Leggings)
 #scenarioBuilder.agents[1].addInventoryItem(ItemType.Diamond_chestplate, ItemSlot.Armor.Chestplate)
