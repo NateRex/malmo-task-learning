@@ -369,7 +369,7 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:   # First entity is always the agent itself
-            if entity.type in MobType.Peaceful.__members__ or entity.type in MobType.Hostile.__members__:
+            if entity.type in MobType.All.__members__:
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -446,7 +446,28 @@ class Agent:
         if nearestEntity == None:
             return None
         Logger.logClosestFoodMob(self, entity)
-        print(entity.id)
+        return nearestEntity
+
+    def getClosestFoodItem(self):
+        """
+        Returns a named EntityInfo tuple of the nearest food item within a 20x20 area of this agent.
+        Returns None if no such item exists.
+        """
+        agentPos = self.getPosition()
+        entities = self.getNearbyEntities()
+        if agentPos == None or entities == None:
+            return None
+        nearestDistance = 1000000
+        nearestEntity = None
+        for entity in entities:
+            if entity.type in ItemType.Food.__members__:
+                entityPos = entity.position
+                distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
+                if distanceToEntity < nearestDistance:
+                    nearestDistance = distanceToEntity
+                    nearestEntity = entity
+        if nearestEntity == None:
+            return None
         return nearestEntity
 
     def getClosestBlockLocation(self, blockType):
@@ -626,18 +647,18 @@ class Agent:
         self.__startChangingPitch__(pitchRate)
         return abs(yawRate) <= .25 and abs(pitchRate) <= .25
 
-    def lookAtEntity(self, mob):
+    def lookAtEntity(self, entity):
         """
-        Begin continuously turning/looking to face the specified mob.
+        Begin continuously turning/looking to face the specified entity.
         Returns true if the agent is currently facing the entity. Returns false otherwise.
         """
-        Logger.logLookAtStart(self, mob)
+        Logger.logLookAtStart(self, entity)
 
         # Look at the target
-        isLookingAt = self.__lookAtPosition__(mob.position)
+        isLookingAt = self.__lookAtPosition__(entity.position)
         if isLookingAt:
-            Logger.logLookAtFinish(self, mob)
-            self.lastLookedAt = mob.id
+            Logger.logLookAtFinish(self, entity)
+            self.lastLookedAt = entity.id
             return True
         return False
 
@@ -696,24 +717,26 @@ class Agent:
             self.__startMoving__(1)
             return False
 
-    def moveToEntity(self, mob):
+    def moveToEntity(self, entity):
         """
-        Begin continuously moving & turning to reach a desired mob that was found from observations.
-        Returns true if the agent is currently at the specified mob. Returns false otherwise.
+        Begin continuously moving & turning to reach a desired entity that was found from observations.
+        Returns true if the agent is currently at the specified entity. Returns false otherwise.
         """
         # Precondition: We are looking at target
-        isLooking = self.__isLookingAt__(mob.position)
+        isLooking = self.__isLookingAt__(entity.position)
         if not isLooking:
             self.stopMoving()
             return False
 
-        Logger.logMoveToStart(self, mob)
+        Logger.logMoveToStart(self, entity)
         
         # Move to the target
-        isAt = self.__moveToPosition__(mob.position)
+        isAt = self.__moveToPosition__(entity.position)
         if isAt:
-            Logger.logMoveToFinish(self, mob)
-            self.lastMovedTo = mob.id
+            if entity.type in ItemType.All: # If we moved to an item, it will be picked up!
+                self.inventory.addItem(entity.type, entity.id)
+            Logger.logMoveToFinish(self, entity)
+            self.lastMovedTo = entity.id
             return True
         return False
 
@@ -784,14 +807,14 @@ class Agent:
     def attackMob(self, mob):
         """
         Attack a mob using the currently equipped item, provided that it is within striking distance. This method
-        calls LookAt if it is necessary for the agent to turn to face the mob.
+        calls LookAt if it is necessary for the agent to turn to face the mob. Returns true if successful, and false otherwise.
         """
         oldMobsKilled = self.getMobsKilled()
         if oldMobsKilled == None:
             return False
 
         # Precondition: The provided entity is a mob
-        if mob.type not in MobType.Peaceful.__members__ and mob.type not in MobType.Hostile.__members__:
+        if mob.type not in MobType.All.__members__:
             return False
 
         # Precondition: We are looking at target

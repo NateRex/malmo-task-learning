@@ -99,7 +99,7 @@ class Logger:
         if mob.id in Logger.__declaredEntityIds:    # We already logged this mob
             return
         
-        if mob.type in MobType.Hostile.__members__ or mob.type in MobType.Peaceful.__members__:
+        if mob.type in MobType.All.__members__:
             Logger.__pushStatement__("mobs-{}-{}".format(mob.type, mob.id))
             Logger.__declaredEntityIds.append(mob.id)
         
@@ -113,7 +113,7 @@ class Logger:
         if entity.id in Logger.__declaredEntityIds:  # We already logged this entity
             return
 
-        if entity.type in MobType.Hostile.__members__ or entity.type in MobType.Peaceful.__members__:
+        if entity.type in MobType.All.__members__:
             Logger.__logMob__(entity)
         elif entity.type in ItemType.__members__:
             Logger.logNewItem(entity)
@@ -172,7 +172,7 @@ class Logger:
         """
         Log the closest mob to the agent given.
         """
-        if mob.type not in MobType.Peaceful.__members__ and mob.type not in MobType.Hostile.__members__:
+        if mob.type not in MobType.All.__members__:
             return
         agentId = agent.getId()
         if agentId == None:
