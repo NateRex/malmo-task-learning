@@ -66,17 +66,24 @@ class Stats:
         """
         Prints out all of the agent's stat information recorded throughout the mission.
         """
-        print(agent.getId())
-        print("-------------------")
-        print("Damage Dealt: ", self.damageDealt)
-        print("EnemiesKilled: ", self.mobsKilled)
-        print("PlayersKilled: ", self.playersKilled)
-        print("CurrentHealth: ", self.currentHealth)
-        print("Health Lost: ", self.healthLost)
-        print("Is Alive: ", self.isAlive)
-        print("Time Alive: ", self.timeAlive)
-        print("Food: ", self.food)
-        print("Score: ", self.score)
-        print("XP: ", self.xp)
-        print("DistanceTravelled: ", self.distanceTravelled)
-        print()
+        fileName = datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S') + ".txt"
+        filePath = "stats"
+        if not os.path.isdir(filePath):
+            os.mkdir(filePath)
+        filePath = os.path.join(filePath, fileName)
+        statFile = open(filePath, "w+")
+        statFile.write(agent.getId() + "\n")
+        statFile.write("-------------------\n")
+        statFile.write("Damage Dealt: " + str(self.damageDealt) +"\n")
+        statFile.write("EnemiesKilled: " + str(self.mobsKilled) +"\n")
+        statFile.write("PlayersKilled: " + str(self.playersKilled) + "\n")
+        statFile.write("CurrentHealth: " + str(self.currentHealth) + "\n")
+        statFile.write("Health Lost: " + str(self.healthLost) + "\n")
+        statFile.write("Is Alive: " + str(self.isAlive) + "\n")
+        statFile.write("Time Alive: " + str(self.timeAlive) + "\n")
+        statFile.write("Food: " + str(self.food) + "\n")
+        statFile.write("Score: " + str(self.score) + "\n")
+        statFile.write("XP: " + str(self.xp) + "\n")
+        statFile.write("DistanceTravelled: " + str(self.distanceTravelled) + "\n")
+        statFile.close()
+        print("Mission stats output has been saved to: " + filePath)
