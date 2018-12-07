@@ -39,6 +39,8 @@ class Stats:
         Should be checked frequently throughout an Agent's mission.
         """
         health = agent.getCurrentHealth()
+        if health == None:
+            return
         if(health < self.currentHealth):
             self.healthLost += self.currentHealth - health
         if(health == 0.0):
