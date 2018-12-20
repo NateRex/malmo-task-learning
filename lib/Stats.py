@@ -8,9 +8,6 @@ import math
 import time
 from Utils import *
 from Logger import *
-from Constants import *
-from AgentInventory import *
-from Agent import *
 
 class Stats:
     """
