@@ -9,7 +9,6 @@ import malmoutils
 import os
 import sys
 import time
-from Constants import *
 from Utils import *
 from Agent import *
 from ScenarioBuilder import *
@@ -135,7 +134,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     companion_agent.stats.checkHealth(companion_agent)
 
     # Agent Code
-    nearestZombie = companion_agent.getClosestHarmfulMob()
+    nearestZombie = companion_agent.getClosestHostileMob()
     if nearestZombie != None:
         companion_agent.stopAllMovement()
         companion_agent.lookAtEntity(nearestZombie)

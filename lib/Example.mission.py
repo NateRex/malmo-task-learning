@@ -10,7 +10,6 @@ import malmoutils
 import os
 import sys
 import time
-from Constants import *
 from Utils import *
 from Agent import *
 from ScenarioBuilder import *

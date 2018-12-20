@@ -12,7 +12,6 @@ import time
 import json
 import math
 from collections import namedtuple
-from Constants import *
 from Utils import *
 from ScenarioBuilder import *
 from Agent import *
