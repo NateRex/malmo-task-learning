@@ -63,8 +63,8 @@ class AgentInventory:
         if itemId == None:
             itemId = "{}{}".format(itemTypeStr, self.__getId__())
         item = Item(itemId, itemTypeStr)
-        Logger.logItem(item)
-        Logger.logAquiredItem(agent, item)
+        # Logger.logItemDefinition(item)
+        # Logger.logAgentAquiredItem(agent, item)
         self.__inventory__[itemTypeStr].append(item)
         return item
 
@@ -79,7 +79,7 @@ class AgentInventory:
                 self.__inventory__[item.type].pop(i)
                 return
 
-    def getAllItems(self, agent):
+    def allItems(self, agent):
         """
         Returns a list of all of the items in this inventory.
         """
@@ -90,7 +90,7 @@ class AgentInventory:
                 items.append(item)
         return items
 
-    def getAllItemsOfType(self, agent, itemType):
+    def allItemsByType(self, agent, itemType):
         """
         Returns a list of all of the items in this inventory for a specific type.
         """
@@ -99,7 +99,7 @@ class AgentInventory:
             return []
         return self.__inventory__[itemType.value]
 
-    def getItem(self, agent, itemType):
+    def itemByType(self, agent, itemType):
         """
         Returns an item in this inventory of a specific type. Returns None if no item for that type exists in this inventory.
         """

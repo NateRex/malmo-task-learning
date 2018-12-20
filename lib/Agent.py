@@ -9,7 +9,6 @@ import math
 import time
 from Utils import *
 from Logger import *
-from Constants import *
 from AgentInventory import *
 from Stats import *
 
@@ -23,8 +22,6 @@ class Agent:
         self.host = MalmoPython.AgentHost()
         self.inventory = AgentInventory()
         self.lastWorldState = None
-        self.lastLookedAt = None    # Id of the entity we last looked at
-        self.lastMovedTo = None     # Id of the entity we last moved to
         self.stats = Stats()
 
     def isMissionActive(self):
@@ -368,8 +365,8 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:   # First entity is always the agent itself
-            if entity.type in MobType.All.__members__:
-                Logger.logEntity(entity)    # In case we never saw this entity before
+            if isMob(entity.type):
+                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -379,7 +376,7 @@ class Agent:
             return None
         Logger.logClosestMob(self, entity)
 
-    def getClosestPeacedfulMob(self):
+    def getClosestPeacefulMob(self):
         """
         Returns a named EntityInfo tuple of the nearest peaceful mob within a 20x20 area of this agent.
         Returns None if no such mob exists.
@@ -391,9 +388,8 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            Logger.logEntity(entity)
-            if entity.type in MobType.Peaceful.__members__:
-                Logger.logEntity(entity)    # In case we never saw this entity before
+            if isPeacefulMob(entity.type):
+                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -404,7 +400,7 @@ class Agent:
         Logger.logClosestPeacefulMob(self, entity)
         return nearestEntity
 
-    def getClosestHarmfulMob(self):
+    def getClosestHostileMob(self):
         """
         Returns a named EntityInfo tuple of the nearest harmful mob within a 20x20 area of this agent.
         Returns None if no such mob exists.
@@ -416,9 +412,8 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            Logger.logEntity(entity)
-            if entity.type in MobType.Hostile.__members__:
-                Logger.logEntity(entity)    # In case we never saw this entity before
+            if isHostileMob(entity.type):
+                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -441,8 +436,8 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            if entity.type in MobType.Food.__members__:
-                Logger.logEntity(entity)    # In case we never saw this entity before
+            if isFoodMob(entity.type):
+                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -465,7 +460,8 @@ class Agent:
         nearestDistance = 1000000
         nearestEntity = None
         for entity in entities:
-            if entity.type in ItemType.Food.__members__:
+            if isFoodItem(entity.type):
+                Logger.logItemDefinition(entity)
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -473,11 +469,12 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
+        Logger.logClosestFoodItem(self, entity)
         return nearestEntity
 
     def getClosestBlockLocation(self, blockType):
         """
-        Returns the  nearest block of a given type as an entity.
+        Returns the nearest block of a given type as an entity.
         """
         agentState = self.getObservation()
         if agentState == None:
@@ -574,6 +571,8 @@ class Agent:
             rate = 1.0 * multiplier
         elif diff > 5:
             rate = .25 * multiplier
+        elif diff > 2:
+            rate = .05 * multiplier
         else:
             rate = MathExt.affineTransformation(diff, 0.0, 180.0, 0, 1.0) * multiplier
 
@@ -634,16 +633,16 @@ class Agent:
         """
         Returns true if this agent is currently looking in the proximity of the target position.
         """
-        # Our tolerance for angle differences depends on how close we are to the object
+        # Our tolerance depends on how close we are to the object
         agentPos = self.getPosition()
         distanceFromTarget = MathExt.distanceBetweenPoints(agentPos, targetPosition)
         yawRate = self.__getYawRateToFacePosition__(targetPosition)
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
         if distanceFromTarget > 7:
-            if abs(yawRate) > .25 or abs(pitchRate) > .25:
+            if abs(yawRate) >= .25 or abs(pitchRate) >= .25:
                 return False
         else:
-            if abs(yawRate) > .8 or abs(pitchRate) > .8:
+            if abs(yawRate) >= .8 or abs(pitchRate) >= .8:
                 return False
         return True
 
@@ -652,11 +651,20 @@ class Agent:
         Begin continuously turning/looking to face a Vector position.
         Returns true if the agent is currently looking at the target. Returns false otherwise.
         """
+        # Our tolerance depends on how close we are to the object
+        agentPos = self.getPosition()
+        distanceFromTarget = MathExt.distanceBetweenPoints(agentPos, targetPosition)
         yawRate = self.__getYawRateToFacePosition__(targetPosition)
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
         self.__startChangingYaw__(yawRate)
         self.__startChangingPitch__(pitchRate)
-        return abs(yawRate) <= .1 and abs(pitchRate) <= .1
+        if distanceFromTarget > 7:
+            if abs(yawRate) >= .25 or abs(pitchRate) >= .25:
+                return False
+        else:
+            if abs(yawRate) >= .8 or abs(pitchRate) >= .8:
+                return False
+        return True
 
     def lookAtEntity(self, entity):
         """
@@ -669,7 +677,6 @@ class Agent:
         isLookingAt = self.__lookAtPosition__(entity.position)
         if isLookingAt:
             Logger.logLookAtFinish(self, entity)
-            self.lastLookedAt = entity.id
             return True
         return False
 
@@ -694,7 +701,6 @@ class Agent:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
             Logger.logLookAtFinish(self, agentEntity)
-            self.lastLookedAt = agentId
             return True
         return False
 
@@ -751,7 +757,6 @@ class Agent:
         isAt = self.__moveToPosition__(mob.position, STRIKING_DISTANCE)
         if isAt:
             Logger.logMoveToFinish(self, mob)
-            self.lastMovedTo = mob.id
             return True
         return False
 
@@ -772,7 +777,6 @@ class Agent:
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE)
         if isAt:
             Logger.logMoveToFinish(self, item)
-            self.lastMovedTo = item.id
             return True
         return False
 
@@ -809,7 +813,6 @@ class Agent:
         isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
             Logger.logMoveToFinish(self, agentEntity)
-            self.lastMovedTo = agentId
             return True
         return False
 
@@ -826,7 +829,7 @@ class Agent:
         # Get a list of the items to be used
         itemsUsed = []
         for recipeItem in recipeItems:
-            items = self.inventory.getAllItemsOfType(self, recipeItem.type)
+            items = self.inventory.allItemsByType(self, recipeItem.type)
             for i in range(0, recipeItem.quantity):
                 itemsUsed.append(items[i])
 
@@ -848,7 +851,7 @@ class Agent:
             return False
 
         # Precondition: The provided entity is a mob
-        if mob.type not in MobType.All.__members__:
+        if not isMob(mob.type):
             return False
 
         # Precondition: We are looking at target
@@ -927,7 +930,7 @@ class Agent:
             return False
 
         # Remove one item of that type from this agent's inventory
-        inventoryItem = self.inventory.getItem(self, item)
+        inventoryItem = self.inventory.itemByType(self, item)
         if inventoryItem == None:
             return False
         self.inventory.removeItem(inventoryItem)
