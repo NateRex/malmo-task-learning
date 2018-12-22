@@ -99,7 +99,6 @@ class Logger:
         if isMob(mob.type):
             Logger.__pushStatement__("mobs-{}-{}".format(mob.type, mob.id))
             Logger.__declaredEntityIds.append(mob.id)
-            print(Logger.__declaredEntityIds)
 
     @staticmethod
     def logEntityDefinition(entity):
@@ -447,8 +446,7 @@ class Logger:
         if not os.path.isdir(filePath):
             os.mkdir(filePath)
         filePath = os.path.join(filePath, fileName)
-        logFile = open(filePath, "w+")
-        logFile.write("\n".join(Logger.__contents))
-        logFile.close()
+        with open(filePath, "w+") as logFile:
+            logFile.write("\n".join(Logger.__contents))
         print("Mission log output has been saved to: " + filePath)
         Logger.clear()
