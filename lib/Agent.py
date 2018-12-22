@@ -868,7 +868,7 @@ class Agent:
 
         self.__startAttacking__()
         self.stopAllMovement()  # Momentarily stop all movement to check if we killed the entity
-        time.sleep(0.8)  # TODO: Figure out a better way to wait until the entity has either died or not
+        time.sleep(0.3)         # Disallows for spamming of the attack action
         newMobsKilled = self.getMobsKilled()
 
         if newMobsKilled > oldMobsKilled:
