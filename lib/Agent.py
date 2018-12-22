@@ -366,7 +366,6 @@ class Agent:
         nearestEntity = None
         for entity in entities:   # First entity is always the agent itself
             if isMob(entity.type):
-                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -374,7 +373,9 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestMob(self, entity)
+        Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
+        Logger.logClosestMob(self, nearestEntity)
+        return nearestEntity
 
     def getClosestPeacefulMob(self):
         """
@@ -389,7 +390,6 @@ class Agent:
         nearestEntity = None
         for entity in entities:
             if isPeacefulMob(entity.type):
-                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -397,7 +397,8 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestPeacefulMob(self, entity)
+        Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
+        Logger.logClosestPeacefulMob(self, nearestEntity)
         return nearestEntity
 
     def getClosestHostileMob(self):
@@ -413,7 +414,6 @@ class Agent:
         nearestEntity = None
         for entity in entities:
             if isHostileMob(entity.type):
-                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -421,7 +421,8 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestHarmfulMob(self, entity)
+        Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
+        Logger.logClosestHarmfulMob(self, nearestEntity)
         return nearestEntity
 
     def getClosestFoodMob(self):
@@ -437,7 +438,6 @@ class Agent:
         nearestEntity = None
         for entity in entities:
             if isFoodMob(entity.type):
-                Logger.logMobDefinition(entity)    # In case we never saw this entity before
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -445,7 +445,8 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestFoodMob(self, entity)
+        Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
+        Logger.logClosestFoodMob(self, nearestEntity)
         return nearestEntity
 
     def getClosestFoodItem(self):
@@ -461,7 +462,6 @@ class Agent:
         nearestEntity = None
         for entity in entities:
             if isFoodItem(entity.type):
-                Logger.logItemDefinition(entity)
                 entityPos = entity.position
                 distanceToEntity = MathExt.distanceBetweenPoints(agentPos, entityPos)
                 if distanceToEntity < nearestDistance:
@@ -469,7 +469,8 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logClosestFoodItem(self, entity)
+        Logger.logItemDefinition(nearestEntity)    # In case we never saw this entity before
+        Logger.logClosestFoodItem(self, nearestEntity)
         return nearestEntity
 
     def getClosestBlockLocation(self, blockType):
@@ -868,7 +869,7 @@ class Agent:
 
         self.__startAttacking__()
         self.stopAllMovement()  # Momentarily stop all movement to check if we killed the entity
-        time.sleep(0.3)         # Disallows for spamming of the attack action
+        time.sleep(0.5)         # Disallows for spamming of the attack action
         newMobsKilled = self.getMobsKilled()
 
         if newMobsKilled > oldMobsKilled:

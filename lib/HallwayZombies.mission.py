@@ -1,7 +1,3 @@
-# ==============================================================================================
-# In this mission, the companion and agent spawn in a large dark corridor. The companion must
-# fend off zombies that are approaching and defend the player.
-# ==============================================================================================
 from __future__ import print_function
 from builtins import range
 import MalmoPython

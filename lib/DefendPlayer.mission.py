@@ -9,9 +9,9 @@ import json
 import math
 from collections import namedtuple
 from Utils import *
-from ScenarioBuilder import *
+from ScenarioBuilder import ScenarioBuilder
 from Agent import *
-from Logger import *
+from Logger import Logger
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -26,23 +26,28 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-# Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 25000, "Player", Vector(0, 4, 0), Direction.North)
-scenarioBuilder.addAgent("Companion", Vector(0, 4, -15), Direction.South)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, "Player", Vector(-15, 4, -16), Direction.North)
+scenarioBuilder.addAgent("Companion", Vector(-15, 4, -15), Direction.South)
+scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
 
-scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
-scenarioBuilder.environment.addLine(Vector(-3, 4, 1), Vector(-3, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addLine(Vector(3, 4, 1), Vector(3, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addLine(Vector(-2, 4, 1), Vector(2, 4, 1), BlockType.Fence)
-scenarioBuilder.environment.addLine(Vector(-2, 4, -25), Vector(2, 4, -25), BlockType.Fence)
-scenarioBuilder.environment.addBlock(Vector(0, 3, -22), BlockType.Mob_spawner, MobType.Peaceful.Pig)
+# Player inventory
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_helmet, ItemSlot.Armor.Helmet)
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_chestplate, ItemSlot.Armor.Chestplate)
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_leggings, ItemSlot.Armor.Leggings)
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
 
-scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond, ItemSlot.HotBar._3, 6)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.All.stick, ItemSlot.HotBar._4, 3)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_leggings, ItemSlot.Armor.Leggings)
-scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_chestplate, ItemSlot.Armor.Chestplate)
+# Companion inventory
 scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_helmet, ItemSlot.Armor.Helmet)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_chestplate, ItemSlot.Armor.Chestplate)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_leggings, ItemSlot.Armor.Leggings)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_sword, ItemSlot.HotBar._0)
+
+# Zombie placements
+scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(0, 4, -20), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(0, 4, -25), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(-25, 4, 0), MobType.Hostile.Zombie)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -112,39 +117,35 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-Logger.logInitialState([companion_agent, player_agent])
-
-numberOfSwordsCrafted = 0
+Logger.logInitialState([player_agent, companion_agent])
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    # AGENT ACTIONS GO HERE  =============================================================================================
-    if numberOfSwordsCrafted < 3:
-        companion_agent.craft(ItemType.All.diamond_sword, [RecipeItem(ItemType.All.diamond, 2), RecipeItem(ItemType.All.stick, 1)])
-        numberOfSwordsCrafted += 1
+    # Ensure we have our diamond sword equipped
+    companion_agent.equip(ItemType.All.diamond_sword)
+
+    # If there is a zombie close to the player, target it for attack
+    zombie = player_agent.getClosestHostileMob()
+    if zombie != None:
+        isLookingAt = companion_agent.lookAtEntity(zombie)
+        if not isLookingAt:
+            continue
+        isAt = companion_agent.moveToMob(zombie)
+        if not isAt:
+            continue
+        companion_agent.attackMob(zombie)
         continue
 
-    nearestPig = companion_agent.getClosestFoodMob()
-    if nearestPig == None:
-        companion_agent.stopAllMovement()
-        continue
-
-    # Look at nearest pig
-    isLookingAt = companion_agent.lookAtEntity(nearestPig)
+    # No zombies nearby... return to player
+    isLookingAt = companion_agent.lookAtAgent(player_agent)
     if not isLookingAt:
-        companion_agent.stopMoving()
-        companion_agent.stopAttacking()
         continue
-    
-    # Move to nearest pig
-    isAt = companion_agent.moveToMob(nearestPig)
+    isAt = companion_agent.moveToAgent(player_agent)
     if not isAt:
-        companion_agent.stopAttacking()
         continue
-    
-    # Attack the nearest pig
-    companion_agent.attackMob(nearestPig)
-    # ====================================================================================================================
+
+    # Nothing to do...
+    companion_agent.stopAllMovement()
 
 # Log final state and flush the log
 Logger.logFinalState()

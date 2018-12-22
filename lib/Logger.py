@@ -84,7 +84,7 @@ class Logger:
         if item.id in Logger.__declaredEntityIds:   # We already logged this item
             return
 
-        if not isItem(item.type):
+        if isItem(item.type):
             Logger.__pushStatement__("items-{}-{}".format(item.type, item.id))
             Logger.__declaredEntityIds.append(item.id)
 
@@ -96,9 +96,10 @@ class Logger:
         if mob.id in Logger.__declaredEntityIds:    # We already logged this mob
             return
         
-        if not isMob(mob.type):
+        if isMob(mob.type):
             Logger.__pushStatement__("mobs-{}-{}".format(mob.type, mob.id))
             Logger.__declaredEntityIds.append(mob.id)
+            print(Logger.__declaredEntityIds)
 
     @staticmethod
     def logEntityDefinition(entity):

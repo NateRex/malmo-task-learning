@@ -1,8 +1,3 @@
-# ==============================================================================================
-# This file serves as an example of how to set up a scenario for the Malmo platform. The XML for
-# the environment and agent settings is dynamically generated using the ScenarioBuilder in
-# ScenarioBuilder.py.
-# ==============================================================================================
 from __future__ import print_function
 from builtins import range
 import MalmoPython
