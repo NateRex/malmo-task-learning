@@ -469,7 +469,12 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             return None
-        Logger.logItemDefinition(nearestEntity)    # In case we never saw this entity before
+
+        # If we did not log this entity definition, we must do so for it, as well as all other items in the stack
+        if not Logger.isEntityDefined(nearestEntity):
+            Logger.logItemDefinition(nearestEntity)
+            for _ in range(1, nearestEntity.quantity):
+                Logger.logItemDefinition(Item("{}{}".format(nearestEntity.type, self.inventory.getId()), nearestEntity.type))
         Logger.logClosestFoodItem(self, nearestEntity)
         return nearestEntity
 
@@ -771,12 +776,13 @@ class Agent:
         if not isLooking:
             self.stopAllMovement()
             return False
-
+        print(item)
         Logger.logMoveToStart(self, item)
 
         # Move to the target
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE)
         if isAt:
+            print("PICKED UP {} {}".format(item.quantity, item.type))
             Logger.logMoveToFinish(self, item)
             return True
         return False
@@ -941,5 +947,5 @@ class Agent:
         time.sleep(0.5) # There is a small delay in equipping an item
         self.__throwItem__()
         time.sleep(2)   # Wait for agent to pick up item
-        Logger.logGiveItemToAgent(self, inventoryItem, agent)
+        #Logger.logGiveItemToAgent(self, inventoryItem, agent)
         return True

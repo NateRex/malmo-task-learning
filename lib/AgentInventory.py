@@ -10,12 +10,13 @@ class AgentInventory:
     Class containing all of the inventory items an Agent is currently in possession of.
     This inventory object must be updated at regular intervals when new JSON observations come in from the AgentHost.
     """
-    idCounter = 0   # Used to uniquely identify all items during a mission
+    idQueue = []    # Map of item types to a list of ids of items that have been discovered but not yet picked up
+    idCounter = 0   # Used to uniquely identify items in a mission
 
     def __init__(self):
         self.__inventory__ = {}
 
-    def __getId__(self):
+    def getId(self):
         """
         Returns a unique number that can be used to identify a new item in the inventory
         """
@@ -61,7 +62,7 @@ class AgentInventory:
         if itemTypeStr not in self.__inventory__:
             self.__inventory__[itemTypeStr] = []
         if itemId == None:
-            itemId = "{}{}".format(itemTypeStr, self.__getId__())
+            itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
         # Logger.logItemDefinition(item)
         # Logger.logAgentAquiredItem(agent, item)
@@ -70,7 +71,7 @@ class AgentInventory:
 
     def removeItem(self, item):
         """
-        Removes an item from this inventory.
+        Removes an item with a specific id from this inventory.
         """
         if item.type not in self.__inventory__:
             return

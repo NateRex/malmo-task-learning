@@ -114,6 +114,15 @@ class Logger:
             Logger.logItemDefinition(entity)
 
     @staticmethod
+    def isEntityDefined(entity):
+        """
+        Returns true if this entity was already previously defined in the log. Returns false otherwise.
+        """
+        if entity.id in Logger.__declaredEntityIds:
+            return True
+        return False
+
+    @staticmethod
     def logAgentAquiredItem(agent, item):
         """
         Logs that an agent aquired the item specified.
