@@ -83,7 +83,7 @@ class Logger:
             return
 
         if isItem(item.type):
-            Logger.__pushStatement__("items-{}-{}".format(item.type, item.id))
+            Logger.__pushStatement__("items-{}-{}".format(item.id, item.type))
             Logger.__declaredEntityIds.append(item.id)
 
     @staticmethod
@@ -95,7 +95,7 @@ class Logger:
             return
         
         if isMob(mob.type):
-            Logger.__pushStatement__("mobs-{}-{}".format(mob.type, mob.id))
+            Logger.__pushStatement__("mobs-{}-{}".format(mob.id, mob.type))
             Logger.__declaredEntityIds.append(mob.id)
 
     @staticmethod
@@ -179,7 +179,7 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if Logger.__lastClosestMob == None or mob.id != Logger.__lastClosestMob.id:
-            Logger.__pushStatement__("closest_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__pushStatement__("closest_mob-{}-{}".format(agentId, mob.id))
             Logger.__lastClosestMob = mob
 
     __lastClosestPeacefulMob = None     # Keep track of last closest peaceful mob to avoid repeat logging
@@ -197,7 +197,7 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if Logger.__lastClosestPeacefulMob == None or mob.id != Logger.__lastClosestPeacefulMob.id:
-            Logger.__pushStatement__("closest_peaceful_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__pushStatement__("closest_peaceful_mob-{}-{}".format(agentId, mob.id))
             Logger.__lastClosestPeacefulMob = mob
 
     __lastClosestHostileMob = None      # Keep track of last closest hostile mob to avoid repeat logging
@@ -215,7 +215,7 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if Logger.__lastClosestHostileMob == None or mob.id != Logger.__lastClosestHostileMob.id:
-            Logger.__pushStatement__("closest_harmful_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__pushStatement__("closest_harmful_mob-{}-{}".format(agentId, mob.id))
             Logger.__lastClosestHostileMob = mob
 
     __lastClosestFoodMob = None     # Keep track of last closest food mob to avoid repeat logging
@@ -233,7 +233,7 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if Logger.__lastClosestFoodMob == None or mob.id != Logger.__lastClosestFoodMob.id:
-            Logger.__pushStatement__("closest_food_mob-{}-{}-{}".format(agentId, mob.type, mob.id))
+            Logger.__pushStatement__("closest_food_mob-{}-{}".format(agentId, mob.id))
             Logger.__lastClosestFoodMob = mob
 
     __lastClosestFoodItem = None    # Keep track of last closest food item to avoid repeat logging
@@ -251,7 +251,7 @@ class Logger:
         Logger.logItemDefinition(item)
 
         if Logger.__lastClosestFoodItem == None or item.id != Logger.__lastClosestFoodItem.id:
-            Logger.__pushStatement__("closest_food_item-{}-{}-{}".format(agentId, item.type, item.id))
+            Logger.__pushStatement__("closest_food_item-{}-{}".format(agentId, item.id))
             Logger.__lastClosestFoodItem = item
 
     __lastLookAt = None             # Keep track of the last lookAt executed to avoid repeat logging
