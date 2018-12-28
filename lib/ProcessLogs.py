@@ -6,19 +6,16 @@
 import os
 
 WORKING_DIR = None  # Current working directory of this script
-ID_COUNTERS = {}    # A global counter for each type of entity to map complex Malmo ids to simpler ones
-ID_MAP = {}         # Dictionary to map ids of certain types to new ids to simplify them
 
-def getNextIdNumberForType(entityType):
+def getNextIdNumberForType(id_counters, entityType):
     """
     Returns the next ID number for use for a specific type of entity.
     """
-    global ID_COUNTERS
-    if entityType in ID_COUNTERS:
-        ID_COUNTERS[entityType] += 1
-        return ID_COUNTERS[entityType]
+    if entityType in id_counters:
+        id_counters[entityType] += 1
+        return id_counters[entityType]
     else:
-        ID_COUNTERS[entityType] = 1
+        id_counters[entityType] = 1
         return 1
 
 def doesLogDirectoryExist():
@@ -57,7 +54,9 @@ def processLogFile(filePath):
     """
     Given a full, absolute path to a log file, parse the file and fix any issues, rewriting the result back out to the file.
     """
-    global ID_MAP
+    id_counters = {}    # A global counter for each type of entity to map complex Malmo ids to simpler ones
+    id_map = {}         # Dictionary to map ids of certain types to new ids to simplify them
+
     # Generate a list of strings representing the lines of the NEW file post-processing
     newFileContents = []
     with open(filePath, "r") as logFile:
@@ -70,6 +69,8 @@ def processLogFile(filePath):
                 shouldAddLine = False
             elif line == "\n" and len(newFileContents) > 0 and newFileContents[-1].startswith("closest"):   # No newline after closest entity output
                 shouldAddLine = False
+            elif line.startswith("closest") and len(newFileContents) > 0 and newFileContents[-1].startswith("!"):   # Need newline after last action that didn't finish
+                newFileContents.append("\n")
 
             # Checks for each part in the line, separated by '-' ===================
             if shouldAddLine:
@@ -78,28 +79,28 @@ def processLogFile(filePath):
                     lineParts = line.split("-")
                     oldId = lineParts[1]
                     entityType = lineParts[2][:-1]  # Don't include newline at end of entity type
-                    if oldId in ID_MAP:
-                        lineParts[1] = ID_MAP[oldId]
+                    if oldId in id_map:
+                        lineParts[1] = id_map[oldId]
                     else:
-                        newId = "{}{}".format(entityType, getNextIdNumberForType(entityType))
-                        ID_MAP[oldId] = newId
-                        ID_MAP[newId] = newId
+                        newId = "{}{}".format(entityType, getNextIdNumberForType(id_counters, entityType))
+                        id_map[oldId] = newId
+                        id_map[newId] = newId
                         lineParts[1] = newId
                     line = "-".join(lineParts)
 
                 lineParts = line.split("-")
                 for partIdx in range(0, len(lineParts)):
+                    # Replace entity id with simpler one if currently processing an id (consider that last character could be newline)
+                    if lineParts[partIdx] in id_map:
+                        lineParts[partIdx] = id_map[lineParts[partIdx]]
+                    elif lineParts[partIdx][:-1] in id_map:
+                        lineParts[partIdx] = id_map[lineParts[partIdx][:-1]]
+                        lineParts[partIdx] += "\n"
+
                     # Check if a mob or agent is referenced after dying
                     if checkIsMobDead(newFileContents, lineParts[partIdx]):
                         shouldAddLine = False
                         break
-                    
-                    # Replace entity id with simpler one if currently processing an id (consider that last character could be newline)
-                    if lineParts[partIdx] in ID_MAP:
-                        lineParts[partIdx] = ID_MAP[lineParts[partIdx]]
-                    elif lineParts[partIdx][:-1] in ID_MAP:
-                        lineParts[partIdx] = ID_MAP[lineParts[partIdx][:-1]]
-                        lineParts[partIdx] += "\n"
                 line = "-".join(lineParts)
 
             if shouldAddLine:
