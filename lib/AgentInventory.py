@@ -9,9 +9,10 @@ class AgentInventory:
     """
     Class containing all of the inventory items an Agent is currently in possession of.
     This inventory object must be updated at regular intervals when new JSON observations come in from the AgentHost.
+    Item IDs at the FRONT of each array are the next to be used for items where the agent has more than one.
     """
-    idQueue = []    # Map of item types to a list of ids of items that have been discovered but not yet picked up
-    idCounter = 0   # Used to uniquely identify items in a mission
+    __idCounter__ = 0   # Used to uniquely identify items in a mission
+    __idQueue__ = {}    # Map of item types to a list of ids of items that have been discovered but not yet picked up (the first item is the most recently identified "closest")
 
     def __init__(self):
         self.__inventory__ = {}
@@ -20,8 +21,8 @@ class AgentInventory:
         """
         Returns a unique number that can be used to identify a new item in the inventory
         """
-        AgentInventory.idCounter += 1
-        return AgentInventory.idCounter
+        AgentInventory.__idCounter__ += 1
+        return AgentInventory.__idCounter__
 
     def update(self, agent):
         """
@@ -52,6 +53,22 @@ class AgentInventory:
             # Only perform another iteration if there are more items of different types that we have not yet checked
             if len(inventoryJson) == 0:
                 itemsLeft = False
+
+    def queueClosestDropItem(self, item):
+        """
+        Places the id of an item that is closest to an agent in a queue such that when an item of that type is
+        randomly added to the agent's inventory from a pick-up, we first select that id.
+        """
+        if item.type not in AgentInventory.__idQueue__:
+            AgentInventory.__idQueue__[item.type] = []
+
+        # If item id is already in queue, move it to front. Otherwise, just prepend it
+        if item.id in AgentInventory.__idQueue__[item.type]:
+            idx = AgentInventory.__idQueue__[item.type].index(item.id)
+            del AgentInventory.__idQueue__[item.type][idx]
+            AgentInventory.__idQueue__[item.type].insert(0, item.id)
+        else:
+            AgentInventory.__idQueue__[item.type].insert(0, item.id)
 
     def addItem(self, agent, itemTypeStr, itemId = None):
         """
