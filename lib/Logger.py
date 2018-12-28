@@ -71,7 +71,7 @@ class Logger:
         if agentId in Logger.__declaredEntityIds:   # We already logged this agent
             return
 
-        Logger.__pushStatement__("agent-{}-{}".format(agentId, agentId[:-1]))
+        Logger.__pushStatement__("agents-{}-{}".format(agentId, agentId[:-1]))
         Logger.__declaredEntityIds.append(agentId)
 
     @staticmethod
