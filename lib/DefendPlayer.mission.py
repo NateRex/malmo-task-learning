@@ -17,8 +17,8 @@ MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
-player_agent = Agent()
-companion_agent = Agent()
+player_agent = Agent("Player")
+companion_agent = Agent("Companion")
 malmoutils.parse_command_line(player_agent.host)
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10000) )
@@ -26,8 +26,8 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, "Player", Vector(-15, 4, -16), Direction.North)
-scenarioBuilder.addAgent("Companion", Vector(-15, 4, -15), Direction.South)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, player_agent.getId(), Vector(-15, 4, -16), Direction.North)
+scenarioBuilder.addAgent(companion_agent.getId(), Vector(-15, 4, -15), Direction.South)
 scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
 
 # Player inventory
