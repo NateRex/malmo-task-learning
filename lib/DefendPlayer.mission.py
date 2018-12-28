@@ -43,6 +43,14 @@ scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_leggings, ItemSl
 scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_sword, ItemSlot.HotBar._0)
 
+# Structures
+scenarioBuilder.environment.addCube(Vector(-100, 3, -100), Vector(100, 30, 100), BlockType.Stone)
+scenarioBuilder.environment.addCube(Vector(-99, 4, -99), Vector(99, 29, 99), BlockType.Air)
+for i in range(-99, 99):
+    for j in range(-99, 99):
+        if i % 4 == 0 and j % 4 == 0:
+            scenarioBuilder.environment.addBlock(Vector(i, 4, j), BlockType.Torch)
+
 # Zombie placements
 scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Hostile.Zombie)
 scenarioBuilder.environment.addMob(Vector(0, 4, -20), MobType.Hostile.Zombie)
