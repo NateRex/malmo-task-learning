@@ -68,12 +68,10 @@ class Logger:
         Internal method that logs the definition of a new agentm and adds its id information to the list of declared entities.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
         if agentId in Logger.__declaredEntityIds:   # We already logged this agent
             return
 
-        Logger.__pushStatement__("agent-{}".format(agentId))
+        Logger.__pushStatement__("agent-{}-{}".format(agentId, agentId[:-1]))
         Logger.__declaredEntityIds.append(agentId)
 
     @staticmethod
@@ -128,8 +126,6 @@ class Logger:
         Logs that an agent aquired the item specified.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
         Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
 
     @staticmethod
@@ -138,8 +134,6 @@ class Logger:
         Logs that an agent lost the item specified.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
         Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
 
     @staticmethod
@@ -180,8 +174,6 @@ class Logger:
         if not isMob(mob.type):
             return
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # This might be an entity not previously declared in the log. Log its definition if so.
         Logger.logMobDefinition(mob)
@@ -200,8 +192,6 @@ class Logger:
         if not isPeacefulMob(mob.type):
             return
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # This might be an entity not previously declared in the log. Log its definition if so.
         Logger.logMobDefinition(mob)
@@ -220,8 +210,6 @@ class Logger:
         if not isHostileMob(mob.type):
             return
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # This might be an entity not previously declared in the log. Log its definition if so.
         Logger.logMobDefinition(mob)
@@ -240,8 +228,6 @@ class Logger:
         if not isMob(mob.type):
             return
         agentId = agent.getId()
-        if agentId == None:
-            return
         
         # This might be an entity not previously declared in the log. Log its definition if so.
         Logger.logMobDefinition(mob)
@@ -260,8 +246,6 @@ class Logger:
         if not isFoodItem(item.type):
             return
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # This might be an entity not previously declared in the log. Log its definition if so.
         Logger.logItemDefinition(item)
@@ -280,8 +264,6 @@ class Logger:
         call of the previous LookAt command.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # Ensure this is not a repeat call to do what we were already doing
         command = Action("lookat", [agentId, entity.id])
@@ -306,8 +288,6 @@ class Logger:
         Log the postconditions for the LookAt command, since it has ran to completion before looking elsewhere
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # Did command already run to completion (and was therefore postconditions were logged)?
         if Logger.__lastLookAtDidFinish:
@@ -327,8 +307,6 @@ class Logger:
         call of the previous LookAt command.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # Ensure this is not a repeat call to do what we were already doing
         command = Action("moveto", [agentId, entity.id])
@@ -354,8 +332,6 @@ class Logger:
         Log the postconditions for the MoveTo command, since it has ran to completion before moving elsewhere.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         # Did command already run to completion (and was therefore postconditions were logged)?
         if Logger.__lastMoveToDidFinish:
@@ -371,8 +347,6 @@ class Logger:
         Log the preconditions, action, and postconditions for the Craft command.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         Logger.__pushNewline__()
 
@@ -400,8 +374,6 @@ class Logger:
         Log the preconditions, action, and possible postconditions for the Attack command.
         """
         agentId = agent.getId()
-        if agentId == None:
-            return
 
         Logger.__pushNewline__()
 

@@ -18,11 +18,12 @@ class Agent:
     To access the Malmo AgentHost object, use the 'host' member.
     """
     
-    def __init__(self):
+    def __init__(self, name):
         self.host = MalmoPython.AgentHost()
         self.inventory = AgentInventory()
         self.lastWorldState = None
         self.stats = Stats()
+        self.id = "{}0".format(name)
 
     def isMissionActive(self):
         """
@@ -55,10 +56,7 @@ class Agent:
         """
         Returns the unique identifier for this agent. Returns none if unsuccessful.
         """
-        agentState = self.getObservation()
-        if agentState == None:
-            return None
-        return agentState["Name"]
+        return self.id
 
     def getPosition(self):
         """
