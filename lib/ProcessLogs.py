@@ -54,8 +54,9 @@ def processLogFile(filePath):
     """
     Given a full, absolute path to a log file, parse the file and fix any issues, rewriting the result back out to the file.
     """
-    id_counters = {}    # A global counter for each type of entity to map complex Malmo ids to simpler ones
-    id_map = {}         # Dictionary to map ids of certain types to new ids to simplify them
+    id_counters = {}            # A global counter for each type of entity to map complex Malmo ids to simpler ones
+    id_map = {}                 # Dictionary to map ids of certain types to new ids to simplify them
+    didPassEndMarker = False    # Boolean signifying whether or not we have passed the marker specifying the start of final state output
 
     # Generate a list of strings representing the lines of the NEW file post-processing
     newFileContents = []
@@ -71,6 +72,8 @@ def processLogFile(filePath):
                 shouldAddLine = False
             elif line.startswith("closest") and len(newFileContents) > 0 and newFileContents[-1].startswith("!"):   # Need newline after last action that didn't finish
                 newFileContents.append("\n")
+            elif line.startswith("END"):    # We are entering the final state output
+                didPassEndMarker = True
 
             # Checks for each part in the line, separated by '-' ===================
             if shouldAddLine:
@@ -98,7 +101,7 @@ def processLogFile(filePath):
                         lineParts[partIdx] += "\n"
 
                     # Check if a mob or agent is referenced after dying
-                    if checkIsMobDead(newFileContents, lineParts[partIdx]):
+                    if not didPassEndMarker and checkIsMobDead(newFileContents, lineParts[partIdx]):
                         shouldAddLine = False
                         break
                 line = "-".join(lineParts)
