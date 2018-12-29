@@ -26,8 +26,8 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, player_agent.getId(), Vector(-15, 4, -16), Direction.North)
-scenarioBuilder.addAgent(companion_agent.getId(), Vector(-15, 4, -15), Direction.South)
+scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, player_agent.getId(), Vector(0, 4, 0), Direction.North)
+scenarioBuilder.addAgent(companion_agent.getId(), Vector(0, 4, 2), Direction.South)
 scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
 
 # Player inventory
@@ -52,10 +52,9 @@ for i in range(-99, 99):
             scenarioBuilder.environment.addBlock(Vector(i, 4, j), BlockType.Torch)
 
 # Zombie placements
-scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Hostile.Zombie)
-scenarioBuilder.environment.addMob(Vector(0, 4, -20), MobType.Hostile.Zombie)
-scenarioBuilder.environment.addMob(Vector(0, 4, -25), MobType.Hostile.Zombie)
-scenarioBuilder.environment.addMob(Vector(-25, 4, 0), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(2, 4, 4), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(-20, 4, 20), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(5, 4, -11), MobType.Hostile.Zombie)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -125,6 +124,7 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
+Logger.trackClosestHostileMob()
 Logger.logInitialState([player_agent, companion_agent])
 
 # Wait for all agents to finish:
@@ -156,7 +156,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     companion_agent.stopAllMovement()
 
 # Log final state and flush the log
-Logger.logFinalState()
+Logger.logFinalState([player_agent, companion_agent])
 Logger.flushToFile()
 print()
 print("Mission ended")
