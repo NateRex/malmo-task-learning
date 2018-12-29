@@ -23,7 +23,28 @@ class Agent:
         self.inventory = AgentInventory()
         self.lastWorldState = None
         self.stats = Stats()
-        self.id = "{}0".format(name)
+        self.id = "{}1".format(name)
+
+        # Information pertaining to the last entity interacted with for certain actions
+        self.lastStartedLookingAt = ""
+        self.lastFinishedLookingAt = ""
+        self.lastStartedMovingTo = ""
+        self.lastFinishedMovingTo = ""
+        self.lastClosestMob = None
+        self.lastClosestPeacefulMob = None
+        self.lastClosestHostileMob = None
+        self.lastClosestFoodMob = None
+        self.lastClosestFoodItem = None
+
+    def resetClosestEntityRecords(self):
+        """
+        Resets the information regarding the most recent entities found nearby.
+        """
+        self.lastClosestMob = None
+        self.lastClosestPeacefulMob = None
+        self.lastClosestHostileMob = None
+        self.lastClosestFoodMob = None
+        self.lastClosestFoodItem = None
 
     def isMissionActive(self):
         """
@@ -370,9 +391,12 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
+            Logger.logClosestMob(self, "")
+            self.lastClosestMob = ""
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestMob(self, nearestEntity)
+        self.lastClosestMob = nearestEntity.id
         return nearestEntity
 
     def getClosestPeacefulMob(self):
@@ -394,9 +418,12 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
+            Logger.logClosestPeacefulMob(self, "")
+            self.lastClosestPeacefulMob = ""
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestPeacefulMob(self, nearestEntity)
+        self.lastClosestPeacefulMob = nearestEntity.id
         return nearestEntity
 
     def getClosestHostileMob(self):
@@ -418,9 +445,12 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
+            Logger.logClosestHostileMob(self, "")
+            self.lastClosestHostileMob = ""
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
-        Logger.logClosestHarmfulMob(self, nearestEntity)
+        Logger.logClosestHostileMob(self, nearestEntity)
+        self.lastClosestHostileMob = nearestEntity.id
         return nearestEntity
 
     def getClosestFoodMob(self):
@@ -442,9 +472,12 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
+            Logger.logClosestFoodMob(self, "")
+            self.lastClosestFoodMob = ""
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestFoodMob(self, nearestEntity)
+        self.lastClosestFoodMob = nearestEntity.id
         return nearestEntity
 
     def getClosestFoodItem(self):
@@ -466,6 +499,8 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
+            Logger.logClosestFoodItem(self, "")
+            self.lastClosestFoodItem = ""
             return None
 
         # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
@@ -477,6 +512,7 @@ class Agent:
                 Logger.logItemDefinition(newItem)
                 self.inventory.queueClosestDropItem(newItem)
         Logger.logClosestFoodItem(self, nearestEntity)
+        self.lastClosestFoodItem = nearestEntity.id
         return nearestEntity
 
     def getClosestBlockLocation(self, blockType):
@@ -679,11 +715,15 @@ class Agent:
         Returns true if the agent is currently facing the entity. Returns false otherwise.
         """
         Logger.logLookAtStart(self, entity)
+        self.lastStartedLookingAt = entity.id
 
         # Look at the target
         isLookingAt = self.__lookAtPosition__(entity.position)
         if isLookingAt:
+            self.__stopChangingPitch__()
+            self.__stopChangingYaw__()
             Logger.logLookAtFinish(self, entity)
+            self.lastFinishedLookingAt = entity.id
             return True
         return False
 
@@ -701,6 +741,7 @@ class Agent:
         agentEntity = EntityInfo(agentId, "agent", agentPos, 1)
 
         Logger.logLookAtStart(self, agentEntity)
+        self.lastStartedLookingAt = agentId
 
         # Look at the target
         isLookingAt = self.__lookAtPosition__(agentPos)
@@ -708,6 +749,7 @@ class Agent:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
             Logger.logLookAtFinish(self, agentEntity)
+            self.lastFinishedLookingAt = agentId
             return True
         return False
 
@@ -759,11 +801,13 @@ class Agent:
             return False
 
         Logger.logMoveToStart(self, mob)
+        self.lastStartedMovingTo = mob.id
         
         # Move to the target
         isAt = self.__moveToPosition__(mob.position, STRIKING_DISTANCE)
         if isAt:
             Logger.logMoveToFinish(self, mob)
+            self.lastFinishedMovingTo = mob.id
             return True
         return False
 
@@ -778,11 +822,13 @@ class Agent:
             self.stopAllMovement()
             return False
         Logger.logMoveToStart(self, item)
+        self.lastStartedMovingTo = item.id
 
         # Move to the target
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE)
         if isAt:
             Logger.logMoveToFinish(self, item)
+            self.lastFinishedMovingTo = item.id
             return True
         return False
 
@@ -801,7 +847,7 @@ class Agent:
         """
         agentId = agent.getId()
         agentPos = agent.getPosition()
-        if agentId == None or agentPos == None:
+        if agentPos == None:
             return False
         
         # Represent the agent as an EntityInfo tuple
@@ -814,11 +860,13 @@ class Agent:
             return False
 
         Logger.logMoveToStart(self, agentEntity)
-        
+        self.lastStartedMovingTo = agentId
+
         # Move to the target
         isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
             Logger.logMoveToFinish(self, agentEntity)
+            self.lastFinishedMovingTo = agentId
             return True
         return False
 
