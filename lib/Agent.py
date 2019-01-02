@@ -506,11 +506,11 @@ class Agent:
         # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
         if not Logger.isEntityDefined(nearestEntity):
             Logger.logItemDefinition(nearestEntity)
-            self.inventory.queueClosestDropItem(nearestEntity)
+            self.inventory.enqueueItemId(nearestEntity)
             for _ in range(1, nearestEntity.quantity):
                 newItem = Item("{}{}".format(nearestEntity.type, self.inventory.getId()), nearestEntity.type)
                 Logger.logItemDefinition(newItem)
-                self.inventory.queueClosestDropItem(newItem)
+                self.inventory.enqueueItemId(newItem)
         Logger.logClosestFoodItem(self, nearestEntity)
         self.lastClosestFoodItem = nearestEntity.id
         return nearestEntity
