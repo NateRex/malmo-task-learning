@@ -11,8 +11,8 @@ from enum import Enum
 # ==============================================================================================
 
 NUMBER_OF_INVENTORY_SLOTS = 40
-PICK_UP_ITEM_DISTANCE = 1.5
-STRIKING_DISTANCE = 3.5
+PICK_UP_ITEM_DISTANCE = 2
+STRIKING_DISTANCE = 3
 GIVING_DISTANCE = 4
 
 # ==============================================================================================

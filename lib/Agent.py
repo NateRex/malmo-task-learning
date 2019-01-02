@@ -506,11 +506,11 @@ class Agent:
         # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
         if not Logger.isEntityDefined(nearestEntity):
             Logger.logItemDefinition(nearestEntity)
-            self.inventory.enqueueItemId(nearestEntity)
+            AgentInventory.enqueueItemId(nearestEntity)
             for _ in range(1, nearestEntity.quantity):
                 newItem = Item("{}{}".format(nearestEntity.type, self.inventory.getId()), nearestEntity.type)
                 Logger.logItemDefinition(newItem)
-                self.inventory.enqueueItemId(newItem)
+                AgentInventory.enqueueItemId(newItem)
         Logger.logClosestFoodItem(self, nearestEntity)
         self.lastClosestFoodItem = nearestEntity.id
         return nearestEntity
@@ -970,6 +970,7 @@ class Agent:
         Give an item in this agent's inventory to another agent.
         Returns true if successful, and false otherwise.
         """
+        self.stopAllMovement()  # Make sure we are stopped before checking our direction and position
         agentPos = agent.getPosition()
         if agentPos == None:
             return False
@@ -987,8 +988,8 @@ class Agent:
         inventoryItem = self.inventory.itemByType(self, item)
         if inventoryItem == None:
             return False
-        self.inventory.removeItem(inventoryItem)
-        agent.inventory.addItem(agent, item.value, inventoryItem.id)   # We must preserve the id in the agent's inventory
+        self.inventory.removeItem(self, inventoryItem)
+        agent.inventory.addItem(agent, item.value, inventoryItem.id)   # We must preserve the id of the item
 
         self.equip(item)
         time.sleep(0.5) # There is a small delay in equipping an item

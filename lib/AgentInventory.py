@@ -54,7 +54,8 @@ class AgentInventory:
             if len(inventoryJson) == 0:
                 itemsLeft = False
 
-    def enqueueItemId(self, item):
+    @staticmethod
+    def enqueueItemId(item):
         """
         Places the id of an item that is closest to an agent in a queue such that when an item of that type is
         randomly added to the agent's inventory from a pick-up, we first select that id.
@@ -70,7 +71,8 @@ class AgentInventory:
         else:
             AgentInventory.__idQueue__[item.type].insert(0, item.id)
 
-    def dequeueItemId(self, itemTypeStr):
+    @staticmethod
+    def dequeueItemId(itemTypeStr):
         """
         Removes the first item id of a specific type from the queue.
         """
@@ -94,13 +96,11 @@ class AgentInventory:
             else:
                 itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
-        # Logger.logItemDefinition(item)
-        # Logger.logAgentAquiredItem(agent, item)
+        Logger.logAgentAquiredItem(agent, item)
         self.__inventory__[itemTypeStr].append(item)
-        self.printOut(agent)
         return item
 
-    def removeItem(self, item):
+    def removeItem(self, agent, item):
         """
         Removes an item with a specific id from this inventory.
         """
@@ -109,13 +109,13 @@ class AgentInventory:
         for i in range(0, len(self.__inventory__[item.type])):
             if self.__inventory__[item.type][i].id == item.id:
                 self.__inventory__[item.type].pop(i)
+                Logger.logAgentLostItem(agent, item)
                 return
 
     def allItems(self, agent):
         """
         Returns a list of all of the items in this inventory.
         """
-        self.update(agent)
         items = []
         for itemType in self.__inventory__:
             for item in self.__inventory__[itemType]:
@@ -126,7 +126,6 @@ class AgentInventory:
         """
         Returns a list of all of the items in this inventory for a specific type.
         """
-        self.update(agent)
         if itemType.value not in self.__inventory__:
             return []
         return self.__inventory__[itemType.value]
@@ -135,7 +134,6 @@ class AgentInventory:
         """
         Returns an item in this inventory of a specific type. Returns None if no item for that type exists in this inventory.
         """
-        self.update(agent)
         if itemType.value not in self.__inventory__:
             return None
         if len(self.__inventory__[itemType.value]) == 0:
@@ -146,7 +144,6 @@ class AgentInventory:
         """
         Returns the quantity of a type of item in this inventory.
         """
-        self.update(agent)
         if item.value not in self.__inventory__:
             return 0
         return len(self.__inventory__[item.value])
@@ -155,7 +152,6 @@ class AgentInventory:
         """
         DEBUG ONLY
         """
-        self.update(agent)
         print("=========================================")
         for item in self.__inventory__:
             for itemId in self.__inventory__[item]:
