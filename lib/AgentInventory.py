@@ -54,7 +54,7 @@ class AgentInventory:
             if len(inventoryJson) == 0:
                 itemsLeft = False
 
-    def queueClosestDropItem(self, item):
+    def enqueueItemId(self, item):
         """
         Places the id of an item that is closest to an agent in a queue such that when an item of that type is
         randomly added to the agent's inventory from a pick-up, we first select that id.
@@ -70,20 +70,34 @@ class AgentInventory:
         else:
             AgentInventory.__idQueue__[item.type].insert(0, item.id)
 
+    def dequeueItemId(self, itemTypeStr):
+        """
+        Removes the first item id of a specific type from the queue.
+        """
+        if itemTypeStr not in AgentInventory.__idQueue__:
+            return
+        if len(AgentInventory.__idQueue__[itemTypeStr]) <= 0:
+            return
+        AgentInventory.__idQueue__[itemTypeStr].pop(0)
+
     def addItem(self, agent, itemTypeStr, itemId = None):
         """
-        Add an item of a specific type to this inventory. Returns the item.
-        If the item already had an id, provide it to this method. Otherwise, a new
-        global id for the item will be generated.
+        Add an item of a specific type to this inventory, given the type as a string.
+        If no item ID was given, the ID will be either pulled from a queue or generated.
         """
         if itemTypeStr not in self.__inventory__:
             self.__inventory__[itemTypeStr] = []
         if itemId == None:
-            itemId = "{}{}".format(itemTypeStr, self.getId())
+            if itemTypeStr in AgentInventory.__idQueue__ and len(AgentInventory.__idQueue__[itemTypeStr]) > 0:
+                itemId = AgentInventory.__idQueue__[itemTypeStr][0]
+                self.dequeueItemId(itemTypeStr)
+            else:
+                itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
         # Logger.logItemDefinition(item)
         # Logger.logAgentAquiredItem(agent, item)
         self.__inventory__[itemTypeStr].append(item)
+        self.printOut(agent)
         return item
 
     def removeItem(self, item):
@@ -142,6 +156,8 @@ class AgentInventory:
         DEBUG ONLY
         """
         self.update(agent)
+        print("=========================================")
         for item in self.__inventory__:
             for itemId in self.__inventory__[item]:
                 print(itemId)
+        print("=========================================")
