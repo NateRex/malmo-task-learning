@@ -52,7 +52,7 @@ class Agent:
         """
         return self.host.peekWorldState().is_mission_running
 
-    def getObservation(self):
+    def getObservationJson(self):
         """
         Returns the entire world state containing the most recent observations as a JSON object.
         """
@@ -84,7 +84,7 @@ class Agent:
         Returns the Vector position of this agent.
         If no observations have occurred, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
@@ -94,7 +94,7 @@ class Agent:
         Returns the amount of damage this agent has dealt out to other entities.
         If no observations have occurred, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["DamageDealt"]
@@ -104,7 +104,7 @@ class Agent:
         Returns the number of mobs this agent has killed.
         If no observations have occurred, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["MobsKilled"]
@@ -114,7 +114,7 @@ class Agent:
         Returns the number of players this agent has killed.
         If no observations have occured, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["PlayersKilled"]
@@ -124,7 +124,7 @@ class Agent:
         Returns the time the agent has been alive for
         If no observations have occured, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["TimeAlive"]
@@ -134,7 +134,7 @@ class Agent:
         Returns the hunger level of the agent.
         If no observations have occured, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["Food"]
@@ -144,7 +144,7 @@ class Agent:
         Returns the score of the agent.
         If no observations have occured, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["Score"]
@@ -154,7 +154,7 @@ class Agent:
         Returns the xp of the agent.
         If no observations have occured, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["XP"]
@@ -164,7 +164,7 @@ class Agent:
         Returns the distance travelled by the agent.
         If no observations have occured, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["DistanceTravelled"]
@@ -173,7 +173,7 @@ class Agent:
         """
         Returns the current health of the agent.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["Life"]
@@ -182,7 +182,7 @@ class Agent:
         """
         Returns the current hunger of the agent.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState[u'Hunger']
@@ -192,7 +192,7 @@ class Agent:
         Returns an array of JSON inventory items that this agent is currently carrying.
         If no observations have occurred, returns None.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return None
         return agentState["inventory"]
@@ -202,7 +202,7 @@ class Agent:
         Returns the hotbar index (0-based) that this agent currently has selected.
         If unable to determine the currently used hotbar index, returns -1.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return -1
         return agentState["currentItemIndex"]
@@ -366,7 +366,7 @@ class Agent:
         Returns a list of named EntityInfo tuples of all entities within a 20x20 area around this agent.
         Returns None on error.
         """
-        worldState = self.getObservation()
+        worldState = self.getObservationJson()
         if worldState == None:
             return None
         entities = [EntityInfo("{}{}".format(k["name"], k["id"]).replace("-", ""), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
@@ -519,7 +519,7 @@ class Agent:
         """
         Returns the nearest block of a given type as an entity.
         """
-        agentState = self.getObservation()
+        agentState = self.getObservationJson()
         if agentState == None:
             return self.getPosition
         currentPos = self.getPosition()
@@ -566,7 +566,7 @@ class Agent:
         """
         Obtain a rate in which to turn along the yaw angle to face a given target position.
         """
-        worldState = self.getObservation()
+        worldState = self.getObservationJson()
         agentPos = self.getPosition()
         if worldState == None or agentPos == None:
             return False    
@@ -625,7 +625,7 @@ class Agent:
         """
         Obtain a rate in which to turn along the pitch angle to face the given target position.
         """
-        worldState = self.getObservation()
+        worldState = self.getObservationJson()
         agentPos = self.getPosition()
         if worldState == None or agentPos == None:
             return False  
