@@ -25,7 +25,7 @@ class Logger:
     an action.
     """
     __contents = []                 # The string containing the entire log
-    __finalStateContents = []       # List of strings containing final state contents that will not change again
+    __currentState = []             # A list of atom strings defining the current environment state as a whole
     __declaredEntityIds = []        # A list of entity ids for entities that have already been declared in the log
     __stateFlags = 0x00000000       # A set of flags for determining what information to write out to the initial and final state
 
@@ -172,7 +172,7 @@ class Logger:
         return True
 
     @staticmethod
-    def __logAgent__(agent):
+    def __logAgentDefinition__(agent):
         """
         Internal method that logs the definition of a new agentm and adds its id information to the list of declared entities.
         """
@@ -182,7 +182,7 @@ class Logger:
 
         agentLog = "agents-{}-{}".format(agentId, agentId[:-1])
         Logger.__pushStatement__(agentLog)
-        Logger.__finalStateContents.append(agentLog)
+        Logger.__currentState.append(agentLog)
         Logger.__declaredEntityIds.append(agentId)
 
     @staticmethod
@@ -196,7 +196,7 @@ class Logger:
         if isItem(item.type):
             itemLog = "items-{}-{}".format(item.id, item.type)
             Logger.__pushStatement__(itemLog)
-            Logger.__finalStateContents.append(itemLog)
+            Logger.__currentState.append(itemLog)
             Logger.__declaredEntityIds.append(item.id)
 
     @staticmethod
@@ -210,7 +210,7 @@ class Logger:
         if isMob(mob.type):
             mobLog = "mobs-{}-{}".format(mob.id, mob.type)
             Logger.__pushStatement__(mobLog)
-            Logger.__finalStateContents.append(mobLog)
+            Logger.__currentState.append(mobLog)
             Logger.__declaredEntityIds.append(mob.id)
 
     @staticmethod
@@ -241,7 +241,9 @@ class Logger:
         Logs that an agent aquired the item specified.
         """
         agentId = agent.getId()
-        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
+        hasLog = "agent_has-{}-{}".format(agentId, item.id)
+        Logger.__pushStatement__(hasLog)
+        Logger.__currentState.append(hasLog)
 
     @staticmethod
     def logAgentLostItem(agent, item):
@@ -250,6 +252,12 @@ class Logger:
         """
         agentId = agent.getId()
         Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
+        hasLog = "agent_has-{}-{}".format(agentId, item.id)
+        for i in range(0, len(Logger.__currentState)):
+            log = Logger.__currentState[i]
+            if log == hasLog:
+                del Logger.__currentState[i]
+                break  
 
     @staticmethod
     def logInitialState(agents):
@@ -260,7 +268,7 @@ class Logger:
             agentId = agent.getId()
 
             # Log the definition of this agent
-            Logger.__logAgent__(agent)
+            Logger.__logAgentDefinition__(agent)
 
             # Log all entities that the agent has identified nearby
             entities = agent.getNearbyEntities()
@@ -272,7 +280,9 @@ class Logger:
 
             # Log additional starting data dependent on the Logger flags set (getClosestXXX automatically logs)
             Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, ""))
+            Logger.__currentState.append("agent_looking_at-{}-{}".format(agentId, ""))
             Logger.__pushStatement__("agent_at-{}-{}".format(agentId, ""))
+            Logger.__currentState.append("agent_at-{}-{}".format(agentId, ""))
             if Logger.isTrackingClosestMob():
                 agent.getClosestMob()
             if Logger.isTrackingClosestPeacefulMob():
@@ -295,16 +305,14 @@ class Logger:
         Logger.__pushNewline__()
         Logger.__pushStatement__("END")
 
-        # Log any final state information previously recorded as final
-        for statement in Logger.__finalStateContents:
-            Logger.__pushStatement__(statement)
+        # Log the current state (ignore closestXXX information, as we will refresh this manually)
+        for statement in Logger.__currentState:
+            if not statement.startswith("closest_"):
+                Logger.__pushStatement__(statement)
 
-        # For each agent, log additional data dependent on Logger flags set (getClosestXXX automatically logs)
+        # Refresh and log closest entity information (calling getClosestXXX automatically logs)
         for agent in agents:
-            agentId = agent.getId()
-            Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, agent.lastFinishedLookingAt))
-            Logger.__pushStatement__("agent_at-{}-{}".format(agentId, agent.lastFinishedMovingTo))
-            agent.resetClosestEntityRecords()   # We want to ensure that we re-log despite no change
+            agent.resetClosestEntityRecords()
             if Logger.isTrackingClosestMob():
                 agent.getClosestMob()
             if Logger.isTrackingClosestPeacefulMob():
@@ -316,6 +324,7 @@ class Logger:
             if Logger.isTrackingClosestFoodItem():
                 agent.getClosestFoodItem()
 
+
     @staticmethod
     def logClosestMob(agent, mob):
         """
@@ -326,7 +335,16 @@ class Logger:
         # Special case, where there is no closest mob
         if mob == "":
             if mob != agent.lastClosestMob:
-                Logger.__pushStatement__("closest_mob-{}-".format(agentId))
+                closestLog = "closest_mob-{}-".format(agentId)
+                Logger.__pushStatement__(closestLog)
+                didModifyCurrentState = False
+                for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                    if Logger.__currentState[i].startswith("closest_mob-{}".format(agentId)):
+                        Logger.__currentState[i] = closestLog
+                        didModifyCurrentState = True
+                        break
+                if not didModifyCurrentState:
+                    Logger.__currentState.append(closestLog)
             return
 
         if not isMob(mob.type):
@@ -336,7 +354,17 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if mob.id != agent.lastClosestMob:
-            Logger.__pushStatement__("closest_mob-{}-{}".format(agentId, mob.id))
+            closestLog = "closest_mob-{}-{}".format(agentId, mob.id)
+            Logger.__pushStatement__(closestLog)
+            didModifyCurrentState = False
+            for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                if Logger.__currentState[i].startswith("closest_mob-{}".format(agentId)):
+                    Logger.__currentState[i] = closestLog
+                    didModifyCurrentState = True
+                    break
+            if not didModifyCurrentState:
+                Logger.__currentState.append(closestLog)
+
 
     @staticmethod
     def logClosestPeacefulMob(agent, mob):
@@ -348,7 +376,16 @@ class Logger:
         # Special case, where there is no closest peaceful mob
         if mob == "":
             if mob != agent.lastClosestPeacefulMob:
-                Logger.__pushStatement__("closest_peaceful_mob-{}-".format(agentId))
+                closestLog = "closest_peaceful_mob-{}-".format(agentId)
+                Logger.__pushStatement__(closestLog)
+                didModifyCurrentState = False
+                for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                    if Logger.__currentState[i].startswith("closest_peaceful_mob-{}".format(agentId)):
+                        Logger.__currentState[i] = closestLog
+                        didModifyCurrentState = True
+                        break
+                if not didModifyCurrentState:
+                    Logger.__currentState.append(closestLog)
             return
 
         if not isPeacefulMob(mob.type):
@@ -358,7 +395,16 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if mob.id != agent.lastClosestPeacefulMob:
-            Logger.__pushStatement__("closest_peaceful_mob-{}-{}".format(agentId, mob.id))
+            closestLog = "closest_peaceful_mob-{}-{}".format(agentId, mob.id)
+            Logger.__pushStatement__(closestLog)
+            didModifyCurrentState = False
+            for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                if Logger.__currentState[i].startswith("closest_peaceful_mob-{}".format(agentId)):
+                    Logger.__currentState[i] = closestLog
+                    didModifyCurrentState = True
+                    break
+            if not didModifyCurrentState:
+                Logger.__currentState.append(closestLog)
 
     @staticmethod
     def logClosestHostileMob(agent, mob):
@@ -370,7 +416,16 @@ class Logger:
         # Special case, where there is no closest hostile mob
         if mob == "":
             if mob != agent.lastClosestHostileMob:
-                Logger.__pushStatement__("closest_hostile_mob-{}-".format(agentId))
+                closestLog = "closest_hostile_mob-{}-".format(agentId)
+                Logger.__pushStatement__(closestLog)
+                didModifyCurrentState = False
+                for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                    if Logger.__currentState[i].startswith("closest_hostile_mob-{}".format(agentId)):
+                        Logger.__currentState[i] = closestLog
+                        didModifyCurrentState = True
+                        break
+                if not didModifyCurrentState:
+                    Logger.__currentState.append(closestLog)
             return
 
         if not isHostileMob(mob.type):
@@ -380,7 +435,16 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if mob.id != agent.lastClosestHostileMob:
-            Logger.__pushStatement__("closest_hostile_mob-{}-{}".format(agentId, mob.id))
+            closestLog = "closest_hostile_mob-{}-{}".format(agentId, mob.id)
+            Logger.__pushStatement__(closestLog)
+            didModifyCurrentState = False
+            for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                if Logger.__currentState[i].startswith("closest_hostile_mob-{}".format(agentId)):
+                    Logger.__currentState[i] = closestLog
+                    didModifyCurrentState = True
+                    break
+            if not didModifyCurrentState:
+                Logger.__currentState.append(closestLog)
 
     @staticmethod
     def logClosestFoodMob(agent, mob):
@@ -392,7 +456,16 @@ class Logger:
         # Special case, where there is no closest food mob
         if mob == "":
             if mob != agent.lastClosestFoodMob:
-                Logger.__pushStatement__("closest_food_mob-{}-".format(agentId))
+                closestLog = "closest_food_mob-{}-".format(agentId)
+                Logger.__pushStatement__(closestLog)
+                didModifyCurrentState = False
+                for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                    if Logger.__currentState[i].startswith("closest_food_mob-{}".format(agentId)):
+                        Logger.__currentState[i] = closestLog
+                        didModifyCurrentState = True
+                        break
+                if not didModifyCurrentState:
+                    Logger.__currentState.append(closestLog)
             return
 
         if not isMob(mob.type):
@@ -402,7 +475,16 @@ class Logger:
         Logger.logMobDefinition(mob)
 
         if mob.id != agent.lastClosestFoodMob:
-            Logger.__pushStatement__("closest_food_mob-{}-{}".format(agentId, mob.id))
+            closestLog = "closest_food_mob-{}-{}".format(agentId, mob.id)
+            Logger.__pushStatement__(closestLog)
+            didModifyCurrentState = False
+            for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                if Logger.__currentState[i].startswith("closest_food_mob-{}".format(agentId)):
+                    Logger.__currentState[i] = closestLog
+                    didModifyCurrentState = True
+                    break
+            if not didModifyCurrentState:
+                Logger.__currentState.append(closestLog)
 
     @staticmethod
     def logClosestFoodItem(agent, item):
@@ -414,7 +496,16 @@ class Logger:
         # Special case, where there is no closest food item
         if item == "":
             if item != agent.lastClosestFoodItem:
-                Logger.__pushStatement__("closest_food_item-{}-".format(agentId))
+                closestLog = "closest_food_item-{}-".format(agentId)
+                Logger.__pushStatement__(closestLog)
+                didModifyCurrentState = False
+                for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                    if Logger.__currentState[i].startswith("closest_food_item-{}".format(agentId)):
+                        Logger.__currentState[i] = closestLog
+                        didModifyCurrentState = True
+                        break
+                if not didModifyCurrentState:
+                    Logger.__currentState.append(closestLog)
             return
 
         if not isFoodItem(item.type):
@@ -424,7 +515,16 @@ class Logger:
         Logger.logItemDefinition(item)
 
         if item.id != agent.lastClosestFoodItem:
-            Logger.__pushStatement__("closest_food_item-{}-{}".format(agentId, item.id))
+            closestLog = "closest_food_item-{}-{}".format(agentId, item.id)
+            Logger.__pushStatement__(closestLog)
+            didModifyCurrentState = False
+            for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+                if Logger.__currentState[i].startswith("closest_food_item-{}".format(agentId)):
+                    Logger.__currentState[i] = closestLog
+                    didModifyCurrentState = True
+                    break
+            if not didModifyCurrentState:
+                Logger.__currentState.append(closestLog)
 
     __lastLookAtDidFinish = False   # Keep track of whether or not lookAt has finished to log post-conditions ONCE
 
@@ -554,7 +654,7 @@ class Logger:
         if didKill:
             deadLog = "is_dead-{}".format(entity.id)
             Logger.__pushStatement__(deadLog)
-            Logger.__finalStateContents.append(deadLog)
+            Logger.__currentState.append(deadLog)
 
         Logger.__pushNewline__()
 
