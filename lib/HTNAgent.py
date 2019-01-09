@@ -11,4 +11,6 @@ class HTNAgent(Agent):
     """
 
     def __init__(self, name):
-        super.__init__(name)
+        super(HTNAgent, self).__init__(name)
+
+    
