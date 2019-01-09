@@ -542,6 +542,12 @@ class Logger:
 
         Logger.__pushNewline__()
 
+        # Modify the current state (there will always be an agent_looking_at string in the current state..)
+        for i in range(0, len(Logger.__currentState)):
+            if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
+                Logger.__currentState[i] = "agent_looking_at-{}-".format(agentId)
+                break
+
         # This might be an entity not previously declared in the log. Log it if so.
         Logger.logEntityDefinition(entity)
 
@@ -562,7 +568,15 @@ class Logger:
         if Logger.__lastLookAtDidFinish:
             return
 
-        Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
+        lookAtLog = "agent_looking_at-{}-{}".format(agentId, entity.id)
+        Logger.__pushStatement__(lookAtLog)
+
+        # Modify the current state (there will always be an agent_looking_at string in the current state..)
+        for i in range(0, len(Logger.__currentState)):
+            if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
+                Logger.__currentState[i] = lookAtLog
+                break
+
         Logger.__lastLookAtDidFinish = True
         Logger.__pushNewline__()
 
@@ -581,6 +595,12 @@ class Logger:
             return
 
         Logger.__pushNewline__()
+
+        # Modify the current state (there will always be an agent_at string in the current state..)
+        for i in range(0, len(Logger.__currentState)):
+            if Logger.__currentState[i].startswith("agent_at-{}".format(agentId)):
+                Logger.__currentState[i] = "agent_at-{}-".format(agentId)
+                break
 
         # This might be an entity not previously declared in the log. Log it if so.
         Logger.logEntityDefinition(entity)
@@ -603,7 +623,15 @@ class Logger:
         if Logger.__lastMoveToDidFinish:
             return
 
-        Logger.__pushStatement__("agent_at-{}-{}".format(agentId, entity.id))
+        isAtLog = "agent_at-{}-{}".format(agentId, entity.id)
+        Logger.__pushStatement__(isAtLog)
+
+        # Modify the current state (there will always be an agent_at string in the current state..)
+        for i in range(0, len(Logger.__currentState)):
+            if Logger.__currentState[i].startswith("agent_at-{}".format(agentId)):
+                Logger.__currentState[i] = isAtLog
+                break
+
         Logger.__lastMoveToDidFinish = True
         Logger.__pushNewline__()
 
@@ -673,7 +701,7 @@ class Logger:
         # Preconditions
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(sourceAgentId, targetAgentId))
         Logger.__pushStatement__("agent_at-{}-{}".format(sourceAgentId, targetAgentId))
-        Logger.logAgentAquiredItem(sourceAgent, item)
+        Logger.__pushStatement__("agent_has-{}-{}".format(sourceAgentId, item.id))
 
         # Action
         Logger.__pushStatement__("!GIVEITEM-{}-{}-{}".format(sourceAgentId, item.id, targetAgentId))
