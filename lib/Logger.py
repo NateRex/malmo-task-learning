@@ -127,6 +127,13 @@ class Logger:
             return False
 
     @staticmethod
+    def getCurrentState():
+        """
+        Returns a list of string atoms that define the current environment state from all agent perspectives.
+        """
+        return Logger.__currentState
+
+    @staticmethod
     def clearLog():
         """
         Clear the contents of this log.
