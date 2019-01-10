@@ -17,13 +17,15 @@ class Agent:
     Wrapper class for a Malmo agent for executing complex commands with corresponding logging.
     To access the Malmo AgentHost object, use the 'host' member.
     """
-    
+    agentList = []  # A list of all agents that have been created
+
     def __init__(self, name):
         self.host = MalmoPython.AgentHost()
         self.inventory = AgentInventory()
         self.lastWorldState = None
         self.stats = Stats()
         self.id = "{}1".format(name)
+        Agent.agentList.append(self)
 
         # Information pertaining to the last entity interacted with for certain actions
         self.lastStartedLookingAt = ""
@@ -35,6 +37,17 @@ class Agent:
         self.lastClosestHostileMob = None
         self.lastClosestFoodMob = None
         self.lastClosestFoodItem = None
+
+    @staticmethod
+    def findAgentById(agentId):
+        """
+        Searches through the list of agents that have been created, and returns an agent with the id given.
+        If no agent exists with that id, returns None.
+        """
+        for agent in Agent.agentList:
+            if agent.id == agentId:
+                return agent
+        return None
 
     def resetClosestEntityRecords(self):
         """
@@ -371,6 +384,16 @@ class Agent:
             return None
         entities = [EntityInfo("{}{}".format(k["name"], numerifyId(k["id"]).replace("-", "")), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
         return entities
+
+    def getNearbyEntityById(self, entityId):
+        """
+        Returns a named EntityInfo tuple describing an entity near this agent, using its id. If an entity with that id is not found, returns None.
+        """
+        entities = self.getNearbyEntities()
+        for entity in entities:
+            if entity.id == entityId:
+                return entity
+        return None
 
     def getClosestMob(self):
         """

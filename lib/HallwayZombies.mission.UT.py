@@ -117,7 +117,7 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log Initial State
-Logger.logInitialState([companion_agent, player_agent])
+Logger.logInitialState(Agent.agentList)
 
 # Used to calculate time of previous attack
 start_time = time.time()
@@ -155,6 +155,6 @@ companion_agent.stats.printStats(companion_agent)
 player_agent.stats.printStats(player_agent)
 
 # Log final state and flush the log
-Logger.logFinalState()
+Logger.logFinalState(Agent.agentList)
 # Logger.flushToFile()
 print("Mission ended")

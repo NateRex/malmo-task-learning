@@ -125,7 +125,7 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
 Logger.trackClosestHostileMob()
-Logger.logInitialState([player_agent, companion_agent])
+Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
@@ -133,7 +133,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     time.sleep(1)
 
 # Log final state and flush the log
-Logger.logFinalState([player_agent, companion_agent])
+Logger.logFinalState(Agent.agentList)
 Logger.flushToFile()
 print()
 print("Mission ended")
