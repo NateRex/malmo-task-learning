@@ -369,7 +369,7 @@ class Agent:
         worldState = self.getObservationJson()
         if worldState == None:
             return None
-        entities = [EntityInfo("{}{}".format(k["name"], k["id"]).replace("-", ""), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
+        entities = [EntityInfo("{}{}".format(k["name"], numerifyId(k["id"]).replace("-", "")), k["name"], Vector(k["x"], k["y"], k["z"]), k.get("quantity")) for k in worldState["nearby_entities"]]
         return entities
 
     def getClosestMob(self):

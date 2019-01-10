@@ -71,6 +71,14 @@ def isFoodItem(string):
     foodItems = [item.value for item in ItemType.Food]
     return string in foodItems
 
+def numerifyId(string):
+    """
+    Given a string containing hexadecimal values that make up an id, return a new id that contains all digits and no letters.
+    """
+    for i in range(0, len(string)):
+        if string[i] < '0' or string[i] > '9':
+            string[i] = string[i] % 10
+
 # ==============================================================================================
 # Classes
 # ==============================================================================================
