@@ -127,10 +127,12 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 Logger.trackClosestHostileMob()
 Logger.logInitialState(Agent.agentList)
 
+# Generate an initial plan using the HTN
+companion_agent.updatePlan()
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    # TODO
-    time.sleep(1)
+    companion_agent.performNextAction()
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)
