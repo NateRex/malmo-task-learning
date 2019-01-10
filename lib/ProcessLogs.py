@@ -36,8 +36,9 @@ def getLogFilePaths():
     paths = []
     for (dirpath, _, filenames) in os.walk(logDirPath):
         for filename in filenames:
-            filepath = os.path.join(dirpath, filename)
-            paths.append(filepath)
+            if filename.endswith(".log"):
+                filepath = os.path.join(dirpath, filename)
+                paths.append(filepath)
     return paths
 
 def checkIsMobDead(fileContents, mobId):
