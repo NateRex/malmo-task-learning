@@ -139,6 +139,19 @@ class AgentInventory:
         if len(self.__inventory__[itemType.value]) == 0:
             return None
         return self.__inventory__[itemType.value][0]
+    
+    def itemById(self, agent, itemId):
+        """
+        Returns an item from this inventory using its id. Returns None if no item is found for the id given.
+        """
+        itemType = "".join([i for i in itemId if not i.isdigit()])
+        if itemType not in self.__inventory__:
+            return None
+        for item in self.__inventory__[itemType]:
+            if item.id == itemId:
+                return item
+        return None
+
 
     def amountOfItem(self, agent, item):
         """
