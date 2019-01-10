@@ -10,7 +10,7 @@ class HTNAgent(Agent):
     in order to select actions based on the current state.
     """
 
-    def __init__(self, name, stateFlags):
+    def __init__(self, name):
         super(HTNAgent, self).__init__(name)
         self.plan = []                  # A list of string actions returned by each call to the HTN
         self.__planCounter__ = 1        # A counter that is incremented in each iteration of the mission loop, determining when to generate a new plan
