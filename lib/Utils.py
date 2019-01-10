@@ -21,7 +21,7 @@ GIVING_DISTANCE = 4
 
 Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
 EntityInfo = namedtuple("EntityInfo", "id type position quantity")   # Information for an entity observed by an agent
-Action = namedtuple("Action", "type args") # A loggable action with corresponding arguments
+Action = namedtuple("Action", "function args") # An action function with a corresponding list of arguments
 Item = namedtuple("Item", "id type")    # An item with an associated id
 RecipeItem = namedtuple("RecipeItem", "type quantity")  # An item that is part of a recipe for crafting
 
@@ -76,8 +76,9 @@ def numerifyId(string):
     Given a string containing hexadecimal values that make up an id, return a new id that contains all digits and no letters.
     """
     for i in range(0, len(string)):
-        if string[i] < '0' or string[i] > '9':
-            string[i] = string[i] % 10
+        if string[i] < "0" or string[i] > "9":
+            string = string[:i] + "{}".format(ord(string[i]) % 10) + string[i + 1:]
+    return string
 
 # ==============================================================================================
 # Classes
