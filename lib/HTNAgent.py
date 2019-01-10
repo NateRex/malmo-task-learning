@@ -10,9 +10,10 @@ class HTNAgent(Agent):
     in order to select actions based on the current state.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, stateFlags):
         super(HTNAgent, self).__init__(name)
-        self.plan = []      # A list of string actions returned by each call to the HTN
+        self.plan = []                  # A list of string actions returned by each call to the HTN
+        self.__planCounter__ = 1        # A counter that is incremented in each iteration of the mission loop, determining when to generate a new plan
 
     def __mapStringToFunction__(self, actionStr):
         """
@@ -71,3 +72,30 @@ class HTNAgent(Agent):
                         return Action(self.giveItemToAgent, [item, receivingAgent])
                 return None
         return None
+
+    def updatePlan(self):
+        """
+        Update the action plan for this agent by feeding the current state of this environment to the trained HTN.
+        """
+        currentState = Logger.getCurrentState(HTNAgent.agentList)
+        # TODO
+        self.plan = []
+
+    def performNextAction(self):
+        """
+        Given the current environment and the trained HTN, perform the next action in the plan.
+        """
+        # If we have made 100 iterations of the mission loop, re-generate the plan using the HTN
+        if self.__planCounter__ == 100:
+            self.updatePlan()
+            self.__planCounter__ = 0
+        self.__planCounter__ += 1
+
+        actionToPerform = self.__mapStringToFunction__(self.plan[0])
+        if actionToPerform == None:
+            del self.plan[0]
+            return
+
+        didSucceed = actionToPerform.function(*actionToPerform.args)
+        if didSucceed:
+            del self.plan[0]
