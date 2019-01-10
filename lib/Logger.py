@@ -165,20 +165,6 @@ class Logger:
             Logger.__contents.append("")
 
     @staticmethod
-    def __areActionsEqual__(actionA, actionB):
-        """
-        Internal method for determining whether two actions are equivalent.
-        """
-        if actionA.type != actionB.type:
-            return False
-        if len(actionA.args) != len(actionB.args):
-            return False
-        for i in range(0, len(actionA.args)):
-            if type(actionA.args[i]) != type(actionB.args[i]) or actionA.args[i] != actionB.args[i]:
-                return False
-        return True
-
-    @staticmethod
     def __logAgentDefinition__(agent):
         """
         Internal method that logs the definition of a new agentm and adds its id information to the list of declared entities.
