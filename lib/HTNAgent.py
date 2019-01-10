@@ -91,11 +91,17 @@ class HTNAgent(Agent):
             self.__planCounter__ = 0
         self.__planCounter__ += 1
 
+        # If there are no actions to perform, do nothing
+        if len(self.plan) == 0:
+            return
+
+        # Get the action to perform
         actionToPerform = self.__mapStringToFunction__(self.plan[0])
         if actionToPerform == None:
             del self.plan[0]
             return
 
+        # Perform the action
         didSucceed = actionToPerform.function(*actionToPerform.args)
         if didSucceed:
             del self.plan[0]
