@@ -127,10 +127,22 @@ class Logger:
             return False
 
     @staticmethod
-    def getCurrentState():
+    def getCurrentState(agents):
         """
         Returns a list of string atoms that define the current environment state from all agent perspectives.
         """
+        # For each agent, update any information we are tracking that depends on a function call
+        for agent in agents:
+            if Logger.isTrackingClosestMob():
+                agent.getClosestMob()
+            if Logger.isTrackingClosestPeacefulMob():
+                agent.getClosestPeacefulMob()
+            if Logger.isTrackingClosestHostileMob():
+                agent.getClosestHostileMob()
+            if Logger.isTrackingClosestFoodMob():
+                agent.getClosestFoodMob()
+            if Logger.isTrackingClosestFoodItem():
+                agent.getClosestFoodItem()
         return Logger.__currentState
 
     @staticmethod
