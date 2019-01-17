@@ -718,7 +718,7 @@ class Logger:
         Logger.__pushNewline__()
 
     @staticmethod
-    def flushToFile():
+    def export():
         """
         Outputs the current JSON log string to a file located a the 'logs' directory within the current working
         directory. The file name is determined by the current date and time.

@@ -23,7 +23,7 @@ class Agent:
         self.host = MalmoPython.AgentHost()
         self.inventory = AgentInventory()
         self.lastWorldState = None
-        self.stats = Stats()
+        self.stats = Stats(self)
         self.id = "{}1".format(name)
         Agent.agentList.append(self)
 
@@ -73,18 +73,6 @@ class Agent:
         if len(agentState.observations) > 0:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
-
-    def waitForNextObservation(self):
-        """
-        Waits for the observations of this agent to change.
-        """
-        agentState = self.host.getWorldState()
-        observationsPassed = agentState.number_of_observations_since_last_state
-        while observationsPassed <= 0:
-            agentState = self.host.getWorldState()
-            observationsPassed = agentState.number_of_observations_since_last_state
-        self.lastWorldState = json.loads(agentState.observations[-1].text)
-        return
 
     def getId(self):
         """
@@ -142,17 +130,7 @@ class Agent:
             return None
         return agentState["TimeAlive"]
 
-    def getCurrentFoodState(self):
-        """
-        Returns the hunger level of the agent.
-        If no observations have occured, returns None.
-        """
-        agentState = self.getObservationJson()
-        if agentState == None:
-            return None
-        return agentState["Food"]
-
-    def getCurrentScore(self):
+    def getScore(self):
         """
         Returns the score of the agent.
         If no observations have occured, returns None.
@@ -162,7 +140,7 @@ class Agent:
             return None
         return agentState["Score"]
 
-    def getCurrentXP(self):
+    def getXP(self):
         """
         Returns the xp of the agent.
         If no observations have occured, returns None.
@@ -172,7 +150,7 @@ class Agent:
             return None
         return agentState["XP"]
 
-    def getCurrentDistanceTravelled(self):
+    def getDistanceTravelled(self):
         """
         Returns the distance travelled by the agent.
         If no observations have occured, returns None.
@@ -182,7 +160,7 @@ class Agent:
             return None
         return agentState["DistanceTravelled"]
 
-    def getCurrentHealth(self):
+    def getHealth(self):
         """
         Returns the current health of the agent.
         """
@@ -191,14 +169,14 @@ class Agent:
             return None
         return agentState["Life"]
 
-    def getCurrentHunger(self):
+    def getHunger(self):
         """
         Returns the current hunger of the agent.
         """
         agentState = self.getObservationJson()
         if agentState == None:
             return None
-        return agentState[u'Hunger']
+        return agentState["Food"]
 
     def getInventoryJson(self):
         """
@@ -844,6 +822,7 @@ class Agent:
         if not isLooking:
             self.stopAllMovement()
             return False
+    
         Logger.logMoveToStart(self, item)
         self.lastStartedMovingTo = item.id
 
@@ -912,7 +891,7 @@ class Agent:
 
         # Craft the item and add it to our inventory, recording its id
         self.host.sendCommand("craft {}".format(item.value))
-        self.waitForNextObservation()
+        time.sleep(0.5)
 
         # Log the successful crafting of the item
         Logger.logCraft(self, item, itemsUsed)

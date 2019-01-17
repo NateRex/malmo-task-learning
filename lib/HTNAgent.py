@@ -85,7 +85,8 @@ class HTNAgent(Agent):
         """
         Given the current environment and the trained HTN, perform the next action in the plan.
         """
-        # If we have made 100 iterations of the mission loop, re-generate the plan using the HTN
+        # If we have made 100 iterations of the mission loop, re-generate the plan automatically using the HTN
+        # This is so that if we need to repeat an action that was previously deleted from the plan, it will reappear during a reoccurring refresh
         if self.__planCounter__ == 100:
             self.updatePlan()
             self.__planCounter__ = 0
