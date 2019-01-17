@@ -24,6 +24,7 @@ class Agent:
         self.inventory = AgentInventory(self)   # This agent's inventory
         self.stats = Stats(self)                # This agent's statistical information
         self.id = "{}1".format(name)            # The ID of this agent
+        self.overrideAction = None              # An function pointer that, if present, is ran instead of any called actions
         Agent.agentList.append(self)            # Add this agent to the global list of all agents
 
         # Recorded information for previous state/action observations, used by the logger
