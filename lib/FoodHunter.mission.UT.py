@@ -110,14 +110,14 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-Logger.isTrackingClosestFoodMob()
-Logger.isTrackingClosestFoodItem()
+Logger.trackClosestFoodMob()
+Logger.trackClosestFoodItem()
 Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # If we have beef, go to the player and give it to them
-    if companion_agent.inventory.amountOfItem(companion_agent, ItemType.Food.beef) > 0:
+    if companion_agent.inventory.amountOfItem(ItemType.Food.beef) > 0:
         isLookingAt = companion_agent.lookAtAgent(player_agent)
         if not isLookingAt:
             continue

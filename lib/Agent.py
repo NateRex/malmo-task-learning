@@ -27,7 +27,7 @@ class Agent:
         self.actionOverride = None              # An function pointer that, if present, is ran instead of any called actions
         Agent.agentList.append(self)            # Add this agent to the global list of all agents
 
-        # Recorded information for previous state/action observations, used by the logger
+        # Recorded information for previous state/action observations used for checking state changes and logging
         self.lastWorldState = None
         self.lastStartedLookingAt = ""
         self.lastFinishedLookingAt = ""
@@ -38,6 +38,7 @@ class Agent:
         self.lastClosestHostileMob = None
         self.lastClosestFoodMob = None
         self.lastClosestFoodItem = None
+        self.lastItemAmount = 0
 
     @staticmethod
     def findAgentById(agentId):
@@ -790,7 +791,7 @@ class Agent:
         distance = MathExt.distanceBetweenPointsXZ(agentPos, targetPosition)
 
         if distance < tol and distance > minDistance:
-            self.stopMoving()
+            self.__startMoving__(0.5)   # Slow down movement, expecting caller function to handle completing the stop as necessary
             return True
         elif distance > tol:
             self.__startMoving__(1)
@@ -822,6 +823,7 @@ class Agent:
         if isAt:
             Logger.logMoveToFinish(self, mob)
             self.lastFinishedMovingTo = mob.id
+            self.stopMoving()
             return True
         return False
 
@@ -839,16 +841,29 @@ class Agent:
         if not isLooking:
             self.stopAllMovement()
             return False
-    
+
+        # If this is the first call to move to this item, remember the amount of the item we started with
+        if self.lastStartedMovingTo != item.id:
+            self.lastItemAmount = self.inventory.amountOfItem(item.type)
+
         Logger.logMoveToStart(self, item)
         self.lastStartedMovingTo = item.id
 
         # Move to the target
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE)
         if isAt:
-            Logger.logMoveToFinish(self, item)
-            self.lastFinishedMovingTo = item.id
-            return True
+            # Lock this action into repeat and do not officially report true until the item appears in our inventory
+            self.actionOverride = Action(self.moveToItem, [item])
+            self.inventory.update()
+            newAmount = self.inventory.amountOfItem(item.type)
+            if newAmount > self.lastItemAmount:
+                Logger.logMoveToFinish(self, item)
+                self.stopMoving()
+                self.lastFinishedMovingTo = item.id
+                self.actionOverride = None  # Release lock
+                return True
+            else:
+                return False
         return False
 
     def moveToBlock(self, block, exact = True):
@@ -891,6 +906,7 @@ class Agent:
         # Move to the target
         isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
+            self.stopMoving()
             Logger.logMoveToFinish(self, agentEntity)
             self.lastFinishedMovingTo = agentId
             return True
@@ -1013,7 +1029,7 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.giveItemToAgent:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        self.stopAllMovement()  # Make sure we are stopped before checking our direction and position
+        self.stopMoving()  # Make sure we are stopped before checking our direction and position
         agentPos = agent.getPosition()
         if agentPos == None:
             return False

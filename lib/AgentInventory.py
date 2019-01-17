@@ -45,7 +45,7 @@ class AgentInventory:
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.addItem(self.__agent__, itemType)  # This item was obtained not through action... needs id
+                    self.addItem(itemType)  # This item was obtained not through action... needs id
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
@@ -153,14 +153,15 @@ class AgentInventory:
                 return item
         return None
 
-
-    def amountOfItem(self, item):
+    def amountOfItem(self, itemType):
         """
         Returns the quantity of a type of item in this inventory.
         """
-        if item.value not in self.__inventory__:
+        if not isinstance(itemType, str):
+            itemType = itemType.value
+        if itemType not in self.__inventory__:
             return 0
-        return len(self.__inventory__[item.value])
+        return len(self.__inventory__[itemType])
 
     def printOut(self):
         """
