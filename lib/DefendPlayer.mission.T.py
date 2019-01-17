@@ -136,6 +136,6 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)
-Logger.flushToFile()
+Logger.export()
 print()
 print("Mission ended")

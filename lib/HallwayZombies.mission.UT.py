@@ -126,9 +126,6 @@ start_time = time.time()
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # AGENT ACTIONS GO HERE  =============================================================================================
 
-    player_agent.stats.checkHealth(player_agent)
-    companion_agent.stats.checkHealth(companion_agent)
-
     # Agent Code
     nearestZombie = companion_agent.getClosestHostileMob()
     if nearestZombie != None:
@@ -149,10 +146,6 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # ====================================================================================================================
 
 print()
-player_agent.stats.logStats(player_agent)
-companion_agent.stats.logStats(companion_agent)
-companion_agent.stats.printStats(companion_agent)
-player_agent.stats.printStats(player_agent)
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)
