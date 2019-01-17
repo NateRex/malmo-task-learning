@@ -20,14 +20,14 @@ class Agent:
     agentList = []  # A list of all agents that have been created
 
     def __init__(self, name):
-        self.host = MalmoPython.AgentHost()
-        self.inventory = AgentInventory()
-        self.lastWorldState = None
-        self.stats = Stats(self)
-        self.id = "{}1".format(name)
-        Agent.agentList.append(self)
+        self.host = MalmoPython.AgentHost()     # A reference to a Malmo AgentHost object
+        self.inventory = AgentInventory(self)   # This agent's inventory
+        self.stats = Stats(self)                # This agent's statistical information
+        self.id = "{}1".format(name)            # The ID of this agent
+        Agent.agentList.append(self)            # Add this agent to the global list of all agents
 
-        # Information pertaining to the last entity interacted with for certain actions
+        # Recorded information for previous state/action observations, used by the logger
+        self.lastWorldState = None
         self.lastStartedLookingAt = ""
         self.lastFinishedLookingAt = ""
         self.lastStartedMovingTo = ""
@@ -879,13 +879,13 @@ class Agent:
         """
         # Precondition - We have enough of each recipe item in our inventory
         for recipeItem in recipeItems:
-            if self.inventory.amountOfItem(self, recipeItem.type) < recipeItem.quantity:
+            if self.inventory.amountOfItem(recipeItem.type) < recipeItem.quantity:
                 return False
 
         # Get a list of the items to be used
         itemsUsed = []
         for recipeItem in recipeItems:
-            items = self.inventory.allItemsByType(self, recipeItem.type)
+            items = self.inventory.allItemsByType(recipeItem.type)
             for i in range(0, recipeItem.quantity):
                 itemsUsed.append(items[i])
 
@@ -978,7 +978,7 @@ class Agent:
             return False
 
         # Precondition: We have atleast one item of that type
-        if self.inventory.amountOfItem(self, item) == 0:
+        if self.inventory.amountOfItem(item) == 0:
             return False
 
         # Precondition: We are at the agent
@@ -987,11 +987,11 @@ class Agent:
             return False
 
         # Remove one item of that type from this agent's inventory
-        inventoryItem = self.inventory.itemByType(self, item)
+        inventoryItem = self.inventory.itemByType(item)
         if inventoryItem == None:
             return False
-        self.inventory.removeItem(self, inventoryItem)
-        agent.inventory.addItem(agent, item.value, inventoryItem.id)   # We must preserve the id of the item
+        self.inventory.removeItem(inventoryItem)
+        agent.inventory.addItem(item.value, inventoryItem.id)   # We must preserve the id of the item
 
         self.equip(item)
         time.sleep(0.5) # There is a small delay in equipping an item

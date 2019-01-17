@@ -14,8 +14,9 @@ class AgentInventory:
     __idCounter__ = 0   # Used to uniquely identify items in a mission
     __idQueue__ = {}    # Map of item types to a list of ids of items that have been discovered but not yet picked up (the first item is the most recently identified "closest")
 
-    def __init__(self):
-        self.__inventory__ = {}
+    def __init__(self, agent):
+        self.__agent__ = agent      # A reference to the agent whose inventory this is
+        self.__inventory__ = {}     # A dictionary mapping item types to lists of ids
 
     def getId(self):
         """
@@ -24,11 +25,11 @@ class AgentInventory:
         AgentInventory.__idCounter__ += 1
         return AgentInventory.__idCounter__
 
-    def update(self, agent):
+    def update(self):
         """
         Given an agent's inventory JSON from an observation, update this inventory to contain only the items found.
         """
-        inventoryJson = agent.getInventoryJson()
+        inventoryJson = self.__agent__.getInventoryJson()
         itemsLeft = len(inventoryJson) != 0
         while (itemsLeft):
             itemType = inventoryJson[0]["type"]
@@ -44,7 +45,7 @@ class AgentInventory:
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.addItem(agent, itemType)  # This item was obtained not through action... needs id
+                    self.addItem(self.__agent__, itemType)  # This item was obtained not through action... needs id
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
@@ -82,7 +83,7 @@ class AgentInventory:
             return
         AgentInventory.__idQueue__[itemTypeStr].pop(0)
 
-    def addItem(self, agent, itemTypeStr, itemId = None):
+    def addItem(self, itemTypeStr, itemId = None):
         """
         Add an item of a specific type to this inventory, given the type as a string.
         If no item ID was given, the ID will be either pulled from a queue or generated.
@@ -96,11 +97,11 @@ class AgentInventory:
             else:
                 itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
-        Logger.logAgentAquiredItem(agent, item)
+        Logger.logAgentAquiredItem(self.__agent__, item)
         self.__inventory__[itemTypeStr].append(item)
         return item
 
-    def removeItem(self, agent, item):
+    def removeItem(self, item):
         """
         Removes an item with a specific id from this inventory.
         """
@@ -109,10 +110,10 @@ class AgentInventory:
         for i in range(0, len(self.__inventory__[item.type])):
             if self.__inventory__[item.type][i].id == item.id:
                 self.__inventory__[item.type].pop(i)
-                Logger.logAgentLostItem(agent, item)
+                Logger.logAgentLostItem(self.__agent__, item)
                 return
 
-    def allItems(self, agent):
+    def allItems(self):
         """
         Returns a list of all of the items in this inventory.
         """
@@ -122,7 +123,7 @@ class AgentInventory:
                 items.append(item)
         return items
 
-    def allItemsByType(self, agent, itemType):
+    def allItemsByType(self, itemType):
         """
         Returns a list of all of the items in this inventory for a specific type.
         """
@@ -130,7 +131,7 @@ class AgentInventory:
             return []
         return self.__inventory__[itemType.value]
 
-    def itemByType(self, agent, itemType):
+    def itemByType(self, itemType):
         """
         Returns an item in this inventory of a specific type. Returns None if no item for that type exists in this inventory.
         """
@@ -140,7 +141,7 @@ class AgentInventory:
             return None
         return self.__inventory__[itemType.value][0]
     
-    def itemById(self, agent, itemId):
+    def itemById(self, itemId):
         """
         Returns an item from this inventory using its id. Returns None if no item is found for the id given.
         """
@@ -153,7 +154,7 @@ class AgentInventory:
         return None
 
 
-    def amountOfItem(self, agent, item):
+    def amountOfItem(self, item):
         """
         Returns the quantity of a type of item in this inventory.
         """
@@ -161,7 +162,7 @@ class AgentInventory:
             return 0
         return len(self.__inventory__[item.value])
 
-    def printOut(self, agent):
+    def printOut(self):
         """
         DEBUG ONLY
         """
