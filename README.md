@@ -1,33 +1,47 @@
-# Malmo Task Learning
+# **Malmo Task Learning**
 
-This repository is designed to help support research into companion AI in Minecraft. More specifically, the goal is to run a simulation with an automated player and companion, where the companion performs a hard-coded task. As the companion performs said tasks, we log the environment states and actions to a learning algorithm which attempts to classify complex tasks from a series of primitive tasks. Given a new companion that is NOT hardcoded, they should be able to use the "learned" model to perform the same task with similar performance.
+This repository contains functionality used in conjunction with Microsoft's MalmoPlatform (https://github.com/Microsoft/malmo) to support research into companion AI in a Minecraft environment. Through the use of hierarchical task networks, the goal of this project is to get non-hardcoded agents to develop a plan and perform the same complex tasks as agents who were hardcoded with what to do in their environments. This pipeline is as follows:
 
-## Usage
+Run a hardcoded mission --> Produce training data --> Train HTN --> Use HTN on non-hardcoded agent
 
-- First, ensure that you have a working copy of Microsoft's MalmoPlatform, and can run both the Minecraft client and the Python missions. The repository for the Malmo project can be found [here](https://github.com/Microsoft/malmo).
+## **Setup**
 
-- Clone this repository onto your local machine. Since this repository contains copies of the shared object libraries and interfaces that Microsoft's missions use to run, the scripts inside this repository will be runnable from anywhere.
+- First, ensure that you have a working build of Microsoft's MalmoPlatform. The repository for the Malmo project can be found [here](https://github.com/Microsoft/malmo). Ensure that the 'launchClient' program runs and successfully produces a Minecraft client.
 
-- Ensure that you have a sufficient number of Malmo Minecraft clients running for a particular mission, and then run that mission using the following command as an example:
+- Clone this repository onto your local machine at any location.
 
-    ```
-    python malmo-task-learning/lib/Example.mission.py
-    ```
+## **Project Pipeline**
 
-## Contents
+### **I. Running Hardcoded Missions**
 
-#### lib/
+Hardcoded mission scripts designed for untrained agents are denoted by the '.mission' and '.UT' portions of the file name. All missions require two instances of the MalmoPlatform Minecraft client to be running. Executing one of these scripts will produce an execution trace log useful for training an HTN, as well as a performance stats file for each Agent. A mission can be ran like so:
 
-This directory contains Python scripts representing unique hardcoded scenarios for players agents and their companions. A scenario can be ran just like any other Python example mission included in the default clone of the Malmo project. When running these scripts, the trace outputs will be fed to the learning algorithm to be used by future non-hardcoded companions.
+    python3 malmo-task-learning/lib/<mission>
 
-There are also several Python scripts that serve as tools for the development of scenarios. These files should **NOT** be ran directly, but rather they expose functionality that the scenario scripts can make use of. These are listed below:
+If you would like to run a single mission any number of times in a repeated fashion, you can also use the following command:
 
-- **Constants**: Enumerated types for specifying certain characteristics of the environment, such as block type, item type, direction, time of day, etc.
+    python malmo-task-learning/lib/Run.py <mission> <# times>
 
-- **ScenarioBuilder**: Functionality for dynamically building up the XML string representations of a scenario, including both agent and environment settings.
+### **II. Cleaning Up Execution Traces**
 
-- **Logger**: Functionality for outputting the generated traces of a scenario as it is ran, which includes both state and action contents.
+After running a single mission several times, there will be corresponding execution trace files in the logs/ directory. Due to the occasional tolerance and timing issues in using the MalmoPlatform, these files must be cleaned up before being used for training. To clean all files in the logs/ directory, run the following command:
 
-- **MalmoPython**: A copy of Microsoft's shared object library containing the Malmo interface, callable from Python.
+    python malmo-task-learning/lib/ProcessLogs.py
 
-- **malmoutils**: A copy of Microsoft's Python script which includes utility functions and classes that provide additional support for working with the Malmo interface.
+### **III. Train a Hierarchical Task Network**
+
+With the cleaned up execution trace files from step 2, an HTN can be trained to recognize parts of the environment from a mission and generate a plan of actions for new environments.
+
+### **IV. Test the Trained Hierarchical Task Network**
+
+After training the HTN in step 3 for a particular mission, the corresponding mission with filename extension '.T' can be ran. The agent for this mission is not hardcoded in the ways it responds to its environment, and is instead developing a plan each time it inspects the surroundings. Similarly to step 1, these missions can be ran like so:
+
+    python malmo-task-learning/lib/<mission>
+
+### **V. Evaluate Performance**
+
+In order to better assess how a hardcoded or non-hardcoded agent performed, statistical information on each agent is automatically output in CSV format to the stats/ directory on each run of a mission. This can be read as plaintext, or can be graphed by running the following command:
+
+    python malmo-task-learning/lib/Stats.py <CSV filename>
+
+Running this script will ask the user for all of the attributes they wish to plot against the time that the mission ran for.
