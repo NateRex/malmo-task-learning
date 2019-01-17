@@ -66,7 +66,7 @@ class HTNAgent(Agent):
             if tokens[0] == "!GIVEITEM":
                 itemType = "".join([i for i in tokens[2] if not i.isdigit()])
                 if isItem(itemType):
-                    item = self.inventory.itemById(self, tokens[2])
+                    item = self.inventory.itemById(tokens[2])
                     receivingAgent = Agent.findAgentById(tokens[3])
                     if item != None and receivingAgent != None:
                         return Action(self.giveItemToAgent, [item, receivingAgent])

@@ -24,7 +24,7 @@ class Agent:
         self.inventory = AgentInventory(self)   # This agent's inventory
         self.stats = Stats(self)                # This agent's statistical information
         self.id = "{}1".format(name)            # The ID of this agent
-        self.overrideAction = None              # An function pointer that, if present, is ran instead of any called actions
+        self.actionOverride = None              # An function pointer that, if present, is ran instead of any called actions
         Agent.agentList.append(self)            # Add this agent to the global list of all agents
 
         # Recorded information for previous state/action observations, used by the logger
@@ -716,6 +716,10 @@ class Agent:
         Begin continuously turning/looking to face the specified entity.
         Returns true if the agent is currently facing the entity. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.lookAtEntity:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         Logger.logLookAtStart(self, entity)
         self.lastStartedLookingAt = entity.id
 
@@ -734,6 +738,10 @@ class Agent:
         Begin continuously turning/looking to face the specified agent.
         Returns true if the agent is currently facing the agent. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.lookAtAgent:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         agentId = agent.getId()
         agentPos = agent.getPosition()
         if agentId == None or agentPos == None:
@@ -796,6 +804,10 @@ class Agent:
         Begin continuously moving to reach the specified mob.
         Returns true if the agent is currently within striking distance of the mob. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.moveToMob:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         # Precondition: We are looking at the target
         isLooking = self.__isLookingAt__(mob.position)
         if not isLooking:
@@ -818,6 +830,10 @@ class Agent:
         Begin continuously moving to reach a the specified item.
         Returns true if the agent is located at the item. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.moveToItem:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         # Precondition: We are looking at the target
         isLooking = self.__isLookingAt__(item.position)
         if not isLooking:
@@ -840,7 +856,10 @@ class Agent:
         Begin continuously moving to reach a specified block. Specify whether the agent should move exactly to the
         block or face it within striking distance. Returns true if the agent has arrived. Returns false otherwise.
         """
-        # TODO
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.moveToBlock:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         return False
 
     def moveToAgent(self, agent):
@@ -848,6 +867,10 @@ class Agent:
         Begin continuously moving & turning to reach the specified agent.
         Returns true if the agent is currently at the agent. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.moveToAgent:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         agentId = agent.getId()
         agentPos = agent.getPosition()
         if agentPos == None:
@@ -878,6 +901,10 @@ class Agent:
         Craft an item from other items in this agent's inventory. This requires providing a list of RecipeItems.
         Returns true if the item was successfully crafted and is in the agent's inventory. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.craft:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         # Precondition - We have enough of each recipe item in our inventory
         for recipeItem in recipeItems:
             if self.inventory.amountOfItem(recipeItem.type) < recipeItem.quantity:
@@ -903,6 +930,10 @@ class Agent:
         Attack a mob using the currently equipped item, provided that it is within striking distance. This method
         calls LookAt if it is necessary for the agent to turn to face the mob. Returns true if successful, and false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.attackMob:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         oldMobsKilled = self.getMobsKilled()
         if oldMobsKilled == None:
             return False
@@ -940,6 +971,11 @@ class Agent:
         Changes the currently equipped item to something in this agent's inventory. This can cause items to be
         swapped from the hot-bar. Returns true if the specified item is equipped. Returns false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.equip:
+            return self.actionOverride.function(*self.actionOverride.args)
+
+        # Precondition: We have atleast one of that item
         itemIdx = self.__locationOfItemInInventory__(item)
         if itemIdx == -1:
             return False
@@ -973,6 +1009,10 @@ class Agent:
         Give an item in this agent's inventory to another agent.
         Returns true if successful, and false otherwise.
         """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.giveItemToAgent:
+            return self.actionOverride.function(*self.actionOverride.args)
+
         self.stopAllMovement()  # Make sure we are stopped before checking our direction and position
         agentPos = agent.getPosition()
         if agentPos == None:
