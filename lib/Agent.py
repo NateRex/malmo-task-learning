@@ -76,6 +76,16 @@ class Agent:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
 
+    def waitForNextObservationJson(self):
+        """
+        Waits until the next new JSON observation comes in, returning it.
+        """
+        while True:
+            agentState = self.host.getWorldState()
+            if len(agentState.observations) > 0:
+                self.lastWorldState = json.loads(agentState.observations[-1].text)
+                return self.lastWorldState
+
     def getId(self):
         """
         Returns the unique identifier for this agent. Returns none if unsuccessful.
@@ -990,6 +1000,7 @@ class Agent:
 
         if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, mob, True)
+            self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
         else:
             Logger.logAttack(self, mob, False)
 
