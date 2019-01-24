@@ -823,7 +823,6 @@ class Agent:
         if isAt:
             Logger.logMoveToFinish(self, mob)
             self.lastFinishedMovingTo = mob.id
-            self.stopMoving()
             return True
         return False
 
@@ -858,7 +857,6 @@ class Agent:
             newAmount = self.inventory.amountOfItem(item.type)
             if newAmount > self.lastItemAmount:
                 Logger.logMoveToFinish(self, item)
-                self.stopMoving()
                 self.lastFinishedMovingTo = item.id
                 self.actionOverride = None  # Release lock
                 return True
@@ -906,7 +904,6 @@ class Agent:
         # Move to the target
         isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
-            self.stopMoving()
             Logger.logMoveToFinish(self, agentEntity)
             self.lastFinishedMovingTo = agentId
             return True
