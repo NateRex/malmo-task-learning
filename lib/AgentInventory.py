@@ -168,7 +168,9 @@ class AgentInventory:
         DEBUG ONLY
         """
         print("=========================================")
-        for item in self.__inventory__:
-            for itemId in self.__inventory__[item]:
-                print(itemId)
+        print(self.__agent__.getId())
+        print("=========================================")
+        for itemType in self.__inventory__:
+            for item in self.__inventory__[itemType]:
+                print(item)
         print("=========================================")
