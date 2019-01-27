@@ -269,6 +269,10 @@ class Logger:
         """
         Given the list of agents for a mission, log the starting state for the environment in the log.
         """
+        # Log the None entity to define a placeholder for anything not yet set in the trace file (we shove this into the mobs section)
+        # TODO: This should really be some kind of universal thing, and not just a mob (what if we have closest_food_item-None?...)
+        Logger.__pushStatement__("mobs-None-NoneType")
+
         for agent in agents:
             agentId = agent.getId()
 
@@ -284,10 +288,10 @@ class Logger:
             # TODO: Starting inventory items
 
             # Log additional starting data dependent on the Logger flags set (getClosestXXX automatically logs)
-            Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, ""))
-            Logger.__currentState.append("agent_looking_at-{}-{}".format(agentId, ""))
-            Logger.__pushStatement__("agent_at-{}-{}".format(agentId, ""))
-            Logger.__currentState.append("agent_at-{}-{}".format(agentId, ""))
+            Logger.__pushStatement__("agent_looking_at-{}-None".format(agentId))
+            Logger.__currentState.append("agent_looking_at-{}-None".format(agentId))
+            Logger.__pushStatement__("agent_at-{}-None".format(agentId))
+            Logger.__currentState.append("agent_at-{}-None".format(agentId))
             if Logger.isTrackingClosestMob():
                 agent.getClosestMob()
             if Logger.isTrackingClosestPeacefulMob():
@@ -310,7 +314,7 @@ class Logger:
         Logger.__pushNewline__()
         Logger.__pushStatement__("END")
 
-        # Log the current state (ignore closestXXX information, as we will refresh this manually)
+        # Log the current state (ignore closestXXX information, as we will manually refresh and print out each)
         for statement in Logger.__currentState:
             if not statement.startswith("closest_"):
                 Logger.__pushStatement__(statement)
@@ -338,9 +342,9 @@ class Logger:
         agentId = agent.getId()
 
         # Special case, where there is no closest mob
-        if mob == "":
+        if mob == None:
             if mob != agent.lastClosestMob:
-                closestLog = "closest_mob-{}-".format(agentId)
+                closestLog = "closest_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
                 for i in range(0, len(Logger.__currentState)):  # Fix-up current state
@@ -379,9 +383,9 @@ class Logger:
         agentId = agent.getId()
 
         # Special case, where there is no closest peaceful mob
-        if mob == "":
+        if mob == None:
             if mob != agent.lastClosestPeacefulMob:
-                closestLog = "closest_peaceful_mob-{}-".format(agentId)
+                closestLog = "closest_peaceful_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
                 for i in range(0, len(Logger.__currentState)):  # Fix-up current state
@@ -419,9 +423,9 @@ class Logger:
         agentId = agent.getId()
 
         # Special case, where there is no closest hostile mob
-        if mob == "":
+        if mob == None:
             if mob != agent.lastClosestHostileMob:
-                closestLog = "closest_hostile_mob-{}-".format(agentId)
+                closestLog = "closest_hostile_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
                 for i in range(0, len(Logger.__currentState)):  # Fix-up current state
@@ -459,9 +463,9 @@ class Logger:
         agentId = agent.getId()
 
         # Special case, where there is no closest food mob
-        if mob == "":
+        if mob == None:
             if mob != agent.lastClosestFoodMob:
-                closestLog = "closest_food_mob-{}-".format(agentId)
+                closestLog = "closest_food_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
                 for i in range(0, len(Logger.__currentState)):  # Fix-up current state
@@ -499,9 +503,9 @@ class Logger:
         agentId = agent.getId()
 
         # Special case, where there is no closest food item
-        if item == "":
+        if item == None:
             if item != agent.lastClosestFoodItem:
-                closestLog = "closest_food_item-{}-".format(agentId)
+                closestLog = "closest_food_item-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
                 for i in range(0, len(Logger.__currentState)):  # Fix-up current state
@@ -550,7 +554,7 @@ class Logger:
         # Modify the current state (there will always be an agent_looking_at string in the current state..)
         for i in range(0, len(Logger.__currentState)):
             if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
-                Logger.__currentState[i] = "agent_looking_at-{}-".format(agentId)
+                Logger.__currentState[i] = "agent_looking_at-{}-None".format(agentId)
                 break
 
         # This might be an entity not previously declared in the log. Log it if so.
@@ -604,7 +608,7 @@ class Logger:
         # Modify the current state (there will always be an agent_at string in the current state..)
         for i in range(0, len(Logger.__currentState)):
             if Logger.__currentState[i].startswith("agent_at-{}".format(agentId)):
-                Logger.__currentState[i] = "agent_at-{}-".format(agentId)
+                Logger.__currentState[i] = "agent_at-{}-None".format(agentId)
                 break
 
         # This might be an entity not previously declared in the log. Log it if so.

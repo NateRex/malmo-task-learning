@@ -29,10 +29,8 @@ class Agent:
 
         # Recorded information for previous state/action observations used for checking state changes and logging
         self.lastWorldState = None
-        self.lastStartedLookingAt = ""
-        self.lastFinishedLookingAt = ""
-        self.lastStartedMovingTo = ""
-        self.lastFinishedMovingTo = ""
+        self.lastStartedLookingAt = None
+        self.lastStartedMovingTo = None
         self.lastClosestMob = None
         self.lastClosestPeacefulMob = None
         self.lastClosestHostileMob = None
@@ -394,8 +392,8 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
-            Logger.logClosestMob(self, "")
-            self.lastClosestMob = ""
+            Logger.logClosestMob(self, None)
+            self.lastClosestMob = None
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestMob(self, nearestEntity)
@@ -421,8 +419,8 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
-            Logger.logClosestPeacefulMob(self, "")
-            self.lastClosestPeacefulMob = ""
+            Logger.logClosestPeacefulMob(self, None)
+            self.lastClosestPeacefulMob = None
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestPeacefulMob(self, nearestEntity)
@@ -448,8 +446,8 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
-            Logger.logClosestHostileMob(self, "")
-            self.lastClosestHostileMob = ""
+            Logger.logClosestHostileMob(self, None)
+            self.lastClosestHostileMob = None
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestHostileMob(self, nearestEntity)
@@ -475,8 +473,8 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
-            Logger.logClosestFoodMob(self, "")
-            self.lastClosestFoodMob = ""
+            Logger.logClosestFoodMob(self, None)
+            self.lastClosestFoodMob = None
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestFoodMob(self, nearestEntity)
@@ -502,8 +500,8 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
-            Logger.logClosestFoodItem(self, "")
-            self.lastClosestFoodItem = ""
+            Logger.logClosestFoodItem(self, None)
+            self.lastClosestFoodItem = None
             return None
 
         # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
@@ -730,7 +728,6 @@ class Agent:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
             Logger.logLookAtFinish(self, entity)
-            self.lastFinishedLookingAt = entity.id
             return True
         return False
 
@@ -760,7 +757,6 @@ class Agent:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
             Logger.logLookAtFinish(self, agentEntity)
-            self.lastFinishedLookingAt = agentId
             return True
         return False
 
@@ -822,7 +818,6 @@ class Agent:
         isAt = self.__moveToPosition__(mob.position, STRIKING_DISTANCE)
         if isAt:
             Logger.logMoveToFinish(self, mob)
-            self.lastFinishedMovingTo = mob.id
             self.stopMoving()
             return True
         return False
@@ -859,7 +854,6 @@ class Agent:
             if newAmount > self.lastItemAmount:
                 Logger.logMoveToFinish(self, item)
                 self.stopMoving()
-                self.lastFinishedMovingTo = item.id
                 self.actionOverride = None  # Release lock
                 return True
             else:
@@ -908,7 +902,6 @@ class Agent:
         if isAt:
             self.stopMoving()
             Logger.logMoveToFinish(self, agentEntity)
-            self.lastFinishedMovingTo = agentId
             return True
         return False
 
