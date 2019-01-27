@@ -45,3 +45,7 @@ In order to better assess how well a hardcoded or non-hardcoded agent performed,
     python malmo-task-learning/lib/Stats.py <CSV filename>
 
 Running this script will ask the user for all of the attributes they wish to plot against the time that the mission ran for.
+
+### **VI. Testing Against Humans**
+
+In order to evaluate a trained agent against a human player, a copy of each mission is provided with the filename extension '.H', to denote that it is a human-playable version of the mission. Statistical data will still be collected for the human-controlled agent in these missions, which can then be used in the Stats script as mentioned in the section **'V. Evaluate Performance'**.

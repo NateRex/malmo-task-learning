@@ -74,6 +74,16 @@ class Agent:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
 
+    def waitForNextObservationJson(self):
+        """
+        Waits until the next new JSON observation comes in, returning it.
+        """
+        while True:
+            agentState = self.host.getWorldState()
+            if len(agentState.observations) > 0:
+                self.lastWorldState = json.loads(agentState.observations[-1].text)
+                return self.lastWorldState
+
     def getId(self):
         """
         Returns the unique identifier for this agent. Returns none if unsuccessful.
@@ -774,7 +784,7 @@ class Agent:
         
         return True
 
-    def __moveToPosition__(self, targetPosition, tol = 0.5, minDistance = 0.0):
+    def __moveToPosition__(self, targetPosition, tol = 0.5, minDistance = 0.0, hardStop = True):
         """
         Begin continuously moving to reach a desired Vector position.
         Optionally specify a tolerance, as well as a minimum distance that the agent can be close to the target.
@@ -787,7 +797,10 @@ class Agent:
         distance = MathExt.distanceBetweenPointsXZ(agentPos, targetPosition)
 
         if distance < tol and distance > minDistance:
-            self.__startMoving__(0.5)   # Slow down movement, expecting caller function to handle completing the stop as necessary
+            if hardStop:
+                self.stopMoving()
+            else:
+                self.__startMoving__(0.4)
             return True
         elif distance > tol:
             self.__startMoving__(1)
@@ -805,11 +818,13 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.moveToMob:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Precondition: We are looking at the target
-        isLooking = self.__isLookingAt__(mob.position)
-        if not isLooking:
-            self.stopAllMovement()
-            return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition: We are looking at the target
+            isLooking = self.__isLookingAt__(mob.position)
+            if not isLooking:
+                self.stopAllMovement()
+                return False
 
         Logger.logMoveToStart(self, mob)
         self.lastStartedMovingTo = mob.id
@@ -829,13 +844,17 @@ class Agent:
         """
         # Check action override
         if self.actionOverride != None and self.actionOverride.function != self.moveToItem:
+            print("HIT 1")
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Precondition: We are looking at the target
-        isLooking = self.__isLookingAt__(item.position)
-        if not isLooking:
-            self.stopAllMovement()
-            return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition: We are looking at the target
+            isLooking = self.__isLookingAt__(item.position)
+            if not isLooking:
+                print("HIT 2")
+                self.stopAllMovement()
+                return False
 
         # If this is the first call to move to this item, remember the amount of the item we started with
         if self.lastStartedMovingTo != item.id:
@@ -844,9 +863,9 @@ class Agent:
         Logger.logMoveToStart(self, item)
         self.lastStartedMovingTo = item.id
 
-        # Move to the target
-        isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE)
-        if isAt:
+        # Move to the target (do not allow hard-stop, in case we are not yet quite close enough to pick up item)
+        isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE, 0, False)
+        if isAt:      
             # Lock this action into repeat and do not officially report true until the item appears in our inventory
             self.actionOverride = Action(self.moveToItem, [item])
             self.inventory.update()
@@ -855,6 +874,7 @@ class Agent:
                 Logger.logMoveToFinish(self, item)
                 self.stopMoving()
                 self.actionOverride = None  # Release lock
+                self.stopMoving()   # Stop moving, since __moveToPosition__ will not stop agent automatically in this case
                 return True
             else:
                 return False
@@ -888,11 +908,13 @@ class Agent:
         # Represent the agent as an EntityInfo tuple
         agentEntity = EntityInfo(agentId, "agent", agentPos, 1)
 
-        # Precondition: We are looking at target
-        isLooking = self.__isLookingAt__(agentPos)
-        if not isLooking:
-            self.stopAllMovement()
-            return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition: We are looking at target
+            isLooking = self.__isLookingAt__(agentPos)
+            if not isLooking:
+                self.stopAllMovement()
+                return False
 
         Logger.logMoveToStart(self, agentEntity)
         self.lastStartedMovingTo = agentId
@@ -900,7 +922,6 @@ class Agent:
         # Move to the target
         isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
-            self.stopMoving()
             Logger.logMoveToFinish(self, agentEntity)
             return True
         return False
@@ -914,10 +935,12 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.craft:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Precondition - We have enough of each recipe item in our inventory
-        for recipeItem in recipeItems:
-            if self.inventory.amountOfItem(recipeItem.type) < recipeItem.quantity:
-                return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition - We have enough of each recipe item in our inventory
+            for recipeItem in recipeItems:
+                if self.inventory.amountOfItem(recipeItem.type) < recipeItem.quantity:
+                    return False
 
         # Get a list of the items to be used
         itemsUsed = []
@@ -947,21 +970,23 @@ class Agent:
         if oldMobsKilled == None:
             return False
 
-        # Precondition: The provided entity is a mob
-        if not isMob(mob.type):
-            return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition: The provided entity is a mob
+            if not isMob(mob.type):
+                return False
 
-        # Precondition: We are looking at target
-        isLooking = self.__isLookingAt__(mob.position)
-        if not isLooking:
-            self.stopAttacking()
-            return False
+            # Precondition: We are looking at target
+            isLooking = self.__isLookingAt__(mob.position)
+            if not isLooking:
+                self.stopAttacking()
+                return False
 
-        # Precondition: We are at the target
-        isAt = self.__isAt__(mob.position, STRIKING_DISTANCE)
-        if not isAt:
-            self.stopAllMovement()
-            return False
+            # Precondition: We are at the target
+            isAt = self.__isAt__(mob.position, STRIKING_DISTANCE)
+            if not isAt:
+                self.stopAllMovement()
+                return False
 
         self.__startAttacking__()
         self.stopAllMovement()  # Momentarily stop all movement to check if we killed the entity
@@ -970,6 +995,7 @@ class Agent:
 
         if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, mob, True)
+            self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
         else:
             Logger.logAttack(self, mob, False)
 
@@ -984,10 +1010,12 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.equip:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Precondition: We have atleast one of that item
-        itemIdx = self.__locationOfItemInInventory__(item)
-        if itemIdx == -1:
-            return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition: We have atleast one of that item
+            itemIdx = self.__locationOfItemInInventory__(item)
+            if itemIdx == -1:
+                return False
         
         # Check if item is already in hotbar (note: key commands are 1-indexed)
         if itemIdx < 9:
@@ -1027,14 +1055,16 @@ class Agent:
         if agentPos == None:
             return False
 
-        # Precondition: We have atleast one item of that type
-        if self.inventory.amountOfItem(item) == 0:
-            return False
+        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        if self.actionOverride == None:
+            # Precondition: We have atleast one item of that type
+            if self.inventory.amountOfItem(item) == 0:
+                return False
 
-        # Precondition: We are at the agent
-        isAt = self.__isAt__(agentPos, GIVING_DISTANCE)
-        if not isAt:
-            return False
+            # Precondition: We are at the agent
+            isAt = self.__isAt__(agentPos, GIVING_DISTANCE)
+            if not isAt:
+                return False
 
         # Remove one item of that type from this agent's inventory
         inventoryItem = self.inventory.itemByType(item)

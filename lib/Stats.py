@@ -13,6 +13,8 @@ import random
 from Utils import *
 from Logger import *
 
+# A tuple containing agent IDs paired with dataframes containing the stats of that agent from a mission
+AgentData = namedtuple("AgentData", "agent_id data")
 # A list of all of the attribute names we track
 attribute_names = ["SysTime", "DamageDealt", "MobsKilled", "PlayersKilled", "CurrentHealth", "HealthLost", "IsAlive", "TimeAlive", "Hunger", "Score", "XP", "DistanceTravelled"]
 
@@ -84,20 +86,39 @@ class Stats:
 # Standalone Functions
 # ===========================================================================================================
 
+def __getCSVFiles__():
+    """
+    Repeatedly asks the user to input the name of a stats CSV file in the stats directory, until the empty string is received.
+    Returns the list of csv filenames.
+    """
+    filenames = []
+    shouldGetInput = True
+    while shouldGetInput:
+        filename = input("Enter CSV file name: ")
+        if len(filename) == 0:
+            shouldGetInput = False
+        else:
+            filepath = os.path.join("stats", filename)
+            if os.path.isfile(filepath):
+                filenames.append(filename)
+            else:
+                print("'{}' could not be found.".format(filepath))
+    return filenames
+
 def __getGraphAttributes__():
     """
     Repeatedly collects attributes to plot from the user until an empty string is received.
     Returns the list of attributes.
     """
-    print("Attribute Names ==============================")
+    print("Plottable Attributes ==============================")
     for i in attribute_names:
         print("- " + i)
-    print("==============================================\n")
-
+    print("===================================================\n")
+    
     attributes = []
     shouldGetInput = True
     while shouldGetInput:
-        attribute = input("Enter attribute: ")
+        attribute = input("Attribute: ")
         if len(attribute) == 0:
             shouldGetInput = False
         else:
@@ -109,32 +130,29 @@ def main():
     Main method allowing this file to be ran as a script for nicely outputting statistical data from a csv file in
     various forms.
     """
-    if len(sys.argv) < 2:
-        print("Usage: {} <csv_file>".format(sys.argv[0]))
+    filenames = __getCSVFiles__()
+    if len(filenames) == 0:
+        print("No CSV files entered")
         return
 
-    filePath = os.path.join("stats", sys.argv[1])
+    # These have a 1:1 mapping to the filepaths gathered above
+    agentDataList = []
+    for filepath in filenames:
+        agentData = AgentData(filepath.split("_")[0], pandas.read_csv(os.path.join("stats", filepath)))
+        agentDataList.append(agentData)
 
-    if not os.path.isfile(filePath):
-        print("Error - CSV file '{}' does not exist".format(filePath))
-        return
-
-    agentId = sys.argv[1].split("_")[0]
-
-    # Open CSV file as a pandas dataframe
-    data = pandas.read_csv(filePath)
-
-    # Get the attributes to plot
+    # Collect the attributes of interest in each AgentData object
     attributes = __getGraphAttributes__()
 
     # Plot each attribute against SysTime
     fig = plt.figure()
-    fig.canvas.set_window_title("{} Statistics Over Time".format(agentId))
-    for attribute in attributes:
-        r = random.random()
-        g = random.random()
-        b = random.random()
-        plt.plot(data["SysTime"], data[attribute], markeredgecolor=(r, g, b, 1), linestyle="solid", label=attribute)
+    fig.canvas.set_window_title("Agent Statistics Over Time")
+    for agentData in agentDataList:
+        for attribute in attributes:
+            r = random.random()
+            g = random.random()
+            b = random.random()
+            plt.plot(agentData.data["SysTime"], agentData.data[attribute], markeredgecolor=(r, g, b, 1), linestyle="solid", label="{} {}".format(agentData.agent_id, attribute))
 
     # Show the plot on-screen
     plt.legend(loc="best")
