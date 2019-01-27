@@ -85,6 +85,8 @@ def processLogFile(filePath):
                     entityType = lineParts[2][:-1]  # Don't include newline at end of entity type
                     if oldId in id_map:
                         lineParts[1] = id_map[oldId]
+                    elif oldId == "None":    # Special case... do not alter sole member None in NoneType
+                        id_map["None"] = "None"
                     else:
                         newId = "{}{}".format(entityType, getNextIdNumberForType(id_counters, entityType))
                         id_map[oldId] = newId
