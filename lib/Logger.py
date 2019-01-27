@@ -185,10 +185,14 @@ class Logger:
         if agentId in Logger.__declaredEntityIds:   # We already logged this agent
             return
 
+        # Log the definition of the agent
         agentLog = "agents-{}-{}".format(agentId, agentId[:-1])
         Logger.__pushStatement__(agentLog)
         Logger.__currentState.append(agentLog)
         Logger.__declaredEntityIds.append(agentId)
+
+        # Assume that when defining a new agent, it starts out as alive
+        Logger.logEntityIsAlive(agent, True)
 
     @staticmethod
     def logItemDefinition(item):
@@ -213,10 +217,14 @@ class Logger:
             return
         
         if isMob(mob.type):
+            # Log mob definition
             mobLog = "mobs-{}-{}".format(mob.id, mob.type)
             Logger.__pushStatement__(mobLog)
             Logger.__currentState.append(mobLog)
             Logger.__declaredEntityIds.append(mob.id)
+
+            # Assume that when defining a new mob, it starts out as alive
+            Logger.logEntityIsAlive(mob, True)
 
     @staticmethod
     def logEntityDefinition(entity):
@@ -230,6 +238,28 @@ class Logger:
             Logger.logMobDefinition(entity)
         elif isItem(entity.type):   # Item entity
             Logger.logItemDefinition(entity)
+
+    @staticmethod
+    def logEntityIsAlive(entity, isAlive):
+        """
+        Updates the status of the entity given to isAlive if given True, and isDead otherwise.
+        """
+        if isAlive:
+            logString = "status-{}-alive".format(entity.id)
+        else:
+            logString = "status-{}-dead".format(entity.id)
+        
+        Logger.__pushStatement__(logString)
+
+        # Update the current state
+        didModifyCurrentState = False
+        for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+            if Logger.__currentState[i].startswith("status-{}".format(entity.id)):
+                Logger.__currentState[i] = logString
+                didModifyCurrentState = True
+                break
+        if not didModifyCurrentState:
+            Logger.__currentState.append(logString)
 
     @staticmethod
     def isEntityDefined(entity):
@@ -689,9 +719,7 @@ class Logger:
 
         # Postconditions
         if didKill:
-            deadLog = "is_dead-{}".format(entity.id)
-            Logger.__pushStatement__(deadLog)
-            Logger.__currentState.append(deadLog)
+            Logger.logEntityIsAlive(entity, False)
 
         Logger.__pushNewline__()
 
