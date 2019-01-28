@@ -5,12 +5,32 @@
 # ==============================================================================================
 import os
 
-WORKING_DIR = None  # Current working directory of this script
+WORKING_DIR = None          # Current working directory of this script
+old_file_contents = []      # A list of the lines for the original log file
+new_file_contents = []      # A list of the lines for the new log file after post-processing
+id_counters = {}            # A global counter for each type of entity for generating new simple entity ids
+id_map = {}                 # A mapping of original complex Malmo ids to simpler ones generated in this script
+dead_entities = []          # A list of ids for entities that have been declared as dead
+didPassEndMarker = False    # Boolean signifying if we have passed the END marker specifying the start of final state output
 
-def getNextIdNumberForType(id_counters, entityType):
+def resetGlobals():
+    """
+    Reset the global values so that they are ready to be used for processing a new log.
+    """
+    global id_counters, old_file_contents, new_file_contents, id_map, dead_entities, didPassEndMarker
+    old_file_contents = []
+    new_file_contents = []
+    id_counters = {}
+    id_map = {}
+    dead_entities = []
+    didPassEndMarker = False
+
+
+def getNextIdNumberForType(entityType):
     """
     Returns the next ID number for use for a specific type of entity.
     """
+    global id_counters
     if entityType in id_counters:
         id_counters[entityType] += 1
         return id_counters[entityType]
@@ -41,81 +61,178 @@ def getLogFilePaths():
                 paths.append(filepath)
     return paths
 
-def checkIsMobDead(fileContents, mobId):
+def handleEmptyLine(line):
     """
-    Given a portion of a log file's contents as an array of strings, check to see if a mob of the given id was already declared dead.
+    Handle the case when a line contains the empty string "". Returns true if the line should be appended to the file, false otherwise.
     """
-    toCheckStr = "is_dead-{}".format(mobId)
-    for line in fileContents:
-        if line == toCheckStr:
-            return True
-    return False
+    global new_file_contents
+    if len(new_file_contents) > 0:
+        if new_file_contents[-1] == "": # No repeated newlines
+            return False
+        if new_file_contents[-1].startswith("closest"): # No newline after closest_XXX entity output
+            return False
+    return True
+
+def handleClosestXXXLine(line):
+    """
+    Handle the case where the line is defining a closest entity to one of the agents. Returns true if the line should be appended to the file, false otherwise.
+    """
+    global new_file_contents
+    if len(new_file_contents) > 0 and new_file_contents[-1].startswith("!"):    # Last action never finished... add a newline before proceeding
+        new_file_contents.append("")
+    return True
+
+def handleEntityDefinitionLine(line):
+    """
+    Handle the case where the line is defining a new entity. Returns the new, modified line.
+    """
+    global id_map
+    strings = line.split("-")
+    oldEntityId = strings[1]
+    entityType = strings[2]
+    if oldEntityId in id_map:   # We already defined and simplified this entity id?... shouldn't happen
+        strings[1] = id_map[oldEntityId]
+    elif oldEntityId == "None": # Special case... do not alter sole member None of NoneType
+        id_map["None"] = "None"
+    else:
+        newEntityId = "{}{}".format(entityType, getNextIdNumberForType(entityType))
+        id_map[oldEntityId] = newEntityId
+        id_map[newEntityId] = newEntityId
+        strings[1] = newEntityId
+    return "-".join(strings)
+    
+def handleEntityStatusLine(line):
+    """
+    Handle the case where the line is declaring an entity as either alive or dead. Returns true if the line should be appended to the file, false otherwise.
+    """
+    global dead_entities
+    if line.endswith("dead"):
+        strings = line.split("-")
+        dead_entities.append(strings[1])
+    return True
+
+def handleAttackLine(line, lineIdx):
+    """
+    Handle the case where the line declares an attack on an entity by some agent. This requires the line number that the attack occurred on.
+    Returns the amount to move the line index head for reading from the old file contents.
+    """
+    global new_file_contents
+    attackedEntityId = line.split("-")[2]
+
+    # Move to the end of the possible series of attacks
+    # TODO: HANDLE CASE WHERE ATTACKS HAPPEN EVEN THOUGH ENTITY DIED
+    lastAttackIdx = lineIdx
+    for i in range(lineIdx + 1, len(old_file_contents)):
+        lineToCheck = old_file_contents[i]
+        if not lineToCheck.startswith("!"):
+            continue
+        else:
+            if lineToCheck.startswith("!ATTACK") and lineToCheck.endswith(attackedEntityId):
+                lastAttackIdx = i
+            else:
+                break
+
+    # If this attack ended with the entity dying, make sure it is officially logged and return to move ahead in the log past the status update
+    statusLine = old_file_contents[lastAttackIdx + 1] if lastAttackIdx + 1 < len(old_file_contents) else ""
+    if statusLine.startswith("status") and statusLine.endswith("dead") and attackedEntityId in statusLine.split("-"):
+        new_file_contents.append(line)
+        new_file_contents.append(old_file_contents[lastAttackIdx + 1])
+        return lastAttackIdx - lineIdx + 1
+
+    # Attack was NOT conducted until completion. Loop backwards over new_file_contents and delete immediate prior actions on the attacked entity.
+    startDeleteIdx = len(new_file_contents) - 1
+    for i in range(len(new_file_contents) - 1, -1, -1):
+        lineToCheck = new_file_contents[i]
+        strings = lineToCheck.split("-")
+
+        # If we hit an action that DOES NOT refer to this entity, we went too far
+        if lineToCheck.startswith("!") and attackedEntityId not in strings:
+            break
+
+        # If we hit an action that DOES refer to this attacked entity, move the starting delete index to right after the next previous empty string
+        if lineToCheck.startswith("!") and attackedEntityId in strings:
+            prevLine = lineToCheck
+            while prevLine != "":
+                prevLine = new_file_contents[i - 1]
+                startDeleteIdx = i
+                i -= 1
+
+    # Delete everything that referenced this entity that was attacked but never killed in a row
+    del new_file_contents[startDeleteIdx:len(new_file_contents)]
+    return lastAttackIdx - lineIdx + 1
+
 
 def processLogFile(filePath):
     """
     Given a full, absolute path to a log file, parse the file and fix any issues, rewriting the result back out to the file.
     """
-    id_counters = {}            # A global counter for each type of entity to map complex Malmo ids to simpler ones
-    id_map = {}                 # Dictionary to map ids of certain types to new ids to simplify them
-    didPassEndMarker = False    # Boolean signifying whether or not we have passed the marker specifying the start of final state output
+    global id_counters, old_file_contents, new_file_contents, id_map, dead_entities, didPassEndMarker
 
-    # Generate a list of strings representing the lines of the NEW file post-processing
-    newFileContents = []
+    # Reset the global variables at the start of a new log
+    resetGlobals()
+
     with open(filePath, "r") as logFile:
         line = logFile.readline()
         while line:
-            shouldAddLine = True
-
-            # Checks for the entire line ===================
-            if line == "\n" and len(newFileContents) > 0 and newFileContents[-1] == "\n":   # No repeated newlines
-                shouldAddLine = False
-            elif line == "\n" and len(newFileContents) > 0 and newFileContents[-1].startswith("closest"):   # No newline after closest entity output
-                shouldAddLine = False
-            elif line.startswith("closest") and len(newFileContents) > 0 and newFileContents[-1].startswith("!"):   # Need newline after last action that didn't finish
-                newFileContents.append("\n")
-            elif line.startswith("END"):    # We are entering the final state output
-                didPassEndMarker = True
-
-            # Checks for each part in the line, separated by '-' ===================
-            if shouldAddLine:
-                if line.startswith("agents") or line.startswith("mobs") or line.startswith("items"): # Simplify ids of entities during definition
-                    # Simplify ids of entities during definition
-                    lineParts = line.split("-")
-                    oldId = lineParts[1]
-                    entityType = lineParts[2][:-1]  # Don't include newline at end of entity type
-                    if oldId in id_map:
-                        lineParts[1] = id_map[oldId]
-                    elif oldId == "None":    # Special case... do not alter sole member None in NoneType
-                        id_map["None"] = "None"
-                    else:
-                        newId = "{}{}".format(entityType, getNextIdNumberForType(id_counters, entityType))
-                        id_map[oldId] = newId
-                        id_map[newId] = newId
-                        lineParts[1] = newId
-                    line = "-".join(lineParts)
-
-                lineParts = line.split("-")
-                for partIdx in range(0, len(lineParts)):
-                    # Replace entity id with simpler one if currently processing an id (consider that last character could be newline)
-                    if lineParts[partIdx] in id_map:
-                        lineParts[partIdx] = id_map[lineParts[partIdx]]
-                    elif lineParts[partIdx][:-1] in id_map:
-                        lineParts[partIdx] = id_map[lineParts[partIdx][:-1]]
-                        lineParts[partIdx] += "\n"
-
-                    # Check if a mob or agent is referenced after dying
-                    if not didPassEndMarker and checkIsMobDead(newFileContents, lineParts[partIdx]):
-                        shouldAddLine = False
-                        break
-                line = "-".join(lineParts)
-
-            if shouldAddLine:
-                newFileContents.append(line)
+            old_file_contents.append(line[:-1]) # Do not include newline at the end of each line
             line = logFile.readline()
+
+    lineIdx = -1
+    while lineIdx < len(old_file_contents) - 1:
+        lineIdx += 1
+        line = old_file_contents[lineIdx]
+        shouldAddLine = True
+
+        # ============================================================
+        # Whole Line Checks
+        # ============================================================
+        # Empty string
+        if line == "":
+            shouldAddLine = handleEmptyLine(line)
+        # ClosestXXX declaration
+        elif line.startswith("closest"):
+            shouldAddLine = handleClosestXXXLine(line)
+        # Entering final state output
+        elif line.startswith("END"):
+            didPassEndMarker = True
+        # Defining a new entity
+        elif line.startswith("agents") or line.startswith("mobs") or line.startswith("items"):
+            line = handleEntityDefinitionLine(line)
+        # Attacking an entity
+        elif line.startswith("!ATTACK"):
+            lineIdx += handleAttackLine(line, lineIdx)
+            continue    # Handling for attack alters the new_final_contents... we should immediately move to next line
+
+
+        # ============================================================
+        # Split Line Checks
+        # ============================================================
+        if shouldAddLine:
+            strings = line.split("-")
+            for idx in range(0, len(strings)):
+                # Found an entity id - map it to the simpler version
+                if strings[idx] in id_map:
+                    strings[idx] = id_map[strings[idx]]
+
+                # Found an entity referenced after dying
+                if not didPassEndMarker and strings[idx] in dead_entities:
+                    shouldAddLine = False
+                    break
+            line = "-".join(strings)  # Rejoin
+
+        # ============================================================
+        # More Whole Line Checks
+        # ============================================================
+        # Declaring an entity as either alive or dead
+        if line.startswith("status"):
+            shouldAddLine = handleEntityStatusLine(line)
+
+        if shouldAddLine:
+            new_file_contents.append(line)
 
     # Output the list of strings back to the file with the same name
     with open(filePath, "w+") as newFile:
-        newFile.write("".join(newFileContents))
+        newFile.write("\n".join(new_file_contents))
 
 def main():
     """

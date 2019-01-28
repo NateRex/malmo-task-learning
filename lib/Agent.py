@@ -995,7 +995,7 @@ class Agent:
 
         if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, mob, True)
-            self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
+            # self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
         else:
             Logger.logAttack(self, mob, False)
 
