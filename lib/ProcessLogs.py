@@ -12,6 +12,11 @@ WORKING_DIR = None          # Current working directory of this script
 TOTAL_LOGS = 0              # Total number of logs processed
 LOGS_DELETED = 0            # Number of logs that were deleted due to unmet conditions specified by parameters
 MIN_KILLS = 0               # Minimum number of kills that must be made by the agents in order to preserve log
+ACTION_POST_TUPLES = {      # A set of tuples to show what post-condition is expected immediately following an action
+    "!LOOKAT" : "agent_looking_at",
+    "!MOVETO" : "agent_at",
+    "!ATTACK" : "status"
+}
 
 # GLOBALS FOR EACH LOG
 old_file_contents = []      # A list of the lines for the original log file
@@ -70,30 +75,57 @@ def getLogFilePaths():
                 paths.append(filepath)
     return paths
 
+def getLine(idx):
+    """
+    Get a line from the original log file by index, making any necessary adjustments to it before returning it.
+    """
+    line = old_file_contents[idx]
+    strings = line.split("-")
+    for idx in range(0, len(strings)):
+        # Replace old entity ids with new ones if they were previously generated
+        if strings[idx] in id_map:
+            strings[idx] = id_map[strings[idx]]
+    return "-".join(strings)
+
+def addLine(line):
+    """
+    Before appending a new line to the output list of strings for a log, perform additional checks on each part of the line, separated by '-'.
+    """
+    strings = line.split("-")
+    for idx in range(0, len(strings)):
+        # If an entity is referenced after already dying, do not add the line
+        if not didPassEndMarker and strings[idx] in dead_entities:
+            return
+    new_file_contents.append("-".join(strings))
+
+# ======================================================================
+# Operations on original log
+# ======================================================================
+
 def handleEmptyLine(line):
     """
-    Handle the case when a line contains the empty string "". Returns true if the line should be appended to the file, false otherwise.
+    Handle the case when a line contains the empty string "".
     """
     global new_file_contents
     if len(new_file_contents) > 0:
         if new_file_contents[-1] == "": # No repeated newlines
-            return False
+            return
         if new_file_contents[-1].startswith("closest"): # No newline after closest_XXX entity output
-            return False
-    return True
+            return
+    addLine(line)
 
 def handleClosestXXXLine(line):
     """
-    Handle the case where the line is defining a closest entity to one of the agents. Returns true if the line should be appended to the file, false otherwise.
+    Handle the case where the line is defining a closest entity to one of the agents.
     """
     global new_file_contents
     if len(new_file_contents) > 0 and new_file_contents[-1].startswith("!"):    # Last action never finished... add a newline before proceeding
-        new_file_contents.append("")
-    return True
+        addLine("")
+    addLine(line)
 
 def handleEntityDefinitionLine(line):
     """
-    Handle the case where the line is defining a new entity. Returns the new, modified line.
+    Handle the case where the line is defining a new entity.
     """
     global id_map
     strings = line.split("-")
@@ -108,17 +140,17 @@ def handleEntityDefinitionLine(line):
         id_map[oldEntityId] = newEntityId
         id_map[newEntityId] = newEntityId
         strings[1] = newEntityId
-    return "-".join(strings)
+    addLine("-".join(strings))
     
 def handleEntityStatusLine(line):
     """
-    Handle the case where the line is declaring an entity as either alive or dead. Returns true if the line should be appended to the file, false otherwise.
+    Handle the case where the line is declaring an entity as either alive or dead.
     """
     global dead_entities
+    addLine(line)
     if line.endswith("dead"):
         strings = line.split("-")
         dead_entities.append(strings[1])
-    return True
 
 def handleAttackLine(line, lineIdx):
     """
@@ -131,13 +163,13 @@ def handleAttackLine(line, lineIdx):
     targetAttackIdx = None   # Line of attack action that resulted in the entity dying (if any)
     lastAttackIdx = lineIdx  # Line of the last attack in this series of attacks
     for i in range(lineIdx, len(old_file_contents)):
-        lineToCheck = old_file_contents[i]
+        lineToCheck = getLine(i)
         if not lineToCheck.startswith("!"):
             continue
         else:
             if lineToCheck.startswith("!ATTACK") and lineToCheck.endswith(attackedEntityId):
                 lastAttackIdx = i
-                nextLine = old_file_contents[i + 1] if i < len(old_file_contents) - 1 else ""
+                nextLine = getLine(i + 1) if i < len(old_file_contents) - 1 else ""
                 if nextLine.startswith("status"):
                     targetAttackIdx = i
             else:
@@ -145,11 +177,11 @@ def handleAttackLine(line, lineIdx):
 
     # If this attack ended with the entity dying, make sure it is officially logged and return to move ahead in the log past the status update
     if targetAttackIdx != None:
-        statusLine = old_file_contents[targetAttackIdx + 1]
+        statusLine = getLine(targetAttackIdx + 1)
         if statusLine.startswith("status") and statusLine.endswith("dead") and attackedEntityId in statusLine.split("-"):
             new_file_contents.append(line)
-            new_file_contents.append(old_file_contents[lastAttackIdx + 1])
-            return lastAttackIdx - lineIdx + 1
+            new_file_contents.append(getLine(targetAttackIdx + 1))
+            return lastAttackIdx - lineIdx if lastAttackIdx != targetAttackIdx else lastAttackIdx - lineIdx + 1
 
     # Attack was NOT conducted until completion. Loop backwards over new_file_contents and delete immediate prior actions on the attacked entity.
     startDeleteIdx = len(new_file_contents) - 1
@@ -171,8 +203,83 @@ def handleAttackLine(line, lineIdx):
 
     # Delete everything that referenced this entity that was attacked but never killed in a row
     del new_file_contents[startDeleteIdx:len(new_file_contents)]
-    return lastAttackIdx - lineIdx + 1
+    return lastAttackIdx - lineIdx
 
+# ======================================================================
+# Operations on newly generated log
+# ======================================================================
+
+def checkActionPreconditions(idx):
+    """
+    Given a line index of an action in the newly generated log contents, make sure that each pre-condition has been set beforehand in the log.
+    Returns true if all preconditions were set, false otherwise.
+    """
+    # Gather all of the preconditions we will be checking for
+    startIdx = idx
+    preconditions = []
+    for i in range(idx - 1, -1, -1):
+        startIdx = i
+        # Newline is the stopping point
+        if new_file_contents[i] == "":
+            break
+        # ClosestXXX comes in at random (ignore)
+        elif new_file_contents[i].startswith("closest"):
+            continue
+        # Add the precondition
+        else:
+            preconditions.append(new_file_contents[i].split("-"))
+
+    # Loop backwards and check for the postconditions having been set. Note: if a precondition is set with the wrong values, then it is still a failure
+    for i in range(startIdx, -1, -1):
+        lineToCheck = new_file_contents[i].split("-")
+        for j in range(0, len(preconditions)):
+            if lineToCheck[0] == preconditions[j][0] and lineToCheck[1] == preconditions[j][1]:     # If 1st two args match, ensure the entire lines match
+                if len(lineToCheck) != len(preconditions[j]):
+                    return False
+                for k in range(0, len(preconditions[j])):
+                    if lineToCheck[k] != preconditions[j][k]:
+                        return False
+                del preconditions[j]
+                break
+
+    # If not all preconditions were set, return false
+    if len(preconditions) > 0:
+        return False
+    else:
+        return True
+
+
+def checkActionPostconditions(idx):
+    """
+    Given a line index of an action in the newly generated log contents, make sure the action is followed by its expected post-conditions.
+    Returns the new length of new_file_contents.
+    """
+    global new_file_contents
+    line = new_file_contents[idx]
+    action = line.split("-")[0]
+
+    # Received a line that was not an expected action
+    if action not in ACTION_POST_TUPLES:
+        return 0
+
+    # Action was followed by its expected immediate post-condition
+    if idx + 1 < len(new_file_contents) and new_file_contents[idx + 1].startswith(ACTION_POST_TUPLES[action]):
+        return 0
+
+    # Action was not followed by its expected immedate post-condition. Delete from the previous newline to the next newline.
+    startDeleteIdx = idx
+    for i in range(idx, -1, -1):
+        startDeleteIdx = i
+        if new_file_contents[i] == "":
+            break
+    endDeleteIdx = idx
+    for i in range(idx, len(new_file_contents)):
+        endDeleteIdx = i
+        if new_file_contents[i] == "":
+            break
+    orignalLength = len(new_file_contents)
+    del new_file_contents[startDeleteIdx:endDeleteIdx]
+    return orignalLength - len(new_file_contents)
 
 def processLogFile(filePath):
     """
@@ -193,57 +300,68 @@ def processLogFile(filePath):
                 old_file_contents.append(line[:-1]) # Do not include newline at the end of each line
             line = nextLine
 
+    # ============================================================
+    # Original Log Traversal
+    # ============================================================
     lineIdx = -1
     while lineIdx < len(old_file_contents) - 1:
         lineIdx += 1
-        line = old_file_contents[lineIdx]
+        line = getLine(lineIdx)
         shouldAddLine = True
 
         # ============================================================
-        # Whole Line Checks
+        # Line Checks
         # ============================================================
         # Empty string
         if line == "":
-            shouldAddLine = handleEmptyLine(line)
+            handleEmptyLine(line)
+            continue
         # ClosestXXX declaration
         elif line.startswith("closest"):
-            shouldAddLine = handleClosestXXXLine(line)
+            handleClosestXXXLine(line)
+            continue
         # Entering final state output
         elif line.startswith("END"):
             didPassEndMarker = True
+            addLine(line)
+            continue
         # Defining a new entity
         elif line.startswith("agents") or line.startswith("mobs") or line.startswith("items"):
-            line = handleEntityDefinitionLine(line)
-
-        # ============================================================
-        # Split Line Checks
-        # ============================================================
-        if shouldAddLine:
-            strings = line.split("-")
-            for idx in range(0, len(strings)):
-                # Found an entity id - map it to the simpler version
-                if strings[idx] in id_map:
-                    strings[idx] = id_map[strings[idx]]
-
-                # Found an entity referenced after dying
-                if not didPassEndMarker and strings[idx] in dead_entities:
-                    shouldAddLine = False
-                    break
-            line = "-".join(strings)  # Rejoin
-
-        # ============================================================
-        # More Whole Line Checks (after mapping IDs)
-        # ============================================================
+            handleEntityDefinitionLine(line)
+            continue
         # Declaring an entity as either alive or dead
-        if line.startswith("status"):
-            shouldAddLine = handleEntityStatusLine(line)
+        elif line.startswith("status"):
+            handleEntityStatusLine(line)
+            continue
         # Attacking an entity
         elif line.startswith("!ATTACK"):
             lineIdx += handleAttackLine(line, lineIdx)
-            continue    # Handling for attack alters the new_final_contents... we should immediately move to next line
+            continue
+        # Default case... just add the line
+        else:
+            addLine(line)
+            continue
 
-        if shouldAddLine:
-            new_file_contents.append(line)
+    # ============================================================
+    # New Log Traversal
+    # ============================================================
+    lineIdx = -1
+    new_file_len = len(new_file_contents)
+    while lineIdx < new_file_len - 1:
+        lineIdx += 1
+        line = new_file_contents[lineIdx]
+        strings = line.split("-")
+
+        # Check that each action is followed by its expected post-conditions
+        if strings[0] in ACTION_POST_TUPLES:
+            # Check that each action's preconditions were actually set before-hand
+            if not checkActionPreconditions(lineIdx):
+                os.remove(filePath)
+                LOGS_DELETED += 1
+                return
+            # Check that each action is followed by its expected post-conditions
+            new_file_len -= checkActionPostconditions(lineIdx)
+            continue
 
     # Output the list of strings back to the file with the same name
     with open(filePath, "w+") as newFile:
