@@ -1,17 +1,26 @@
+#!/usr/bin/python
 # ==============================================================================================
 # This file represents a standalone script for the post-processing of log files. For each file
 # in the logs/ directory, parse the log and resolve any minor issues that have resulted due to
 # tolerance issues while the mission ran.
 # ==============================================================================================
 import os
+import sys
 
+# GLOBALS FOR ALL LOGS
 WORKING_DIR = None          # Current working directory of this script
+TOTAL_LOGS = 0              # Total number of logs processed
+LOGS_DELETED = 0            # Number of logs that were deleted due to unmet conditions specified by parameters
+MIN_KILLS = 0               # Minimum number of kills that must be made by the agents in order to preserve log
+
+# GLOBALS FOR EACH LOG
 old_file_contents = []      # A list of the lines for the original log file
 new_file_contents = []      # A list of the lines for the new log file after post-processing
 id_counters = {}            # A global counter for each type of entity for generating new simple entity ids
 id_map = {}                 # A mapping of original complex Malmo ids to simpler ones generated in this script
 dead_entities = []          # A list of ids for entities that have been declared as dead
 didPassEndMarker = False    # Boolean signifying if we have passed the END marker specifying the start of final state output
+
 
 def resetGlobals():
     """
@@ -169,7 +178,7 @@ def processLogFile(filePath):
     """
     Given a full, absolute path to a log file, parse the file and fix any issues, rewriting the result back out to the file.
     """
-    global id_counters, old_file_contents, new_file_contents, id_map, dead_entities, didPassEndMarker
+    global LOGS_DELETED, id_counters, old_file_contents, new_file_contents, id_map, dead_entities, didPassEndMarker
 
     # Reset the global variables at the start of a new log
     resetGlobals()
@@ -241,19 +250,45 @@ def processLogFile(filePath):
     with open(filePath, "w+") as newFile:
         newFile.write("\n".join(new_file_contents))
 
+    # Do any additional parameter checks to see if we should keep the file
+    if len(dead_entities) < MIN_KILLS:
+        os.remove(filePath)
+        LOGS_DELETED += 1
+
 def main():
     """
     Main method.
     """
-    global WORKING_DIR
-    WORKING_DIR = os.getcwd()
+    global WORKING_DIR, TOTAL_LOGS, MIN_KILLS
 
+    # Process command-line parameters
+    if "-h" in sys.argv:
+        print("Usage: {} <args>".format(sys.argv[0]))
+        print("-h : Display this help message")
+        print("-k <amt> : Companion must kill <amt> number of entities (delete log otherwise)")
+        return
+    if "-k" in sys.argv:
+        kIndex = sys.argv.index("-k")
+        if kIndex == len(sys.argv) - 1:
+            print("Error - No amount specified for argument '-k'")
+            return
+        try:
+            MIN_KILLS = int(sys.argv[kIndex + 1])
+        except ValueError:
+            print("Error - '{}' is not a valid amount for argument '-k'".format(sys.argv[kIndex + 1]))
+            return
+
+    WORKING_DIR = os.getcwd()
     if not doesLogDirectoryExist():
         print("Error - Output directory '{}' does not exist.".format(os.path.join(WORKING_DIR, "logs")))
 
     logFilePaths = getLogFilePaths()
+    TOTAL_LOGS = len(logFilePaths)
     for path in logFilePaths:
         processLogFile(path)
+
+    print("Logs cleaned: {}".format(TOTAL_LOGS - LOGS_DELETED))
+    print("Logs deleted: {}".format(LOGS_DELETED))
 
 if __name__ == "__main__":
     main()
