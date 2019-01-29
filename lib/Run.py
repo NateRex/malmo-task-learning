@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # ==============================================================================================
 # This file represents a standalone script for running one of the missions in this directory
 # a certain number of times contiguously. This is useful for exhaustively simulating a single
@@ -21,7 +22,7 @@ def main():
 
     for i in range(0, numberOfRuns):
         print("Starting run {}".format(i + 1))
-        subprocess.check_output(["python3", missionFile], shell=True)
+        subprocess.check_output(["python3", missionFile])
 
     print("Done")
 
