@@ -214,11 +214,6 @@ def processLogFile(filePath):
         # Defining a new entity
         elif line.startswith("agents") or line.startswith("mobs") or line.startswith("items"):
             line = handleEntityDefinitionLine(line)
-        # Attacking an entity
-        elif line.startswith("!ATTACK"):
-            lineIdx += handleAttackLine(line, lineIdx)
-            continue    # Handling for attack alters the new_final_contents... we should immediately move to next line
-
 
         # ============================================================
         # Split Line Checks
@@ -242,6 +237,10 @@ def processLogFile(filePath):
         # Declaring an entity as either alive or dead
         if line.startswith("status"):
             shouldAddLine = handleEntityStatusLine(line)
+        # Attacking an entity
+        elif line.startswith("!ATTACK"):
+            lineIdx += handleAttackLine(line, lineIdx)
+            continue    # Handling for attack alters the new_final_contents... we should immediately move to next line
 
         if shouldAddLine:
             new_file_contents.append(line)
