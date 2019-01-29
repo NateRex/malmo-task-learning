@@ -707,6 +707,8 @@ class Agent:
         """
         # Our tolerance depends on how close we are to the object
         agentPos = self.getPosition()
+        if agentPos == None:
+            return False
         distanceFromTarget = MathExt.distanceBetweenPoints(agentPos, targetPosition)
         yawRate = self.__getYawRateToFacePosition__(targetPosition)
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)

@@ -119,25 +119,28 @@ def handleAttackLine(line, lineIdx):
     global new_file_contents
     attackedEntityId = line.split("-")[2]
 
-    # Move to the end of the possible series of attacks
-    # TODO: HANDLE CASE WHERE ATTACKS HAPPEN EVEN THOUGH ENTITY DIED
-    lastAttackIdx = lineIdx
-    for i in range(lineIdx + 1, len(old_file_contents)):
+    targetAttackIdx = None   # Line of attack action that resulted in the entity dying (if any)
+    lastAttackIdx = lineIdx  # Line of the last attack in this series of attacks
+    for i in range(lineIdx, len(old_file_contents)):
         lineToCheck = old_file_contents[i]
         if not lineToCheck.startswith("!"):
             continue
         else:
             if lineToCheck.startswith("!ATTACK") and lineToCheck.endswith(attackedEntityId):
                 lastAttackIdx = i
+                nextLine = old_file_contents[i + 1] if i < len(old_file_contents) - 1 else ""
+                if nextLine.startswith("status"):
+                    targetAttackIdx = i
             else:
                 break
 
     # If this attack ended with the entity dying, make sure it is officially logged and return to move ahead in the log past the status update
-    statusLine = old_file_contents[lastAttackIdx + 1] if lastAttackIdx + 1 < len(old_file_contents) else ""
-    if statusLine.startswith("status") and statusLine.endswith("dead") and attackedEntityId in statusLine.split("-"):
-        new_file_contents.append(line)
-        new_file_contents.append(old_file_contents[lastAttackIdx + 1])
-        return lastAttackIdx - lineIdx + 1
+    if targetAttackIdx != None:
+        statusLine = old_file_contents[targetAttackIdx + 1]
+        if statusLine.startswith("status") and statusLine.endswith("dead") and attackedEntityId in statusLine.split("-"):
+            new_file_contents.append(line)
+            new_file_contents.append(old_file_contents[lastAttackIdx + 1])
+            return lastAttackIdx - lineIdx + 1
 
     # Attack was NOT conducted until completion. Loop backwards over new_file_contents and delete immediate prior actions on the attacked entity.
     startDeleteIdx = len(new_file_contents) - 1
@@ -174,8 +177,12 @@ def processLogFile(filePath):
     with open(filePath, "r") as logFile:
         line = logFile.readline()
         while line:
-            old_file_contents.append(line[:-1]) # Do not include newline at the end of each line
-            line = logFile.readline()
+            nextLine = logFile.readline()
+            if not nextLine:
+                old_file_contents.append(line)
+            else:
+                old_file_contents.append(line[:-1]) # Do not include newline at the end of each line
+            line = nextLine
 
     lineIdx = -1
     while lineIdx < len(old_file_contents) - 1:
@@ -221,7 +228,7 @@ def processLogFile(filePath):
             line = "-".join(strings)  # Rejoin
 
         # ============================================================
-        # More Whole Line Checks
+        # More Whole Line Checks (after mapping IDs)
         # ============================================================
         # Declaring an entity as either alive or dead
         if line.startswith("status"):
