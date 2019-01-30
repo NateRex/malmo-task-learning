@@ -29,13 +29,13 @@ class Agent:
 
         # Recorded information for previous state/action observations used for checking state changes and logging
         self.lastWorldState = None
-        self.lastStartedLookingAt = None
-        self.lastStartedMovingTo = None
-        self.lastClosestMob = None
-        self.lastClosestPeacefulMob = None
-        self.lastClosestHostileMob = None
-        self.lastClosestFoodMob = None
-        self.lastClosestFoodItem = None
+        self.lastStartedLookingAt = ""
+        self.lastStartedMovingTo = ""
+        self.lastClosestMob = ""
+        self.lastClosestPeacefulMob = ""
+        self.lastClosestHostileMob = ""
+        self.lastClosestFoodMob = ""
+        self.lastClosestFoodItem = ""
         self.lastItemAmount = 0
 
     @staticmethod
@@ -53,11 +53,11 @@ class Agent:
         """
         Resets the information regarding the most recent entities found nearby.
         """
-        self.lastClosestMob = None
-        self.lastClosestPeacefulMob = None
-        self.lastClosestHostileMob = None
-        self.lastClosestFoodMob = None
-        self.lastClosestFoodItem = None
+        self.lastClosestMob = ""
+        self.lastClosestPeacefulMob = ""
+        self.lastClosestHostileMob = ""
+        self.lastClosestFoodMob = ""
+        self.lastClosestFoodItem = ""
 
     def isMissionActive(self):
         """
