@@ -125,7 +125,7 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-Logger.trackClosestHostileMob()
+Logger.trackClosestHostileMob(player_agent)
 Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:

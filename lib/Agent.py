@@ -84,6 +84,12 @@ class Agent:
                 self.lastWorldState = json.loads(agentState.observations[-1].text)
                 return self.lastWorldState
 
+    def getIndex(self):
+        """
+        Return the index of this agent in the global list of agents.
+        """
+        return Agent.agentList.index(self)
+
     def getId(self):
         """
         Returns the unique identifier for this agent. Returns none if unsuccessful.
