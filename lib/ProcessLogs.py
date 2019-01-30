@@ -24,21 +24,22 @@ new_file_contents = []      # A list of the lines for the new log file after pos
 id_counters = {}            # A global counter for each type of entity for generating new simple entity ids
 id_map = {}                 # A mapping of original complex Malmo ids to simpler ones generated in this script
 dead_entities = []          # A list of ids for entities that have been declared as dead
-didPassEndMarker = False    # Boolean signifying if we have passed the END marker specifying the start of final state output
+startMarkerIndex = None     # Location in the log of the START marker
+endMarkerIndex = None       # Location in the log of the END marker
 
 
 def resetGlobals():
     """
     Reset the global values so that they are ready to be used for processing a new log.
     """
-    global id_counters, old_file_contents, new_file_contents, id_map, dead_entities, didPassEndMarker
+    global id_counters, old_file_contents, new_file_contents, id_map, dead_entities, startMarkerIndex, endMarkerIndex
     old_file_contents = []
     new_file_contents = []
     id_counters = {}
     id_map = {}
     dead_entities = []
-    didPassEndMarker = False
-
+    startMarkerIndex = None
+    endMarkerIndex = None
 
 def getNextIdNumberForType(entityType):
     """
@@ -94,7 +95,7 @@ def addLine(line):
     strings = line.split("-")
     for idx in range(0, len(strings)):
         # If an entity is referenced after already dying, do not add the line
-        if not didPassEndMarker and strings[idx] in dead_entities:
+        if endMarkerIndex == None and strings[idx] in dead_entities:
             return
     new_file_contents.append("-".join(strings))
 
@@ -209,14 +210,16 @@ def handleAttackLine(line, lineIdx):
 # Operations on newly generated log
 # ======================================================================
 
-def checkActionPreconditions(idx):
+def checkActionPreconditions(idx, checkClosest=False):
     """
     Given a line index of an action in the newly generated log contents, make sure that each pre-condition has been set beforehand in the log.
-    Returns true if all preconditions were set, false otherwise.
+    Returns 0 if no changes occurred, > 0 for the amount the log was truncated by (if any), and -1 if the log should be discarded.
     """
+    global new_file_contents
     # Gather all of the preconditions we will be checking for
     startIdx = idx
     preconditions = []
+    preconditionLineNumbers = []
     for i in range(idx - 1, -1, -1):
         startIdx = i
         # Newline is the stopping point
@@ -224,30 +227,45 @@ def checkActionPreconditions(idx):
             break
         # ClosestXXX comes in at random (ignore)
         elif new_file_contents[i].startswith("closest"):
-            continue
+            if checkClosest == True:
+                preconditions.append(new_file_contents[i].split("-"))
+                preconditionLineNumbers.append(i)
+            else:
+                continue
         # Add the precondition
         else:
             preconditions.append(new_file_contents[i].split("-"))
+            preconditionLineNumbers.append(i)
 
     # Loop backwards and check for the postconditions having been set. Note: if a precondition is set with the wrong values, then it is still a failure
+    linesDeleted = 0
     for i in range(startIdx, -1, -1):
         lineToCheck = new_file_contents[i].split("-")
         for j in range(0, len(preconditions)):
             if lineToCheck[0] == preconditions[j][0] and lineToCheck[1] == preconditions[j][1]:     # If 1st two args match, ensure the entire lines match
                 if len(lineToCheck) != len(preconditions[j]):
-                    return False
+                    return -1
+                allValuesMatch = True
                 for k in range(0, len(preconditions[j])):
                     if lineToCheck[k] != preconditions[j][k]:
-                        return False
+                        allValuesMatch = False
+
+                if not allValuesMatch and preconditions[j][0].startswith("closest") and i < startMarkerIndex:   # ClosestXXX is a special case, where if we are checking for it, it can only appear in initial state
+                    # Modify closestXXX line in start state and remove precondition from before the action
+                    new_file_contents[i] = "-".join(preconditions[j])
+                    del new_file_contents[preconditionLineNumbers[j]]
+                    linesDeleted += 1
+                    allValuesMatch = True
+                if not allValuesMatch:
+                    return -1
                 del preconditions[j]
                 break
 
     # If not all preconditions were set, return false
     if len(preconditions) > 0:
-        return False
+        return -1
     else:
-        return True
-
+        return linesDeleted
 
 def checkActionPostconditions(idx):
     """
@@ -285,11 +303,9 @@ def processLogFile(filePath):
     """
     Given a full, absolute path to a log file, parse the file and fix any issues, rewriting the result back out to the file.
     """
-    global LOGS_DELETED, id_counters, old_file_contents, new_file_contents, id_map, dead_entities, didPassEndMarker
+    global LOGS_DELETED, id_counters, old_file_contents, new_file_contents, id_map, dead_entities, startMarkerIndex, endMarkerIndex
 
-    # Reset the global variables at the start of a new log
     resetGlobals()
-
     with open(filePath, "r") as logFile:
         line = logFile.readline()
         while line:
@@ -301,7 +317,7 @@ def processLogFile(filePath):
             line = nextLine
 
     # ============================================================
-    # Original Log Traversal
+    # Copy old log -> new log, applying adjustments
     # ============================================================
     lineIdx = -1
     while lineIdx < len(old_file_contents) - 1:
@@ -320,9 +336,14 @@ def processLogFile(filePath):
         elif line.startswith("closest"):
             handleClosestXXXLine(line)
             continue
+        # Leaving initial state output
+        elif line.startswith("START"):
+            startMarkerIndex = lineIdx
+            addLine(line)
+            continue
         # Entering final state output
         elif line.startswith("END"):
-            didPassEndMarker = True
+            endMarkerIndex = lineIdx
             addLine(line)
             continue
         # Defining a new entity
@@ -343,24 +364,48 @@ def processLogFile(filePath):
             continue
 
     # ============================================================
-    # New Log Traversal
+    # Perform additional cleanup on new log
     # ============================================================
     lineIdx = -1
     new_file_len = len(new_file_contents)
+    startMarkerIndex = None
+    endMarkerIndex = None
+    nextActionIsFirstAction = True
     while lineIdx < new_file_len - 1:
         lineIdx += 1
         line = new_file_contents[lineIdx]
         strings = line.split("-")
 
-        # Check that each action is followed by its expected post-conditions
-        if strings[0] in ACTION_POST_TUPLES:
+        # ============================================================
+        # Line Checks
+        # ============================================================
+        # Leaving initial state output
+        if line.startswith("START"):
+            startMarkerIndex = lineIdx
+            continue
+        # If line represents an action
+        elif strings[0] in ACTION_POST_TUPLES:
             # Check that each action's preconditions were actually set before-hand
-            if not checkActionPreconditions(lineIdx):
+            if nextActionIsFirstAction and startMarkerIndex != None:
+                nextActionIsFirstAction = False
+                returnValue = checkActionPreconditions(lineIdx, True)
+            else:
+                returnValue = checkActionPreconditions(lineIdx)
+            if returnValue < 0:
                 os.remove(filePath)
                 LOGS_DELETED += 1
                 return
+            elif returnValue > 0:   # Just in case, move back that number of lines and continue
+                lineIdx -= (returnValue + 1)
+                new_file_len -= returnValue
+                continue
+    
             # Check that each action is followed by its expected post-conditions
-            new_file_len -= checkActionPostconditions(lineIdx)
+            returnValue = checkActionPostconditions(lineIdx)
+            if returnValue > 0:    # Just in case, move back that number of lines and continue
+                lineIdx -= (returnValue + 1)
+                new_file_len -= returnValue
+                continue
             continue
 
     # Output the list of strings back to the file with the same name
