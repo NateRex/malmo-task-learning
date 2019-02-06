@@ -369,7 +369,7 @@ class Logger:
 
         # Special case, where there is no closest mob
         if mob == None:
-            if mob != agent.lastClosestMob:
+            if "None" != agent.lastClosestMob:
                 closestLog = "closest_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
@@ -410,7 +410,7 @@ class Logger:
 
         # Special case, where there is no closest peaceful mob
         if mob == None:
-            if mob != agent.lastClosestPeacefulMob:
+            if "None" != agent.lastClosestPeacefulMob:
                 closestLog = "closest_peaceful_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
@@ -450,7 +450,7 @@ class Logger:
 
         # Special case, where there is no closest hostile mob
         if mob == None:
-            if mob != agent.lastClosestHostileMob:
+            if "None" != agent.lastClosestHostileMob:
                 closestLog = "closest_hostile_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
@@ -490,7 +490,7 @@ class Logger:
 
         # Special case, where there is no closest food mob
         if mob == None:
-            if mob != agent.lastClosestFoodMob:
+            if "None" != agent.lastClosestFoodMob:
                 closestLog = "closest_food_mob-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
@@ -530,7 +530,7 @@ class Logger:
 
         # Special case, where there is no closest food item
         if item == None:
-            if item != agent.lastClosestFoodItem:
+            if "None" != agent.lastClosestFoodItem:
                 closestLog = "closest_food_item-{}-None".format(agentId)
                 Logger.__pushStatement__(closestLog)
                 didModifyCurrentState = False
@@ -589,7 +589,7 @@ class Logger:
         # Preconditions - None
 
         # Action
-        Logger.__pushStatement__("!LOOKAT-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("!LOOKAT-{}-{}-{}".format(agentId, agent.lastFinishedLookingAt, entity.id))
         Logger.__lastLookAtDidFinish = False
 
     @staticmethod
@@ -644,7 +644,7 @@ class Logger:
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(agentId, entity.id))
 
         # Action
-        Logger.__pushStatement__("!MOVETO-{}-{}".format(agentId, entity.id))
+        Logger.__pushStatement__("!MOVETO-{}-{}-{}".format(agentId, agent.lastFinishedMovingTo, entity.id))
         Logger.__lastMoveToDidFinish = False
 
     @staticmethod

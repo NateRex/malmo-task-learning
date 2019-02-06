@@ -30,7 +30,9 @@ class Agent:
         # Recorded information for previous state/action observations used for checking state changes and logging
         self.lastWorldState = None
         self.lastStartedLookingAt = ""
+        self.lastFinishedLookingAt = "None"
         self.lastStartedMovingTo = ""
+        self.lastFinishedMovingTo = "None"
         self.lastClosestMob = ""
         self.lastClosestPeacefulMob = ""
         self.lastClosestHostileMob = ""
@@ -409,7 +411,7 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             Logger.logClosestMob(self, None)
-            self.lastClosestMob = None
+            self.lastClosestMob = "None"
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestMob(self, nearestEntity)
@@ -436,7 +438,7 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             Logger.logClosestPeacefulMob(self, None)
-            self.lastClosestPeacefulMob = None
+            self.lastClosestPeacefulMob = "None"
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestPeacefulMob(self, nearestEntity)
@@ -463,7 +465,7 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             Logger.logClosestHostileMob(self, None)
-            self.lastClosestHostileMob = None
+            self.lastClosestHostileMob = "None"
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestHostileMob(self, nearestEntity)
@@ -490,7 +492,7 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             Logger.logClosestFoodMob(self, None)
-            self.lastClosestFoodMob = None
+            self.lastClosestFoodMob = "None"
             return None
         Logger.logMobDefinition(nearestEntity)    # In case we never saw this entity before
         Logger.logClosestFoodMob(self, nearestEntity)
@@ -517,7 +519,7 @@ class Agent:
                     nearestEntity = entity
         if nearestEntity == None:
             Logger.logClosestFoodItem(self, None)
-            self.lastClosestFoodItem = None
+            self.lastClosestFoodItem = "None"
             return None
 
         # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
@@ -745,6 +747,7 @@ class Agent:
         if isLookingAt:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
+            self.lastFinishedLookingAt = entity.id
             Logger.logLookAtFinish(self, entity)
             return True
         return False
@@ -774,6 +777,7 @@ class Agent:
         if isLookingAt:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
+            self.lastFinishedLookingAt = agent.id
             Logger.logLookAtFinish(self, agentEntity)
             return True
         return False
@@ -840,6 +844,7 @@ class Agent:
         # Move to the target
         isAt = self.__moveToPosition__(mob.position, STRIKING_DISTANCE)
         if isAt:
+            self.lastFinishedMovingTo = mob.id
             Logger.logMoveToFinish(self, mob)
             self.stopMoving()
             return True
@@ -883,6 +888,7 @@ class Agent:
                 self.stopMoving()
                 self.actionOverride = None  # Release lock
                 self.stopMoving()   # Stop moving, since __moveToPosition__ will not stop agent automatically in this case
+                self.lastFinishedMovingTo = item.id
                 return True
             else:
                 return False
@@ -930,6 +936,7 @@ class Agent:
         # Move to the target
         isAt = self.__moveToPosition__(agentPos, GIVING_DISTANCE, 2)
         if isAt:
+            self.lastFinishedMovingTo = agent.id
             Logger.logMoveToFinish(self, agentEntity)
             return True
         return False
