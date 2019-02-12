@@ -17,8 +17,8 @@ MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
-player_agent = HTNAgent("Player")
-companion_agent = HTNAgent("Companion")
+player_agent = Agent("Player")
+companion_agent = Agent("Companion")
 malmoutils.parse_command_line(player_agent.host)
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10000) )
@@ -124,11 +124,8 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-Logger.trackClosestHostileMob()
+Logger.trackClosestHostileMob(player_agent)
 Logger.logInitialState(Agent.agentList)
-
-# Generate an initial plan using the HTN
-companion_agent.updatePlan()
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():

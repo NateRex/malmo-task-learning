@@ -15,15 +15,15 @@ from collections import namedtuple
 from Utils import *
 from ScenarioBuilder import ScenarioBuilder
 from HTNAgent import *
-from plan_generator import *
+from plan_generator import generate_plan
 from Logger import Logger
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
-player_agent = HTNAgent("Player")
-companion_agent = HTNAgent("Companion")
+player_agent = Agent("Player")
+companion_agent = HTNAgent("Companion", generate_plan)
 malmoutils.parse_command_line(player_agent.host)
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10000) )
@@ -133,30 +133,11 @@ Logger.trackClosestHostileMob(player_agent)
 Logger.logInitialState(Agent.agentList)
 
 # Generate an initial plan using the HTN
-companion_agent.updatePlan()
-
-state_atoms = ['agent_at-companion1-none',
- 'agent_at-player1-none',
- 'agent_looking_at-companion1-none',
- 'agent_looking_at-player1-none',
- 'agents-companion1-companion',
- 'agents-player1-player',
- 'closest_hostile_mob-companion1-zombie2',
- 'closest_hostile_mob-player1-zombie2',
- 'mobs-zombie1-zombie',
- 'mobs-zombie2-zombie',
- 'mobs-zombie3-zombie',
- 'status-companion1-alive',
- 'status-player1-alive',
- 'status-zombie1-alive',
- 'status-zombie2-alive',
- 'status-zombie3-alive']
+companion_agent.__updatePlan__()
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    #companion_agent.performNextAction()
-    print(generate_plan(state_atoms))
-    time.sleep(5)
+    companion_agent.performNextAction()
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)

@@ -29,6 +29,14 @@ RecipeItem = namedtuple("RecipeItem", "type quantity")  # An item that is part o
 # Functions
 # ==============================================================================================
 
+def isEntityInfoNamedTuple(x):
+    t = type(x)
+    b = t.__bases__
+    if len(b) != 1 or b[0] != tuple: return False
+    f = getattr(t, '_fields', None)
+    if not isinstance(f, tuple): return False
+    return all(type(n)==str for n in f)
+
 def isMob(string):
     """
     Returns true if the given string is a type of mob.

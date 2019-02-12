@@ -49,7 +49,7 @@ class Logger:
         """
         Set the flag to track the closest peaceful mob of an agent in the initial and final state.
         """
-        Logger.__stateFlagsp[agent.getIndex()] |= StateFlags.ClosestPeacefulMob.value
+        Logger.__stateFlags[agent.getIndex()] |= StateFlags.ClosestPeacefulMob.value
 
     @staticmethod
     def trackClosestHostileMob(agent):
@@ -129,15 +129,15 @@ class Logger:
         """
         # For each agent, update any information we are tracking that could potentially change on each function call
         for agent in agents:
-            if Logger.isTrackingClosestMob():
+            if Logger.isTrackingClosestMob(agent):
                 agent.getClosestMob()
-            if Logger.isTrackingClosestPeacefulMob():
+            if Logger.isTrackingClosestPeacefulMob(agent):
                 agent.getClosestPeacefulMob()
-            if Logger.isTrackingClosestHostileMob():
+            if Logger.isTrackingClosestHostileMob(agent):
                 agent.getClosestHostileMob()
-            if Logger.isTrackingClosestFoodMob():
+            if Logger.isTrackingClosestFoodMob(agent):
                 agent.getClosestFoodMob()
-            if Logger.isTrackingClosestFoodItem():
+            if Logger.isTrackingClosestFoodItem(agent):
                 agent.getClosestFoodItem()
         return Logger.__currentState
 
