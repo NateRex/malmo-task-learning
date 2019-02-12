@@ -1,9 +1,13 @@
 from __future__ import print_function
+import os
+import sys
+
+# Add HTN directory for this mission to the path
+sys.path.insert(0, os.path.join(os.getcwd(), "htns", "DefendPlayer"))
+
 from builtins import range
 import MalmoPython
 import malmoutils
-import os
-import sys
 import time
 import json
 import math
@@ -11,7 +15,7 @@ from collections import namedtuple
 from Utils import *
 from ScenarioBuilder import ScenarioBuilder
 from HTNAgent import *
-from plan_generator import plan_generator
+from plan_generator import *
 from Logger import Logger
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
@@ -125,7 +129,7 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-Logger.trackClosestHostileMob()
+Logger.trackClosestHostileMob(player_agent)
 Logger.logInitialState(Agent.agentList)
 
 # Generate an initial plan using the HTN
@@ -151,7 +155,8 @@ state_atoms = ['agent_at-companion1-none',
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     #companion_agent.performNextAction()
-    print(plan_generator.generate_plan(state_atoms))
+    print(generate_plan(state_atoms))
+    time.sleep(5)
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)
