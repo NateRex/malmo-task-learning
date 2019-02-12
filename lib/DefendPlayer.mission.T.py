@@ -11,6 +11,7 @@ from collections import namedtuple
 from Utils import *
 from ScenarioBuilder import ScenarioBuilder
 from HTNAgent import *
+from plan_generator import plan_generator
 from Logger import Logger
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
@@ -130,9 +131,27 @@ Logger.logInitialState(Agent.agentList)
 # Generate an initial plan using the HTN
 companion_agent.updatePlan()
 
+state_atoms = ['agent_at-companion1-none',
+ 'agent_at-player1-none',
+ 'agent_looking_at-companion1-none',
+ 'agent_looking_at-player1-none',
+ 'agents-companion1-companion',
+ 'agents-player1-player',
+ 'closest_hostile_mob-companion1-zombie2',
+ 'closest_hostile_mob-player1-zombie2',
+ 'mobs-zombie1-zombie',
+ 'mobs-zombie2-zombie',
+ 'mobs-zombie3-zombie',
+ 'status-companion1-alive',
+ 'status-player1-alive',
+ 'status-zombie1-alive',
+ 'status-zombie2-alive',
+ 'status-zombie3-alive']
+
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    companion_agent.performNextAction()
+    #companion_agent.performNextAction()
+    print(plan_generator.generate_plan(state_atoms))
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)

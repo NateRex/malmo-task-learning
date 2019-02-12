@@ -12,6 +12,7 @@ WORKING_DIR = None          # Current working directory of this script
 TOTAL_LOGS = 0              # Total number of logs processed
 LOGS_DELETED = 0            # Number of logs that were deleted due to unmet conditions specified by parameters
 MIN_KILLS = 0               # Minimum number of kills that must be made by the agents in order to preserve log
+MIN_LINES = 0               # Minimum number of lines that the new log must have in order to preserve it
 ACTION_POST_TUPLES = {      # A set of tuples to show what post-condition is expected immediately following an action
     "!LOOKAT" : "agent_looking_at",
     "!MOVETO" : "agent_at",
@@ -152,7 +153,7 @@ def handleEntityStatusLine(line):
     """
     global dead_entities
     addLine(line)
-    if line.endswith("dead"):
+    if line.endswith("dead") and endMarkerIndex == None:
         strings = line.split("-")
         dead_entities.append(strings[1])
 
@@ -460,17 +461,21 @@ def processLogFile(filePath):
     if len(dead_entities) < MIN_KILLS:
         os.remove(filePath)
         LOGS_DELETED += 1
+    if len(new_file_contents) < MIN_LINES:
+        os.remove(filePath)
+        LOGS_DELETED += 1
 
 def main():
     """
     Main method.
     """
-    global WORKING_DIR, TOTAL_LOGS, MIN_KILLS
+    global WORKING_DIR, TOTAL_LOGS, MIN_KILLS, MIN_LINES
 
     # Process command-line parameters
     if "-h" in sys.argv:
         print("Usage: {} <args>".format(sys.argv[0]))
         print("-h : Display this help message")
+        print("-l <amt> : New log must contain <amt> number of lines (delete log otherwise)")
         print("-k <amt> : Companion must kill <amt> number of entities (delete log otherwise)")
         return
     if "-k" in sys.argv:
@@ -481,7 +486,17 @@ def main():
         try:
             MIN_KILLS = int(sys.argv[kIndex + 1])
         except ValueError:
-            print("Error - '{}' is not a valid amount for argument '-k'".format(sys.argv[kIndex + 1]))
+            print("Error - '{}' is not a valid input for argument '{}'".format(sys.argv[kIndex + 1], sys.argv[kIndex]))
+            return
+    if "-l" in sys.argv:
+        lIndex = sys.argv.index("-l")
+        if lIndex == len(sys.argv) - 1:
+            print("Error - No amount specified for argument '-l'")
+            return
+        try:
+            MIN_LINES = int(sys.argv[lIndex + 1])
+        except ValueError:
+            print("Error - '{}' is not a valid input for argument '{}'".format(sys.argv[lIndex + 1], sys.argv[lIndex]))
             return
 
     WORKING_DIR = os.getcwd()

@@ -346,6 +346,7 @@ class Logger:
                 Logger.__pushStatement__(statement)
 
         # Refresh and log closest entity information (calling getClosestXXX automatically logs)
+        # TODO: It might be better to pull this from the _currentState instead for better accuracy...
         for agent in agents:
             agent.resetClosestEntityRecords()
             if Logger.isTrackingClosestMob(agent):
