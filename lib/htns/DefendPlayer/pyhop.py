@@ -257,7 +257,7 @@ def seek_plan(state,tasks,plan,depth,verbose=0):
             print ("# relevant methods:",len(relevant))
         # queued_subtasks = []
         for n, method in enumerate(relevant):
-            num_args = len(inspect.getargs(method.func_code)[0])
+            num_args = len(inspect.getargs(method.__code__)[0])
             # if improper number of args or preconds failed, skip this method
             subtasks = (method(state, *task1[1:]) if len(task1) == num_args else False)
             # try:
@@ -285,7 +285,7 @@ def seek_plan(state,tasks,plan,depth,verbose=0):
             subtask_strs = "\n\t".join(map(str, subtasks)) if subtasks else ""
             if verbose > 0:
                 msg = "seeking plan on task {} method {}/{}"
-                print(msg.format(method.func_name, n, len(relevant)))
+                print(msg.format(method.__name__, n, len(relevant)))
                 if subtask_strs:
                     print('\twith subtasks \n\t[{}]'.format(subtask_strs))
                 print()

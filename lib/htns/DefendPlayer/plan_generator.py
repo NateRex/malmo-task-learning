@@ -122,7 +122,7 @@ def plantree_to_graph(plan):
 def plan_sequence(plan, operators=ops):
 
     g = plantree_to_graph(plan)
-    op_names = [o.func_name for o in operators]
+    op_names = [o.__name__ for o in operators]
     longest_path = max([i for i in nx.all_simple_paths(g, plan.num, -1)])
     for i in longest_path:
         action = g.node[i]['action']
@@ -159,7 +159,7 @@ def yield_f_state_args(state, task_by_num_mobs, types):
     potentially_relevant = list(chain(*[zip(repeat(t), planner.methods[t])
                                         for t in task_by_num_mobs[c]]))
     for t, f in potentially_relevant:
-        code = f.func_code
+        code = f.__code__
         fvars = (code.co_varnames[:code.co_argcount])[1:] # skip state variable
         #print fvars
         type_guesses = dict(list(guess_type_from_name(fvars, types)))
@@ -197,14 +197,15 @@ def generate_plan(state_atoms, state_name="", verbose=0):
 
     for task_name, task_args in potentials:
         if verbose > 0:
-            print "\n"
+            print("\n")
         task = (task_name,) + tuple(task_args)
-        print task
+        if verbose > 0:
+            print(task)
         try:
             policy = planner.run(deepcopy(state), [task], verbose=verbose, k=0, kMax=0)
         except Exception as e:
             if verbose > 0:
-                print "Planning failed. Exception:", e
+                print("Planning failed. Exception:", e)
             continue
 
         if not policy:
@@ -260,7 +261,7 @@ if __name__ == "__main__":
     # read in the traces
     f = "/Users/morganfine-morris/Documents/Graduate School/Research/PYHOP/minecraft/kill3zombies_det"
     f = joinpath(f, "traces")
-    print f
+    print(f)
     if os.path.exists(f):
         trace_files = glob.glob(joinpath(f,"*"))
         initial_states = []
@@ -270,26 +271,25 @@ if __name__ == "__main__":
             ts, i, f = process_trace_file_content(data)
             initial_states.append(i)
         for state_atoms in initial_states:
-            print generate_plan(state_atoms, "test", 0)
+            print(generate_plan(state_atoms, "test", 0))
 
 
     state_atoms = [
-         'agent_at-companion1-zombie2',
+         'agent_at-companion1-none',
          'agent_at-player1-none',
-         'agent_looking_at-companion1-zombie2',
+         'agent_looking_at-companion1-none',
          'agent_looking_at-player1-none',
          'agents-companion1-companion',
          'agents-player1-player',
-         'closest_hostile_mob-companion1-zombie2',
          'closest_hostile_mob-player1-zombie2',
          'mobs-zombie1-zombie',
          'mobs-zombie2-zombie',
          'mobs-zombie3-zombie',
          'status-companion1-alive',
          'status-player1-alive',
-         'status-zombie1-dead',
-         'status-zombie2-dead',
-         'status-zombie3-dead'
+         'status-zombie1-alive',
+         'status-zombie2-alive',
+         'status-zombie3-alive'
          ]
 
-    print generate_plan(state_atoms, "test", 0)
+    print(generate_plan(state_atoms, "test", 0))

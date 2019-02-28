@@ -158,7 +158,7 @@ def method_tree(plan):
 
         if hasattr(node, "method_name") and node not in di:
             if hasattr(node, "method_code"):
-                co_obj = node.method_code.func_code
+                co_obj = node.method_code.__code__
                 # print (co_obj.co_name)
                 # print ([c for c in co_obj.co_consts if isinstance(c,str)
                 #         and (c in methods or c in operators)])
@@ -1119,7 +1119,7 @@ def seek_plan(state, t, depth, goals, k, kMax, verbose=1):
         for n, method in enumerate(relevant, 1):
             t.method_num = n
             t.method_code = method
-            num_args = len(inspect.getargs(method.func_code)[0])
+            num_args = len(inspect.getargs(method.__code__)[0])
 
             # if improper number of args or preconds failed, skip this method
             #pdb.set_trace()
@@ -1145,7 +1145,7 @@ def seek_plan(state, t, depth, goals, k, kMax, verbose=1):
             subtask_strs = "\n\t".join(map(str, subtasks)) if subtasks else ""
             if verbose > 0:
                 msg = "seeking plan on task {} method {}/{}"
-                print(msg.format(method.func_name, n, num_relevant))
+                print(msg.format(method.__name__, n, num_relevant))
                 if subtask_strs:
                     print('\twith subtasks \n\t[{}]'.format(subtask_strs))
                 print()
@@ -1170,7 +1170,7 @@ def seek_plan(state, t, depth, goals, k, kMax, verbose=1):
             if verbose > 3:
                 status = "SUCCESS" if state or state == [] else "FAILURE"
                 msg = "{} returning to depth {} from seek_plan on subtasks of {} ({}/{})"
-                print(msg.format(status, depth, method.func_name, n, num_relevant))
+                print(msg.format(status, depth, method.__name__, n, num_relevant))
                 if not (state or state == []):
                     pprint (vars(intermediate_state))
 

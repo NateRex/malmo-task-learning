@@ -21,9 +21,9 @@ def copyfunc(f, name=None):
     """Returns a deepcopy of a function."""
     try:
         # Python <3
-        return types.FunctionType(f.func_code, f.func_globals,
-                                  name or f.__name__, f.func_defaults,
-                                  f.func_closure)
+        return types.FunctionType(f.__code__, f.__globals__,
+                                  name or f.__name__, f.__defaults__,
+                                  f.__closure__)
     except AttributeError:
         # Python >=3
         return types.FunctionType(f.__code__, f.__globals__,
