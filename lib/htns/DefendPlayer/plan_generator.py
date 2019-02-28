@@ -5,21 +5,23 @@ import sys
 from copy import deepcopy
 from importlib import import_module
 from itertools import product, chain, repeat
-from minecraft import *
 import networkx as nx
 
+
+# domain should import whatever version of planner as planner
+from minecraft_pyhop import *
 import htn
 
 atom_delim = "-"
 
 def dict_to_state(dict_state, state=None, state_name=""):
     """
-    returns a treehop State object based on dict_state and state.
+    returns a planner State object based on dict_state and state.
     Changes neither.
     """
     dict_state = deepcopy(dict_state)  # protect original dict_state
     if not state:
-        state = treehop.State(state_name)
+        state = planner.State(state_name)
     else:
         state = deepcopy(state)
     for name, section in dict_state.items():
@@ -55,7 +57,7 @@ def dictify_atomized_state(atom_set):
 def get_action_string(node):
     """
     return a string representing the action contained in node
-    given a treehop node, get the action and if action has arguments,
+    given a planner node, get the action and if action has arguments,
     append arguments for that action as a string to the end of the action string
     """
     a = node["action"]
@@ -65,7 +67,7 @@ def get_action_string(node):
 
 def plantree_to_graph(plan):
     """
-    convert the plan output by Treehop into a networkx graph
+    convert the plan output by planner into a networkx graph
     """
     graph = nx.DiGraph()
     graph.root = plan.num
@@ -120,7 +122,7 @@ def plantree_to_graph(plan):
 def plan_sequence(plan, operators=ops):
 
     g = plantree_to_graph(plan)
-    op_names = [o.__name__ for o in operators]
+    op_names = [o.func_name for o in operators]
     longest_path = max([i for i in nx.all_simple_paths(g, plan.num, -1)])
     for i in longest_path:
         action = g.node[i]['action']
@@ -139,7 +141,7 @@ def guess_type_from_name(variable_names, types):
 
 def yield_f_state_args(state, task_by_num_mobs, types):
     """
-    given a treehop state object, a dict of tasks keyed by # of zombies,
+    given a planner state object, a dict of tasks keyed by # of zombies,
     and a list of type strings, yield tasks and their args that are appropriate
     given the state.
     """
@@ -154,11 +156,12 @@ def yield_f_state_args(state, task_by_num_mobs, types):
                and state.status[z] == "alive"]
     c = len(zombies)
 
-    potentially_relevant = list(chain(*[zip(repeat(t), treehop.methods[t])
+    potentially_relevant = list(chain(*[zip(repeat(t), planner.methods[t])
                                         for t in task_by_num_mobs[c]]))
     for t, f in potentially_relevant:
-        code = f.__code__
+        code = f.func_code
         fvars = (code.co_varnames[:code.co_argcount])[1:] # skip state variable
+        #print fvars
         type_guesses = dict(list(guess_type_from_name(fvars, types)))
         #print fvars, type_guesses
         argsets = [p for p in product(*[by_type[type_guesses[v]] for v in fvars])]
@@ -169,7 +172,7 @@ def yield_f_state_args(state, task_by_num_mobs, types):
 
 # sort the tasks into groups by the number of zombies mentioned in the title
 task_by_num_mobs = defaultdict(list)
-for task in treehop.methods.keys():
+for task in planner.methods.keys():
     if task.lower() == task:
         continue
     terms = task.split("_")
@@ -181,43 +184,112 @@ for k in task_by_num_mobs:
     task_by_num_mobs[k] = sorted(task_by_num_mobs[k], key=len, reverse=True)
 
 
-def generate_plan(state_atoms):
+def generate_plan(state_atoms, state_name="", verbose=0):
     global task_by_num_mobs, types
     state_atoms = [a.lower() for a in state_atoms]
     state_dict = dictify_atomized_state(state_atoms)
     state = dict_to_state(state_dict)
+    state.__name__ = state_name
     potentials = yield_f_state_args(state, task_by_num_mobs, types)
-    for task_name, task_args in potentials:
+    potentials = list(potentials)
+    #print len(potentials)
+    #print potentials
 
+    for task_name, task_args in potentials:
+        if verbose > 0:
+            print "\n"
         task = (task_name,) + tuple(task_args)
-        policy = treehop.run(deepcopy(state), [task], verbose=0, k=0, kMax=0)
+        print task
+        try:
+            policy = planner.run(deepcopy(state), [task], verbose=verbose, k=0, kMax=0)
+        except Exception as e:
+            if verbose > 0:
+                print "Planning failed. Exception:", e
+            continue
+
         if not policy:
             continue
 
+        # if planner returned a sequence of actions, no further processing needed
+        if isinstance(policy, list) and policy:
+            return policy
+
+        # if planner is treehop, extract the shortest sequence of actions
         plan = list((i[0],) + i[1] for i in plan_sequence(policy))
         if not plan:
             continue
         return plan
+    return []
+
+
+
+def process_trace_file_content(trace_file_content):
+    """
+    split the start and end states from the traces, then splits the traces and tokenizes them.
+    :param trace_file_content:
+    :return: all tokenized traces, initial state (as a list of atoms), final state (as a list of atoms)
+    """
+
+    traces = trace_file_content
+    initial_state, final_state = [], []
+    try:
+        initial_state, traces = traces.split("START")
+        initial_state = initial_state.strip().split("\n")
+    except:
+        pass
+
+    try:
+        traces, final_state = traces.split("END")
+        final_state = final_state.strip().split("\n")
+    except:
+        pass
+
+    traces = traces.strip().split("\n\n")
+    traces = [t.split("\n") for t in traces]
+    return traces, initial_state, final_state
+
 
 
 
 if __name__ == "__main__":
-    state_atoms = ['agent_at-companion1-none',
-     'agent_at-player1-none',
-     'agent_looking_at-companion1-none',
-     'agent_looking_at-player1-none',
-     'agents-companion1-companion',
-     'agents-player1-player',
-     'closest_hostile_mob-companion1-zombie2',
-     'closest_hostile_mob-player1-zombie2',
-     'mobs-zombie1-zombie',
-     'mobs-zombie2-zombie',
-     'mobs-zombie3-zombie',
-     'status-companion1-alive',
-     'status-player1-alive',
-     'status-zombie1-alive',
-     'status-zombie2-alive',
-     'status-zombie3-alive']
+    from pprint import pprint
+    import os
+    import glob
+    pprint (dict(task_by_num_mobs))
+
+    # read in the traces
+    f = "/Users/morganfine-morris/Documents/Graduate School/Research/PYHOP/minecraft/kill3zombies_det"
+    f = joinpath(f, "traces")
+    print f
+    if os.path.exists(f):
+        trace_files = glob.glob(joinpath(f,"*"))
+        initial_states = []
+        for fname in trace_files:
+            with open(fname, "r") as h:
+                data = h.read()
+            ts, i, f = process_trace_file_content(data)
+            initial_states.append(i)
+        for state_atoms in initial_states:
+            print generate_plan(state_atoms, "test", 0)
 
 
-    print(generate_plan(state_atoms))
+    state_atoms = [
+         'agent_at-companion1-zombie2',
+         'agent_at-player1-none',
+         'agent_looking_at-companion1-zombie2',
+         'agent_looking_at-player1-none',
+         'agents-companion1-companion',
+         'agents-player1-player',
+         'closest_hostile_mob-companion1-zombie2',
+         'closest_hostile_mob-player1-zombie2',
+         'mobs-zombie1-zombie',
+         'mobs-zombie2-zombie',
+         'mobs-zombie3-zombie',
+         'status-companion1-alive',
+         'status-player1-alive',
+         'status-zombie1-dead',
+         'status-zombie2-dead',
+         'status-zombie3-dead'
+         ]
+
+    print generate_plan(state_atoms, "test", 0)

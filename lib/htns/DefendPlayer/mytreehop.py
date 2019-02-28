@@ -158,7 +158,7 @@ def method_tree(plan):
 
         if hasattr(node, "method_name") and node not in di:
             if hasattr(node, "method_code"):
-                co_obj = node.method_code.__code__
+                co_obj = node.method_code.func_code
                 # print (co_obj.co_name)
                 # print ([c for c in co_obj.co_consts if isinstance(c,str)
                 #         and (c in methods or c in operators)])
@@ -1119,7 +1119,7 @@ def seek_plan(state, t, depth, goals, k, kMax, verbose=1):
         for n, method in enumerate(relevant, 1):
             t.method_num = n
             t.method_code = method
-            num_args = len(inspect.getargs(method.__code__)[0])
+            num_args = len(inspect.getargs(method.func_code)[0])
 
             # if improper number of args or preconds failed, skip this method
             #pdb.set_trace()
@@ -1242,6 +1242,9 @@ def run(state, tasks, Fexp=None, k=0, kMax=2, depth=0, verbose=0):
     global testState
     global accumulated_state_changes
     global plan_root
+
+    if verbose > 0:
+        print("Running planner TREEHOP")
 
     plan_root = None
 

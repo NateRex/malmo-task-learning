@@ -122,7 +122,7 @@ class HTNAgent(Agent):
                 if isEntityInfoNamedTuple(action.args[i]):
                     updatedEntity = self.getNearbyEntityById(action.args[i].id)
                     if updatedEntity != None:
-                        action.args[i] = self.getNearbyEntityById(action.args[i].id)
+                        action.args[i] = updatedEntity
                     else:
                         self.__planCounter__ = HTNAgent.PLAN_UPDATE_COUNTER
                         return
