@@ -1016,12 +1016,13 @@ class Agent:
 
         self.__startAttacking__()
         self.stopAllMovement()  # Momentarily stop all movement to check if we killed the entity
-        time.sleep(0.5)         # Disallows for spamming of the attack action
+        time.sleep(0.5)         # Prevents possible spamming of the attack action
         newMobsKilled = self.getMobsKilled()
 
         if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, mob, True)
-            # self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
+            time.sleep(0.5)             # Buffer of time to allow item to appear in inventory if immediately picked up
+            self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
         else:
             Logger.logAttack(self, mob, False)
 

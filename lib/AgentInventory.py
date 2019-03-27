@@ -97,8 +97,8 @@ class AgentInventory:
             else:
                 itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
+        print("{} got {}".format(self.__agent__.id, itemId))
         self.__inventory__[itemTypeStr].append(item)
-        print("{} got item {}".format(self.__agent__.getId(), itemId))
         return item
 
     def removeItem(self, item):
