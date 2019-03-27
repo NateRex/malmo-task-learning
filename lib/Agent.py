@@ -1103,5 +1103,5 @@ class Agent:
         self.equip(item)
         time.sleep(0.5) # There is a small delay in equipping an item
         self.__throwItem__()
-        time.sleep(2)   # Wait for agent to pick up item
+        time.sleep(3)   # Wait for agent to pick up item
         return True

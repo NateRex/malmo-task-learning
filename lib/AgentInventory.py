@@ -110,7 +110,6 @@ class AgentInventory:
         for i in range(0, len(self.__inventory__[item.type])):
             if self.__inventory__[item.type][i].id == item.id:
                 self.__inventory__[item.type].pop(i)
-                Logger.logAgentLostItem(self.__agent__, item)
                 return
 
     def allItems(self):

@@ -614,6 +614,8 @@ class Logger:
                 if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
                     Logger.__currentState[i] = lookAtLog
                     break
+        else:
+            print("UHOH")
 
         Logger.__lastLookAtDidFinish = True
         Logger.__pushNewline__()
