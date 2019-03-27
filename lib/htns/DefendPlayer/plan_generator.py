@@ -273,23 +273,22 @@ if __name__ == "__main__":
         for state_atoms in initial_states:
             print(generate_plan(state_atoms, "test", 0))
 
-
     state_atoms = [
-         'agent_at-companion1-none',
-         'agent_at-player1-none',
-         'agent_looking_at-companion1-none',
-         'agent_looking_at-player1-none',
-         'agents-companion1-companion',
-         'agents-player1-player',
-         'closest_hostile_mob-player1-zombie2',
-         'mobs-zombie1-zombie',
-         'mobs-zombie2-zombie',
-         'mobs-zombie3-zombie',
-         'status-companion1-alive',
-         'status-player1-alive',
-         'status-zombie1-alive',
-         'status-zombie2-alive',
-         'status-zombie3-alive'
-         ]
+             'agents-Player1-Player',
+             'status-Player1-alive',
+             'mobs-Zombie201640285190554278589485680219908658-Zombie',
+             'status-Zombie201640285190554278589485680219908658-alive',
+             'mobs-Zombie386064255537054517581655592028237924-Zombie',
+             'status-Zombie386064255537054517581655592028237924-alive',
+             'mobs-Zombie421040915608654835598585208799217582-Zombie',
+             'status-Zombie421040915608654835598585208799217582-alive',
+             'agent_looking_at-Player1-None',
+             'agent_at-Player1-None',
+             'closest_hostile_mob-Player1-Zombie386064255537054517581655592028237924',
+             'agents-Companion1-Companion',
+             'status-Companion1-alive',
+             'agent_looking_at-Companion1-Zombie386064255537054517581655592028237924',
+             'agent_at-Companion1-None'
+             ]
 
     print(generate_plan(state_atoms, "test", 0))

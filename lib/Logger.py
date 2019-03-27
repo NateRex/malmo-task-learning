@@ -608,10 +608,12 @@ class Logger:
         Logger.__pushStatement__(lookAtLog)
 
         # Modify the current state (there will always be an agent_looking_at string in the current state..)
-        for i in range(0, len(Logger.__currentState)):
-            if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
-                Logger.__currentState[i] = lookAtLog
-                break
+        # TODO: We currently avoid doing this for HTNAgents, since we may no longer be at the entity by the time a plan is generated
+        if agent.__class__.__name__ != "HTNAgent":
+            for i in range(0, len(Logger.__currentState)):
+                if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
+                    Logger.__currentState[i] = lookAtLog
+                    break
 
         Logger.__lastLookAtDidFinish = True
         Logger.__pushNewline__()
@@ -663,10 +665,12 @@ class Logger:
         Logger.__pushStatement__(isAtLog)
 
         # Modify the current state (there will always be an agent_at string in the current state..)
-        for i in range(0, len(Logger.__currentState)):
-            if Logger.__currentState[i].startswith("agent_at-{}".format(agentId)):
-                Logger.__currentState[i] = isAtLog
-                break
+        # TODO: We currently avoid doing this for HTNAgents, since we may no longer be at the entity by the time a plan is generated
+        if agent.__class__.__name__ != "HTNAgent":
+            for i in range(0, len(Logger.__currentState)):
+                if Logger.__currentState[i].startswith("agent_at-{}".format(agentId)):
+                    Logger.__currentState[i] = isAtLog
+                    break
 
         Logger.__lastMoveToDidFinish = True
         Logger.__pushNewline__()
