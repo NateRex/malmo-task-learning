@@ -29,8 +29,7 @@ class AgentInventory:
         """
         Given an agent's inventory JSON from an observation, update this inventory to contain only the items found.
         """
-        observationJson = self.__agent__.waitForNextObservationJson()   # Ensure that the observation we use is the newest
-        inventoryJson = observationJson["inventory"]
+        inventoryJson = self.__agent__.getInventoryJson()
         itemsLeft = len(inventoryJson) != 0
         while (itemsLeft):
             itemType = inventoryJson[0]["type"]
@@ -98,7 +97,6 @@ class AgentInventory:
             else:
                 itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
-        Logger.logAgentAquiredItem(self.__agent__, item)
         self.__inventory__[itemTypeStr].append(item)
         print("{} got item {}".format(self.__agent__.getId(), itemId))
         return item

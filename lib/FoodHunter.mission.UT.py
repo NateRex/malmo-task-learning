@@ -110,8 +110,8 @@ safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_d
 safeWaitForStart([player_agent.host, companion_agent.host])
 
 # Log initial state
-Logger.trackClosestFoodMob()
-Logger.trackClosestFoodItem()
+Logger.trackClosestFoodMob(companion_agent)
+Logger.trackClosestFoodItem(companion_agent)
 Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:
@@ -154,7 +154,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         continue
     
     # Nothing to do...
-    companion_agent.stopAllMovement()
+    companion_agent.noAction()
 
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)

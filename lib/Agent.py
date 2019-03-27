@@ -370,6 +370,18 @@ class Agent:
         self.stopMoving()
         self.stopAttacking()
 
+    def noAction(self):
+        """
+        An action to perform if there is nothing left to do for the current environment.
+        Should usually be called upon at the bottom of the mission loop.
+        """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.noAction:
+            return self.actionOverride.function(*self.actionOverride.args)
+
+        self.stopAllMovement()
+        return True
+
     def getNearbyEntities(self):
         """
         Returns a list of named EntityInfo tuples of all entities within a 20x20 area around this agent.
@@ -524,7 +536,6 @@ class Agent:
 
         # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
         if not Logger.isEntityDefined(nearestEntity):
-            Logger.logItemDefinition(nearestEntity)
             AgentInventory.enqueueItemId(nearestEntity)
             for _ in range(1, nearestEntity.quantity):
                 newItem = Item("{}{}".format(nearestEntity.type, self.inventory.getId()), nearestEntity.type)
@@ -850,6 +861,7 @@ class Agent:
             return True
         return False
 
+    global_counter = 0
     def moveToItem(self, item):
         """
         Begin continuously moving to reach a the specified item.
@@ -857,7 +869,6 @@ class Agent:
         """
         # Check action override
         if self.actionOverride != None and self.actionOverride.function != self.moveToItem:
-            print("HIT 1")
             return self.actionOverride.function(*self.actionOverride.args)
 
         # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
@@ -865,32 +876,32 @@ class Agent:
             # Precondition: We are looking at the target
             isLooking = self.__isLookingAt__(item.position)
             if not isLooking:
-                print("HIT 2")
                 self.stopAllMovement()
                 return False
 
-        # If this is the first call to move to this item, remember the amount of the item we started with
+        # If this is the first call to move to this item, remember the amount of the item we started with.
+        # Additionally, queue up each item id in the stack so that when they appear in the AgentInventory, the ids will be preserved.
         if self.lastStartedMovingTo != item.id:
             self.lastItemAmount = self.inventory.amountOfItem(item.type)
 
-        Logger.logMoveToStart(self, item)
         self.lastStartedMovingTo = item.id
+        Logger.logMoveToStart(self, item)
 
         # Move to the target (do not allow hard-stop, in case we are not yet quite close enough to pick up item)
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE, 0, False)
-        if isAt:      
+        if isAt:
             # Lock this action into repeat and do not officially report true until the item appears in our inventory
             self.actionOverride = Action(self.moveToItem, [item])
             self.inventory.update()
             newAmount = self.inventory.amountOfItem(item.type)
             if newAmount > self.lastItemAmount:
                 Logger.logMoveToFinish(self, item)
-                self.stopMoving()
                 self.actionOverride = None  # Release lock
                 self.stopMoving()   # Stop moving, since __moveToPosition__ will not stop agent automatically in this case
                 self.lastFinishedMovingTo = item.id
                 return True
             else:
+                Agent.global_counter += 1
                 return False
         return False
 
@@ -1092,5 +1103,4 @@ class Agent:
         time.sleep(0.5) # There is a small delay in equipping an item
         self.__throwItem__()
         time.sleep(2)   # Wait for agent to pick up item
-        #Logger.logGiveItemToAgent(self, inventoryItem, agent)
         return True
