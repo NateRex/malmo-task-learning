@@ -18,6 +18,7 @@ ACTION_POST_TUPLES = {      # A set of tuples to show what post-condition is exp
     "!MOVETO" : "agent_at",
     "!ATTACK" : "status"
 }
+ENTITY_DECLARATION_STRINGS = ["items", "mobs", "agents"]    # A list of strings representing the start to an entity declaration
 
 # GLOBALS FOR EACH LOG
 old_file_contents = []      # A list of the lines for the original log file
@@ -229,17 +230,15 @@ def checkActionPreconditions(idx, checkClosest=False):
         # Newline is the stopping point
         if new_file_contents[i] == "":
             break
-        # ClosestXXX comes in at random (ignore)
-        elif new_file_contents[i].startswith("closest"):
-            if checkClosest == True:
-                preconditions.append(new_file_contents[i].split("-"))
-                preconditionLineNumbers.append(i)
-            else:
-                continue
+        # ClosestXXX comes in at random (ignore if we are not to check that closest_entity... was set beforehand)
+        elif new_file_contents[i].startswith("closest") and not checkClosest:
+            continue
+        # Entity declarations comes in at random (ignore)
+        elif new_file_contents[i].startswith(tuple(ENTITY_DECLARATION_STRINGS)):
+            continue
         # Add the precondition
-        else:
-            preconditions.append(new_file_contents[i].split("-"))
-            preconditionLineNumbers.append(i)
+        preconditions.append(new_file_contents[i].split("-"))
+        preconditionLineNumbers.append(i)
 
     # Loop backwards and check for the postconditions having been set. Note: if a precondition is set with the wrong values, then it is still a failure
     linesDeleted = 0
@@ -405,6 +404,9 @@ def processLogFile(filePath):
             addLine(line)
             continue
 
+    for a in new_file_contents:
+        print(a)
+
     # ============================================================
     # Perform additional cleanup on new log
     # ============================================================
@@ -433,10 +435,11 @@ def processLogFile(filePath):
             # Check that each action's preconditions were actually set before-hand
             if nextActionIsFirstAction and startMarkerIndex != None:
                 nextActionIsFirstAction = False
-                returnValue = checkActionPreconditions(lineIdx, True)   # First action means 
+                returnValue = checkActionPreconditions(lineIdx, True)
             else:
                 returnValue = checkActionPreconditions(lineIdx)
             if returnValue < 0:
+                print("DELETING DUE TO LINE: {}".format(line))
                 os.remove(filePath)
                 LOGS_DELETED += 1
                 return
