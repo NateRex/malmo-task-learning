@@ -267,7 +267,7 @@ class Logger:
         return False
 
     @staticmethod
-    def logAgentAquiredItem(agent, item):
+    def logAgentHasItem(agent, item):
         """
         Logs that an agent aquired the item specified.
         """
@@ -311,7 +311,11 @@ class Logger:
                 for entity in entities:
                     Logger.logEntityDefinition(entity)
                     
-            # TODO: Starting inventory items
+            # Log starting inventory
+            agent.inventory.update()
+            inventoryItems = agent.inventory.allItems()
+            for item in inventoryItems:
+                Logger.logAgentHasItem(agent, item)
 
             # Log additional starting data dependent on the Logger flags set (getClosestXXX automatically logs)
             Logger.__pushStatement__("agent_looking_at-{}-None".format(agentId))
@@ -688,14 +692,14 @@ class Logger:
 
         # Preconditions
         for item in itemsUsed:
-            Logger.logAgentAquiredItem(agent, item)
+            Logger.logAgentHasItem(agent, item)
 
         # Action
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
         Logger.__pushStatement__("items-{}-{}".format(itemCrafted.type, itemCrafted.id))
-        Logger.logAgentAquiredItem(agent, itemCrafted)
+        Logger.logAgentHasItem(agent, itemCrafted)
         for item in itemsUsed:
             Logger.logAgentLostItem(agent, item)
 
@@ -748,7 +752,7 @@ class Logger:
 
         # Postconditions
         Logger.logAgentLostItem(sourceAgent, item)
-        Logger.logAgentAquiredItem(targetAgent, item)
+        Logger.logAgentHasItem(targetAgent, item)
 
         Logger.__pushNewline__()
 

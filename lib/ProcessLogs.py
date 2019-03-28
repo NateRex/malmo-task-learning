@@ -364,7 +364,6 @@ def processLogFile(filePath):
     while lineIdx < len(old_file_contents) - 1:
         lineIdx += 1
         line = getLine(lineIdx)
-        shouldAddLine = True
 
         # ============================================================
         # Line Checks
