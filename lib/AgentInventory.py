@@ -28,9 +28,13 @@ class AgentInventory:
     def update(self):
         """
         Given an agent's inventory JSON from an observation, update this inventory to contain only the items found.
+        Returns a list of Item objects that were added, as well as a list of Item objects that were deleted.
         """
         inventoryJson = self.__agent__.getInventoryJson()
         itemsLeft = len(inventoryJson) != 0
+        itemsAdded = []
+        itemsDeleted = []
+
         while (itemsLeft):
             itemType = inventoryJson[0]["type"]
             numOfItemInObs = inventoryJson[0]["quantity"]
@@ -45,15 +49,19 @@ class AgentInventory:
             
             if numOfItemInObs > numOfItemInInv: # Add more items with unique id of this type to inventory
                 for i in range(numOfItemInInv, numOfItemInObs):
-                    self.addItem(itemType)  # This item was obtained not through action... needs id
+                    newItem = self.addItem(itemType)
+                    itemsAdded.append(newItem)
             elif numOfItemInObs < numOfItemInInv: # Remove some items of this type from inventory
                 for i in range(numOfItemInObs, numOfItemInInv):
                     if len(self.__inventory__[itemType]) > 0:
-                        self.__inventory__[itemType].pop(0)
+                        lostItem = self.__inventory__[itemType].pop(0)
+                        itemsDeleted.append(lostItem)
 
             # Only perform another iteration if there are more items of different types that we have not yet checked
             if len(inventoryJson) == 0:
                 itemsLeft = False
+        
+        return (itemsAdded, itemsDeleted)
 
     @staticmethod
     def enqueueItemId(item):
@@ -86,7 +94,7 @@ class AgentInventory:
     def addItem(self, itemTypeStr, itemId = None):
         """
         Add an item of a specific type to this inventory, given the type as a string.
-        If no item ID was given, the ID will be either pulled from a queue or generated.
+        If no item ID was given, the ID will be either pulled from the queue or generated.
         """
         if itemTypeStr not in self.__inventory__:
             self.__inventory__[itemTypeStr] = []
