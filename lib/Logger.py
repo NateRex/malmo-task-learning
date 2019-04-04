@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import time
 from Utils import *
+from AgentInventory import *
 
 class StateFlags(Enum):
     """
@@ -273,6 +274,10 @@ class Logger:
         """
         agentId = agent.getId()
         hasLog = "agent_has-{}-{}".format(agentId, item.id)
+
+        # Ensure item has been defined
+        Logger.logItemDefinition(item)
+
         Logger.__pushStatement__(hasLog)
         Logger.__currentState.append(hasLog)
 
@@ -714,7 +719,6 @@ class Logger:
         Log the preconditions, action, and possible postconditions for the Attack command.
         """
         agentId = agent.getId()
-
         Logger.__pushNewline__()
 
         # Preconditions
@@ -728,7 +732,48 @@ class Logger:
         if didKill:
             Logger.logEntityIsAlive(entity, False)
 
+            # Sleep to give time for item to appear in inventory if one was immediately picked up
+            time.sleep(0.5)
+            
+            # If we did immediately pick up an item, log the item definitions as postconditions of the attack, and then fake a call to PickUpItem
+            newItems, _ = agent.inventory.update()
+            if len(newItems) > 0:
+                for item in newItems:
+                    Logger.logItemDefinition(item)
+                for item in newItems:
+                    Logger.logPickUpItem(agent, item)
+            # If we did NOT pick up an item, there are probably one or more lying closeby... define any items lying on the ground as post-conditions
+            else:
+                nearbyItems = agent.getAllNearbyItems()
+                for item in nearbyItems:
+                    if not Logger.isEntityDefined(item):
+                        AgentInventory.enqueueItem(item)    # We will most likely be picking up the item and so we will queue up the id to preserve it
+                        # This item, having come from the JSON observation, will have a quantity associated with it that denotes the size of the stack
+                        for _ in range(1, item.quantity):
+                            newItem = Item("{}{}".format(item.type, agent.inventory.getId()), item.type)
+                            Logger.logItemDefinition(newItem)
+                            AgentInventory.enqueueItem(newItem)
+    
         Logger.__pushNewline__()
+
+    @staticmethod
+    def logPickUpItem(agent, item):
+        """
+        Log the preconditions, action, and possible postconditions for the PickUpItem command.
+        """
+        agentId = agent.getId()
+        Logger.__pushNewline__()
+
+        # Make sure the item has been declared
+        Logger.logItemDefinition(item)
+
+        # Preconditions - None
+
+        # Action
+        Logger.__pushStatement__("!PICKUPITEM-{}-{}".format(agentId, item.id))
+
+        # Postconditions
+        Logger.logAgentHasItem(agent, item)
 
     @staticmethod
     def logGiveItemToAgent(sourceAgent, item, targetAgent):

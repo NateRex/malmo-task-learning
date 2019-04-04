@@ -534,16 +534,22 @@ class Agent:
             self.lastClosestFoodItem = "None"
             return None
 
-        # If we did not log this entity definition, we must do so for it, as well as all other items in the stack of items
-        if not Logger.isEntityDefined(nearestEntity):
-            AgentInventory.enqueueItemId(nearestEntity)
-            for _ in range(1, nearestEntity.quantity):
-                newItem = Item("{}{}".format(nearestEntity.type, self.inventory.getId()), nearestEntity.type)
-                Logger.logItemDefinition(newItem)
-                AgentInventory.enqueueItemId(newItem)
         Logger.logClosestFoodItem(self, nearestEntity)
         self.lastClosestFoodItem = nearestEntity.id
         return nearestEntity
+
+    def getAllNearbyItems(self):
+        """
+        Returns a list of items that are lying on the ground within a 20x20 area of this agent.
+        """
+        entities = self.getNearbyEntities()
+        itemList = []
+        if entities == None:
+            return itemList
+        for entity in entities:
+            if isItem(entity.type):
+                itemList.append(entity)
+        return itemList
 
     def getClosestBlockLocation(self, blockType):
         """
@@ -750,7 +756,8 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.lookAtEntity:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        Logger.logLookAtStart(self, entity)
+        if not isItem(entity.type):
+            Logger.logLookAtStart(self, entity)
         self.lastStartedLookingAt = entity.id
 
         # Look at the target
@@ -759,7 +766,8 @@ class Agent:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
             self.lastFinishedLookingAt = entity.id
-            Logger.logLookAtFinish(self, entity)
+            if not isItem(entity.type):
+                Logger.logLookAtFinish(self, entity)
             return True
         return False
 
@@ -861,15 +869,14 @@ class Agent:
             return True
         return False
 
-    global_counter = 0
-    def moveToItem(self, item):
+    def __moveToItem__(self, item):
         """
         Begin continuously moving to reach a the specified item.
-        Returns true if the agent is located at the item. Returns false otherwise.
+        Returns the list of items that were added to the agent's inventory on success.
+        Returns None on failure.
         """
-        # Check action override
-        if self.actionOverride != None and self.actionOverride.function != self.moveToItem:
-            return self.actionOverride.function(*self.actionOverride.args)
+        # DO NOT CHECK ACTION OVERRIDE HERE... The only way we will have called this action is from PickUpItem...
+        # Which locks waiting for this action to report true
 
         # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
         if self.actionOverride == None:
@@ -877,7 +884,7 @@ class Agent:
             isLooking = self.__isLookingAt__(item.position)
             if not isLooking:
                 self.stopAllMovement()
-                return False
+                return None
 
         # If this is the first call to move to this item, remember the amount of the item we started with.
         # Additionally, queue up each item id in the stack so that when they appear in the AgentInventory, the ids will be preserved.
@@ -885,25 +892,20 @@ class Agent:
             self.lastItemAmount = self.inventory.amountOfItem(item.type)
 
         self.lastStartedMovingTo = item.id
-        Logger.logMoveToStart(self, item)
 
         # Move to the target (do not allow hard-stop, in case we are not yet quite close enough to pick up item)
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE, 0, False)
         if isAt:
-            # Lock this action into repeat and do not officially report true until the item appears in our inventory
-            self.actionOverride = Action(self.moveToItem, [item])
-            self.inventory.update()
+            # Do not report true until we have officially picked up the item
+            newItems, _ = self.inventory.update()
             newAmount = self.inventory.amountOfItem(item.type)
             if newAmount > self.lastItemAmount:
                 Logger.logMoveToFinish(self, item)
                 self.actionOverride = None  # Release lock
                 self.stopMoving()   # Stop moving, since __moveToPosition__ will not stop agent automatically in this case
                 self.lastFinishedMovingTo = item.id
-                return True
-            else:
-                Agent.global_counter += 1
-                return False
-        return False
+                return newItems
+        return None
 
     def moveToBlock(self, block, exact = True):
         """
@@ -951,6 +953,35 @@ class Agent:
             Logger.logMoveToFinish(self, agentEntity)
             return True
         return False
+
+    def pickUpItem(self, item):
+        """
+        Begin looking at and moving to a nearby item to pick it up and add it to the agent's inventory.
+        Returns true if the action has successfully completed, and false otherwise.
+        """
+        # Check action override
+        if self.actionOverride != None and self.actionOverride.function != self.pickUpItem:
+            return self.actionOverride.function(*self.actionOverride.args)
+
+        # Look at the item (if we have already looked at the item and locked this function, skip this step)
+        if self.actionOverride == None:
+            isLookingAt = self.lookAtEntity(item)
+            if not isLookingAt:
+                return False
+
+        # We don't want to keep turning if we have no way to stop after locking
+        self.stopTurning()
+
+        # Note: At this point, we will lock down this function and force it to complete, as not to miss an addition to the agent's inventory
+        self.actionOverride = Action(self.pickUpItem, [item])
+        pickedUpItems = self.__moveToItem__(item)
+        if pickedUpItems != None:
+            self.actionOverride = None  # Release lock
+            for item in pickedUpItems:
+                Logger.logPickUpItem(self, item)
+            return True
+        else:
+            return False
 
     def craft(self, item, recipeItems):
         """
@@ -1021,8 +1052,6 @@ class Agent:
 
         if newMobsKilled > oldMobsKilled:
             Logger.logAttack(self, mob, True)
-            time.sleep(0.5)             # Buffer of time to allow item to appear in inventory if immediately picked up
-            self.inventory.update()     # Update the inventory in case we immediately picked up a drop item from killing the mob
         else:
             Logger.logAttack(self, mob, False)
 

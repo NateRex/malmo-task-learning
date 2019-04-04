@@ -130,11 +130,8 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # If there is beef laying on the ground nearby, go pick it up
     closestFood = companion_agent.getClosestFoodItem()
     if closestFood != None:
-        isLookingAt = companion_agent.lookAtEntity(closestFood)
-        if not isLookingAt:
-            continue
-        isAt = companion_agent.moveToItem(closestFood)
-        if not isAt:
+        didPickUp = companion_agent.pickUpItem(closestFood)
+        if not didPickUp:
             continue
         continue
 

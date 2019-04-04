@@ -3,7 +3,6 @@
 # along with corresponding ids used when generating log traces.
 # ==============================================================================================
 from Utils import *
-from Logger import *
 
 class AgentInventory:
     """
@@ -64,7 +63,7 @@ class AgentInventory:
         return (itemsAdded, itemsDeleted)
 
     @staticmethod
-    def enqueueItemId(item):
+    def enqueueItem(item):
         """
         Places the id of an item that is closest to an agent in a queue such that when an item of that type is
         randomly added to the agent's inventory from a pick-up, we first select that id.
@@ -81,7 +80,7 @@ class AgentInventory:
             AgentInventory.__idQueue__[item.type].insert(0, item.id)
 
     @staticmethod
-    def dequeueItemId(itemTypeStr):
+    def dequeueItem(itemTypeStr):
         """
         Removes the first item id of a specific type from the queue.
         """
@@ -101,11 +100,10 @@ class AgentInventory:
         if itemId == None:
             if itemTypeStr in AgentInventory.__idQueue__ and len(AgentInventory.__idQueue__[itemTypeStr]) > 0:
                 itemId = AgentInventory.__idQueue__[itemTypeStr][0]
-                self.dequeueItemId(itemTypeStr)
+                self.dequeueItem(itemTypeStr)
             else:
                 itemId = "{}{}".format(itemTypeStr, self.getId())
         item = Item(itemId, itemTypeStr)
-        print("{} got {}".format(self.__agent__.id, itemId))
         self.__inventory__[itemTypeStr].append(item)
         return item
 
