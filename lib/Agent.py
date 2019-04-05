@@ -74,7 +74,6 @@ class Agent:
         agentState = self.host.getWorldState()
         if len(agentState.observations) > 0:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
-        print(self.lastWorldState)
         return self.lastWorldState
 
     def getBlockGrid(self):
@@ -344,18 +343,6 @@ class Agent:
         Stop attacking.
         """
         self.host.sendCommand("attack 0")
-
-    def __startUsingItem__(self):
-        """
-        Begin continuously using the item in the currently selected hotbar slot.
-        """
-        self.host.sendCommand("use 1")
-
-    def __stopUsingItem__(self):
-        """
-        Stop using the item in the currently selected hotbar slot.
-        """
-        self.host.sendCommand("use 0")
 
     def __throwItem__(self):
         """
@@ -1093,10 +1080,15 @@ class Agent:
             return
         
         for inventorySlot in inventoryJson:
-            if inventorySlot.index == hotbarIdx:
-                return stringToBlockEnum(inventorySlot.type)
+            if inventorySlot["index"] == hotbarIdx:
+                return stringToBlockEnum(inventorySlot["type"])
         return None
 
+    def useItem(self):
+        """
+        Discretely uses the item currently equipped by this agent.
+        """
+        self.host.sendCommand("use 1")
 
     def giveItemToAgent(self, item, agent):
         """

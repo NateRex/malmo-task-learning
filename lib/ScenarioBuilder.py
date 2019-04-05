@@ -197,7 +197,16 @@ class AgentBuilder:
         <InventoryCommands/>
         <SimpleCraftCommands/>
         <MissionQuitCommands/>
-        <ContinuousMovementCommands/>
+        <DiscreteMovementCommands>
+            <ModifierList type="allow-list">
+                <command>use</command>
+            </ModifierList>
+        </DiscreteMovementCommands>
+        <ContinuousMovementCommands>
+            <ModifierList type="deny-list">
+                <command>use</command>
+            </ModifierList>
+        </ContinuousMovementCommands>
         <ObservationFromGrid>
             <Grid name="blockgrid">
                 <min x="{}" y="{}" z="{}"/>
