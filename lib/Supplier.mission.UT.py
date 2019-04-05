@@ -150,12 +150,25 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
 
     # PLAYER AGENT ACTIONS (wrapped in while loop to break without affecting mission loop)
     while True:
+        currentItem = player_agent.currentlyEquipped()
+
         # If player agent only has one block left of current item, set it at the "collection block" location
-        if player_agent.inventory.amountOfItem(player_agent.currentlyEquipped()) == 1:
+        if player_agent.inventory.amountOfItem(currentItem) == 1:
+            # If the companion is already collecting the other material for the player, do nothing
+            if currentItem == BlockType.Cobblestone and player_agent.inventory.amountOfItem(BlockType.Quartz_block) == 0:
+                break
+            if currentItem == BlockType.Quartz_block and player_agent.inventory.amountOfItem(BlockType.Cobblestone) == 0:
+                break
+            
+            # Look at, move to, and place the last block at the collection site
             if not player_agent.lookAtEntity(collectionBlock):
                 break
             if not player_agent.moveToEntity(collectionBlock):
                 break
+            if player_agent.getBlockTypeAtLocation(collectionBlock.position) == BlockType.Air:
+                player_agent.placeBlock()
+            else:
+                player_agent.mineBlock()
         # Otherwise, place/destroy the block at the building location
         else:
             if not player_agent.lookAtEntity(buildingBlock):

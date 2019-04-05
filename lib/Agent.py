@@ -74,6 +74,7 @@ class Agent:
         agentState = self.host.getWorldState()
         if len(agentState.observations) > 0:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
+        print(self.lastWorldState)
         return self.lastWorldState
 
     def getBlockGrid(self):
