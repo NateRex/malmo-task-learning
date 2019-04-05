@@ -199,7 +199,7 @@ class AgentBuilder:
         <MissionQuitCommands/>
         <ContinuousMovementCommands/>
         <ObservationFromGrid>
-            <Grid name="landscape">
+            <Grid name="blockgrid">
                 <min x="{}" y="{}" z="{}"/>
                 <max x="{}" y="{}" z="{}"/>
             </Grid>

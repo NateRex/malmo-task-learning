@@ -76,15 +76,15 @@ class Agent:
             self.lastWorldState = json.loads(agentState.observations[-1].text)
         return self.lastWorldState
 
-    def waitForNextObservationJson(self):
+    def getBlockGrid(self):
         """
-        Waits until the next new JSON observation comes in, returning it.
+        Returns a grid of block types surrounding this agent as a one-dimensional array. Returns None on error.
         """
-        while True:
-            agentState = self.host.getWorldState()
-            if len(agentState.observations) > 0:
-                self.lastWorldState = json.loads(agentState.observations[-1].text)
-                return self.lastWorldState
+        stateJson = self.getObservationJson()
+        if stateJson != None:
+            return stateJson.get(u'blockgrid', 0)
+        else:
+            return None
 
     def getIndex(self):
         """
@@ -555,15 +555,12 @@ class Agent:
         """
         Returns the nearest block of a given type as an entity. If no such block is found, returns None.
         """
-        agentState = self.getObservationJson()
-        if agentState == None:
-            return self.getPosition
         currentPos = self.getPosition()
+        grid = self.getBlockGrid()
+        if grid == None or currentPos == None:
+            return None
 
-        # Get observation grid of nearby blocks
-        grid = agentState.get(u'landscape', 0)
-        print("=============================================")
-
+        # Find the block type in the observation grid of nearby blocks
         index = 0
         for y in range(0, GRID_OBSERVATION_Y_LEN):
             for z in range(0, GRID_OBSERVATION_Z_LEN):
@@ -574,6 +571,30 @@ class Agent:
                         zDiff = z - GRID_OBSERVATION_Z_HALF_LEN
                         return EntityInfo("someBlock...", blockType.value, Vector(currentPos.x + xDiff, currentPos.y + yDiff, currentPos.z + zDiff), 1)
                     index += 1
+        return None
+
+    def getBlockTypeAtLocation(self, loc):
+        """
+        Get the block type at the position given. This position must be within observable distance to this agent. Returns None on error.
+        """
+        currentPos = self.getPosition()
+        grid = self.getBlockGrid()
+        if grid == None or currentPos == None:
+            return None
+
+        # Convert the x, y, z position to a location in the grid
+        xIdx = GRID_OBSERVATION_X_HALF_LEN + (loc.x - currentPos.x)
+        yIdx = GRID_OBSERVATION_Y_HALF_LEN + (loc.y - currentPos.y)
+        zIdx = GRID_OBSERVATION_Z_HALF_LEN + (loc.z - currentPos.z)
+        idx = int(yIdx * GRID_OBSERVATION_Z_LEN * GRID_OBSERVATION_X_LEN + zIdx * GRID_OBSERVATION_X_LEN + xIdx)
+
+        if idx < 0 or idx >= len(grid):
+            return None
+
+        # We want to return the actual enum.. not just the string
+        for blockType in BlockType:
+            if blockType.value == grid[idx]:
+                return blockType
         return None
 
     def __getYawRateToFacePosition__(self, targetPosition):

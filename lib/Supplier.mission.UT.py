@@ -60,6 +60,9 @@ while (towersGenerated < 13):
 # Add a special block where whichever block type sits on top of it is the one the companion will fetch
 scenarioBuilder.environment.addBlock(Vector(-4, 4, -2), BlockType.Diamond_block)
 
+# Set the starting "collection block" to be gold (something not currently in the environment)
+scenarioBuilder.environment.addBlock(Vector(-4, 5, -2), BlockType.Beacon)
+
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
 
@@ -133,6 +136,10 @@ Logger.logInitialState(Agent.agentList)
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # Check if there is anything on the signaling block
     diamondBlock = player_agent.getClosestBlockByType(BlockType.Diamond_block)
+    print("{} is at {}".format(diamondBlock.type, diamondBlock.position))
+    specialLoc = Vector(diamondBlock.position.x, diamondBlock.position.y + 1, diamondBlock.position.z)
+    blockType = player_agent.getBlockTypeAtLocation(specialLoc)
+    print("{} is at {}".format(blockType.value, specialLoc))
 
     # Nothing to do...
     companion_agent.noAction()
