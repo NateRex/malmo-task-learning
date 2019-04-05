@@ -10,10 +10,22 @@ from enum import Enum
 # Globals
 # ==============================================================================================
 
+# Inventory
 NUMBER_OF_INVENTORY_SLOTS = 40
+
+# Tolerances for completing continuous actions
 PICK_UP_ITEM_DISTANCE = 4
 STRIKING_DISTANCE = 3
 GIVING_DISTANCE = 4
+
+# The size of the observation grid for an agent, as well as how many blocks are in each axis
+GRID_OBSERVATION_SIZE = 605
+GRID_OBSERVATION_X_LEN = 11
+GRID_OBSERVATION_Y_LEN = 5
+GRID_OBSERVATION_Z_LEN = 11
+GRID_OBSERVATION_X_HALF_LEN = int(GRID_OBSERVATION_X_LEN / 2)
+GRID_OBSERVATION_Y_HALF_LEN = int(GRID_OBSERVATION_Y_LEN / 2)
+GRID_OBSERVATION_Z_HALF_LEN = int(GRID_OBSERVATION_Z_LEN / 2)
 
 # ==============================================================================================
 # Named tuples
@@ -177,6 +189,13 @@ class MathExt:
         if vector.x == 0 and vector.y == 0 and vector.z == 0:
             return True
         return False
+    
+    @staticmethod
+    def substractVectors(vectorA, vectorB):
+        """
+        Returns the vector A - B.
+        """
+        return Vector(vectorA.x - vectorB.x, vectorA.y - vectorB.y, vectorA.z - vectorB.z)
 
 # ==============================================================================================
 # Enumerated Types

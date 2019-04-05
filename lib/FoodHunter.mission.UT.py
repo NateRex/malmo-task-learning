@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from __future__ import print_function
 from builtins import range
 import MalmoPython
@@ -27,7 +28,7 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
 # Player Agent
-scenarioBuilder = ScenarioBuilder("Test Scenario", 30000, player_agent.getId(), Vector(-15, 4, -16), Direction.North)
+scenarioBuilder = ScenarioBuilder("Hunt For Food", 30000, player_agent.getId(), Vector(-15, 4, -16), Direction.North)
 scenarioBuilder.addAgent(companion_agent.getId(), Vector(-15, 4, -15), Direction.South)
 
 scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)

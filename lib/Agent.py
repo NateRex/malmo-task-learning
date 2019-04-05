@@ -551,9 +551,9 @@ class Agent:
                 itemList.append(entity)
         return itemList
 
-    def getClosestBlockLocation(self, blockType):
+    def getClosestBlockByType(self, blockType):
         """
-        Returns the nearest block of a given type as an entity.
+        Returns the nearest block of a given type as an entity. If no such block is found, returns None.
         """
         agentState = self.getObservationJson()
         if agentState == None:
@@ -561,42 +561,20 @@ class Agent:
         currentPos = self.getPosition()
 
         # Get observation grid of nearby blocks
-        grid = agentState.get(u'floor11x11', 0)
+        grid = agentState.get(u'landscape', 0)
+        print("=============================================")
 
-        # The number of the block in the grid
-        block = 200
-        x = 200
-        y = 200
-        z = 200
-        for i in range(0, 363):
-            # If a block of a given type is found
-            if grid[i] == blockType.value:
-                tempX = (i % 11) - 5
-                tempY = -1
-                tempZ = ((i - (i%11)) / 11) % 11 - 5
-                if i > 120 and i < 241:
-                    tempY = 0
-                elif i > 240:
-                    tempY = 1
-
-                # If new block is closer to companion than the previous one, return this block
-                if (abs(tempX) + abs(tempZ)) + abs(tempY) < (abs(x) + abs(z)) + abs(tempY):
-                    block = i
-                    x = tempX
-                    y = tempY
-                    z = tempZ
-
-        # If no block is found, return none
-        if block == 200:
-            return None
-
-        # Calculate the position of the block and return it as an entity
-        x = x + currentPos.x - (currentPos.x % 1) + 0.5
-        y = y + currentPos.y - (currentPos.y % 1) - 1
-        z = z + currentPos.z - (currentPos.z % 1) + 0.5
-        blockPos = Vector(x, y, z)
-        blockEnt = EntityInfo(blockType.value + str(blockPos.x) + str(blockPos.y) + str(blockPos.z), blockType.value, blockPos, 1)
-        return blockEnt
+        index = 0
+        for y in range(0, GRID_OBSERVATION_Y_LEN):
+            for z in range(0, GRID_OBSERVATION_Z_LEN):
+                for x in range(0, GRID_OBSERVATION_X_LEN):
+                    if grid[index] == blockType.value:
+                        xDiff = x - GRID_OBSERVATION_X_HALF_LEN
+                        yDiff = y - GRID_OBSERVATION_Y_HALF_LEN
+                        zDiff = z - GRID_OBSERVATION_Z_HALF_LEN
+                        return EntityInfo("someBlock...", blockType.value, Vector(currentPos.x + xDiff, currentPos.y + yDiff, currentPos.z + zDiff), 1)
+                    index += 1
+        return None
 
     def __getYawRateToFacePosition__(self, targetPosition):
         """

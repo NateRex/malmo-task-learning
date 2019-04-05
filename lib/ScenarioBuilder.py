@@ -199,9 +199,9 @@ class AgentBuilder:
         <MissionQuitCommands/>
         <ContinuousMovementCommands/>
         <ObservationFromGrid>
-            <Grid name="floor11x11">
-                <min x="-5" y="-1" z="-5"/>
-                <max x="5" y="1" z="5"/>
+            <Grid name="landscape">
+                <min x="{}" y="{}" z="{}"/>
+                <max x="{}" y="{}" z="{}"/>
             </Grid>
         </ObservationFromGrid>
         <ObservationFromNearbyEntities>
@@ -209,7 +209,7 @@ class AgentBuilder:
         </ObservationFromNearbyEntities>
         {}
         </AgentHandlers>
-        </AgentSection>'''.format(self.name, self.__position.x, self.__position.y, self.__position.z, self.__direction, self.__inventoryXML, self.__handlersXML)
+        </AgentSection>'''.format(self.name, self.__position.x, self.__position.y, self.__position.z, self.__direction, self.__inventoryXML, -GRID_OBSERVATION_X_HALF_LEN, -GRID_OBSERVATION_Y_HALF_LEN, -GRID_OBSERVATION_Z_HALF_LEN, GRID_OBSERVATION_X_HALF_LEN, GRID_OBSERVATION_Y_HALF_LEN, GRID_OBSERVATION_Z_HALF_LEN, self.__handlersXML)
 
 
 class ScenarioBuilder:
