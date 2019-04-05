@@ -592,10 +592,7 @@ class Agent:
             return None
 
         # We want to return the actual enum.. not just the string
-        for blockType in BlockType:
-            if blockType.value == grid[idx]:
-                return blockType
-        return None
+        return stringToBlockEnum(grid[idx])
 
     def __getYawRateToFacePosition__(self, targetPosition):
         """
@@ -839,31 +836,31 @@ class Agent:
             self.__startMoving__(-1)
             return False
 
-    def moveToMob(self, mob):
+    def moveToEntity(self, entity):
         """
         Begin continuously moving to reach the specified mob.
         Returns true if the agent is currently within striking distance of the mob. Returns false otherwise.
         """
         # Check action override
-        if self.actionOverride != None and self.actionOverride.function != self.moveToMob:
+        if self.actionOverride != None and self.actionOverride.function != self.moveToEntity:
             return self.actionOverride.function(*self.actionOverride.args)
 
         # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
         if self.actionOverride == None:
             # Precondition: We are looking at the target
-            isLooking = self.__isLookingAt__(mob.position)
+            isLooking = self.__isLookingAt__(entity.position)
             if not isLooking:
                 self.stopAllMovement()
                 return False
 
-        Logger.logMoveToStart(self, mob)
-        self.lastStartedMovingTo = mob.id
+        Logger.logMoveToStart(self, entity)
+        self.lastStartedMovingTo = entity.id
         
         # Move to the target
-        isAt = self.__moveToPosition__(mob.position, STRIKING_DISTANCE)
+        isAt = self.__moveToPosition__(entity.position, STRIKING_DISTANCE)
         if isAt:
-            self.lastFinishedMovingTo = mob.id
-            Logger.logMoveToFinish(self, mob)
+            self.lastFinishedMovingTo = entity.id
+            Logger.logMoveToFinish(self, entity)
             self.stopMoving()
             return True
         return False
@@ -905,17 +902,6 @@ class Agent:
                 self.lastFinishedMovingTo = item.id
                 return newItems
         return None
-
-    def moveToBlock(self, block, exact = True):
-        """
-        Begin continuously moving to reach a specified block. Specify whether the agent should move exactly to the
-        block or face it within striking distance. Returns true if the agent has arrived. Returns false otherwise.
-        """
-        # Check action override
-        if self.actionOverride != None and self.actionOverride.function != self.moveToBlock:
-            return self.actionOverride.function(*self.actionOverride.args)
-
-        return False
 
     def moveToAgent(self, agent):
         """
@@ -1095,6 +1081,21 @@ class Agent:
             return True
         
         return False
+
+    def currentlyEquipped(self):
+        """
+        Returns the item currently equipped in this agent's inventory. Returns None if no such item exists.
+        """
+        inventoryJson = self.getInventoryJson()
+        hotbarIdx = self.getCurrentHotbarIndex()
+        if inventoryJson == None or hotbarIdx == None:
+            return
+        
+        for inventorySlot in inventoryJson:
+            if inventorySlot.index == hotbarIdx:
+                return stringToBlockEnum(inventorySlot.type)
+        return None
+
 
     def giveItemToAgent(self, item, agent):
         """

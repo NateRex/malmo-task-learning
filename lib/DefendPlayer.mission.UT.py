@@ -143,7 +143,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         isLookingAt = companion_agent.lookAtEntity(zombie)
         if not isLookingAt:
             continue
-        isAt = companion_agent.moveToMob(zombie)
+        isAt = companion_agent.moveToEntity(zombie)
         if not isAt:
             continue
         companion_agent.attackMob(zombie)

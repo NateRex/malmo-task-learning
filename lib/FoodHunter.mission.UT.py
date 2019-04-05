@@ -143,7 +143,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         isLookingAt = companion_agent.lookAtEntity(closestCow)
         if not isLookingAt:
             continue
-        isAt = companion_agent.moveToMob(closestCow)
+        isAt = companion_agent.moveToEntity(closestCow)
         if not isAt:
             continue
         didAttack = companion_agent.attackMob(closestCow)

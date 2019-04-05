@@ -60,8 +60,8 @@ while (towersGenerated < 13):
 # Add a special block where whichever block type sits on top of it is the one the companion will fetch
 scenarioBuilder.environment.addBlock(Vector(-4, 4, -2), BlockType.Diamond_block)
 
-# Set the starting "collection block" to be gold (something not currently in the environment)
-scenarioBuilder.environment.addBlock(Vector(-4, 5, -2), BlockType.Beacon)
+# Add a special block to indicate where the player agent should be "building"
+scenarioBuilder.environment.addBlock(Vector(0, 3, -2), BlockType.Gold_block)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -133,13 +133,36 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Log initial state
 Logger.logInitialState(Agent.agentList)
 
+# Variables for the loop
+collectionBlock = None
+buildingBlock = None
+
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    # Check if there is anything on the signaling block
-    diamondBlock = player_agent.getClosestBlockByType(BlockType.Diamond_block)
-    print("{} is at {}".format(diamondBlock.type, diamondBlock.position))
-    specialLoc = Vector(diamondBlock.position.x, diamondBlock.position.y + 1, diamondBlock.position.z)
-    blockType = player_agent.getBlockTypeAtLocation(specialLoc)
-    print("{} is at {}".format(blockType.value, specialLoc))
+    # If this is the first iteration of the loop, find the "collection block" and "building block" and cache it for future use
+    if collectionBlock == None or buildingBlock == None:
+        diamondBlock = player_agent.getClosestBlockByType(BlockType.Diamond_block)
+        collectionBlockLoc = Vector(diamondBlock.position.x, diamondBlock.position.y + 1, diamondBlock.position.z)
+        collectionBlock = EntityInfo("collection_block0", "collection_block", collectionBlockLoc, 1)
+
+        goldBlock = player_agent.getClosestBlockByType(BlockType.Gold_block)
+        buildingBlockLoc = Vector(goldBlock.position.x, goldBlock.position.y + 1, goldBlock.position.z)
+        buildingBlock = EntityInfo("building_block0", "building_block", buildingBlockLoc, 1)
+
+    # PLAYER AGENT ACTIONS (wrapped in while loop to break without affecting mission loop)
+    while True:
+        # If player agent only has one block left of current item, set it at the "collection block" location
+        if player_agent.inventory.amountOfItem(player_agent.currentlyEquipped()) == 1:
+            if not player_agent.lookAtEntity(collectionBlock):
+                break
+            if not player_agent.moveToEntity(collectionBlock):
+                break
+        # Otherwise, place/destroy the block at the building location
+        else:
+            if not player_agent.lookAtEntity(buildingBlock):
+                break
+            if not player_agent.moveToEntity(buildingBlock):
+                break
+            # If there is nothing at the building location, place a block
 
     # Nothing to do...
     companion_agent.noAction()

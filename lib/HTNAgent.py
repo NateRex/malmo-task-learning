@@ -57,7 +57,7 @@ class HTNAgent(Agent):
                     mobId = planTuple[3].capitalize()
                     mob = self.getNearbyEntityById(mobId)
                     if mob != None:
-                        return Action(self.moveToMob, [mob])
+                        return Action(self.moveToEntity, [mob])
                 elif isItem(entityType):
                     itemId = planTuple[3].capitalize()
                     item = self.getNearbyEntityById(itemId)

@@ -91,6 +91,15 @@ def isFoodItem(string):
     foodItems = [item.value for item in ItemType.Food]
     return string in foodItems
 
+def stringToBlockEnum(string):
+    """
+    Converts a plain string to an enum object from BlockType. If it does not exist, returns None.
+    """
+    for block in BlockType:
+        if block.value == string:
+            return block
+    return None
+
 def numerifyId(string):
     """
     Given a string containing hexadecimal values that make up an id, return a new id that contains all digits and no letters.
