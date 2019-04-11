@@ -543,6 +543,7 @@ class Agent:
         """
         Returns the nearest block of a given type as an entity. If no such block is found, returns None.
         """
+
         currentPos = self.getPosition()
         grid = self.getBlockGrid()
         if grid == None or currentPos == None:
@@ -557,6 +558,7 @@ class Agent:
                         xDiff = x - GRID_OBSERVATION_X_HALF_LEN
                         yDiff = y - GRID_OBSERVATION_Y_HALF_LEN
                         zDiff = z - GRID_OBSERVATION_Z_HALF_LEN
+                        # TODO: Find an intelligent way to name/id the block
                         return EntityInfo("someBlock...", blockType.value, Vector(currentPos.x + xDiff, currentPos.y + yDiff, currentPos.z + zDiff), 1)
                     index += 1
         return None
@@ -740,6 +742,7 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.lookAtEntity:
             return self.actionOverride.function(*self.actionOverride.args)
 
+        # We don't log if it is an item we are moving to
         if not isItem(entity.type):
             Logger.logLookAtStart(self, entity)
         self.lastStartedLookingAt = entity.id

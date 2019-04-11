@@ -32,7 +32,7 @@ scenarioBuilder = ScenarioBuilder("Supply Materials", 30000, player_agent.getId(
 scenarioBuilder.addAgent(companion_agent.getId(), Vector(0, 4, 4), Direction.North)
 scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
 
-scenarioBuilder.agents[0].addInventoryItem(BlockType.Cobblestone, ItemSlot.HotBar._0, 20)
+scenarioBuilder.agents[0].addInventoryItem(BlockType.Cobblestone, ItemSlot.HotBar._0, 1)
 scenarioBuilder.agents[0].addInventoryItem(BlockType.Quartz_block, ItemSlot.HotBar._1, 15)
 scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_pickaxe, ItemSlot.HotBar._8)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.All.iron_pickaxe, ItemSlot.HotBar._0)
@@ -140,44 +140,50 @@ buildingBlock = None
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # If this is the first iteration of the loop, find the "collection block" and "building block" and cache it for future use
     if collectionBlock == None or buildingBlock == None:
-        diamondBlock = player_agent.getClosestBlockByType(BlockType.Diamond_block)
-        collectionBlockLoc = Vector(diamondBlock.position.x, diamondBlock.position.y + 1, diamondBlock.position.z)
-        collectionBlock = EntityInfo("collection_block0", "collection_block", collectionBlockLoc, 1)
+        collectionBlock = player_agent.getClosestBlockByType(BlockType.Diamond_block)
+        buildingBlock = player_agent.getClosestBlockByType(BlockType.Gold_block)
+        print(collectionBlock.position)
+        print(buildingBlock.position)
 
-        goldBlock = player_agent.getClosestBlockByType(BlockType.Gold_block)
-        buildingBlockLoc = Vector(goldBlock.position.x, goldBlock.position.y + 1, goldBlock.position.z)
-        buildingBlock = EntityInfo("building_block0", "building_block", buildingBlockLoc, 1)
-
-    # PLAYER AGENT ACTIONS (wrapped in while loop to break without affecting mission loop)
+    # PLAYER AGENT ACTIONS (wrapped in while loop to break without affecting mission loop) ======================================
     while True:
         currentItem = player_agent.currentlyEquipped()
-        player_agent.placeBlock(currentItem)
-        time.sleep(5)
-
+        
         # If player agent only has one block left of current item, set it at the "collection block" location
-        # if player_agent.inventory.amountOfItem(currentItem) == 1:
-        #     # If the companion is already collecting the other material for the player, do nothing
-        #     if currentItem == BlockType.Cobblestone and player_agent.inventory.amountOfItem(BlockType.Quartz_block) == 0:
-        #         break
-        #     if currentItem == BlockType.Quartz_block and player_agent.inventory.amountOfItem(BlockType.Cobblestone) == 0:
-        #         break
+        if player_agent.inventory.amountOfItem(currentItem) == 1:
+            # If the companion is already collecting the other material for the player, do nothing
+            if currentItem == BlockType.Cobblestone and player_agent.inventory.amountOfItem(BlockType.Quartz_block) == 0:
+                break
+            if currentItem == BlockType.Quartz_block and player_agent.inventory.amountOfItem(BlockType.Cobblestone) == 0:
+                break
             
-        #     # Look at, move to, and place the last block at the collection site
-        #     if not player_agent.lookAtEntity(collectionBlock):
-        #         break
-        #     if not player_agent.moveToEntity(collectionBlock):
-        #         break
-        #     if player_agent.getBlockTypeAtLocation(collectionBlock.position) == BlockType.Air:
-        #         player_agent.placeBlock(currentItem)
-        #     else:
-        #         player_agent.mineBlock()
-        # # Otherwise, place/destroy the block at the building location
-        # else:
-        #     if not player_agent.lookAtEntity(buildingBlock):
-        #         break
-        #     if not player_agent.moveToEntity(buildingBlock):
-        #         break
-            # If there is nothing at the building location, place a block
+            # Look at, move to, and place the last block at the collection site
+            if not player_agent.lookAtEntity(collectionBlock):
+                break
+            if not player_agent.moveToEntity(collectionBlock):
+                break
+            if player_agent.getBlockTypeAtLocation(collectionBlock.position) == BlockType.Air:
+                player_agent.useItem()
+                if currentItem == BlockType.Cobblestone:
+                    player_agent.equip(BlockType.Quartz_block)
+                else:
+                    player_agent.equip(BlockType.Cobblestone)
+            #else:
+                #player_agent.mineBlock()
+        # Otherwise, place/destroy the block at the building location
+        else:
+            if not player_agent.lookAtEntity(buildingBlock):
+                break
+            if not player_agent.moveToEntity(buildingBlock):
+                break
+            if player_agent.getBlockTypeAtLocation(buildingBlock.position) == BlockType.Air:
+                player_agent.useItem()
+            #else:
+            #    player_agent.mineBlock()
+
+
+        break   # Fallback for breaking out of agent 1 action selection
+    # ==============================================================================================================================
 
     # Nothing to do...
     companion_agent.noAction()
