@@ -106,7 +106,7 @@ class Agent:
         agentState = self.getObservationJson()
         if agentState == None:
             return None
-        return Vector(agentState["XPos"], agentState["YPos"] + 1, agentState["ZPos"])   # Agent's head is above the agent's location
+        return Vector(agentState["XPos"], agentState["YPos"], agentState["ZPos"])
 
     def getDamageDealt(self):
         """
@@ -539,11 +539,13 @@ class Agent:
                 itemList.append(entity)
         return itemList
 
+    # TODO:
+    # This method currently does not get the closest block, but rather the first one found in the observation grid for sake of time
+    # It would be better to start at the center of the grid and work outwards      
     def getClosestBlockByType(self, blockType):
         """
         Returns the nearest block of a given type as an entity. If no such block is found, returns None.
         """
-
         currentPos = self.getPosition()
         grid = self.getBlockGrid()
         if grid == None or currentPos == None:
@@ -573,11 +575,10 @@ class Agent:
             return None
 
         # Convert the x, y, z position to a location in the grid
-        xIdx = GRID_OBSERVATION_X_HALF_LEN + (loc.x - currentPos.x)
-        yIdx = GRID_OBSERVATION_Y_HALF_LEN + (loc.y - currentPos.y)
-        zIdx = GRID_OBSERVATION_Z_HALF_LEN + (loc.z - currentPos.z)
+        xIdx = math.ceil(GRID_OBSERVATION_X_HALF_LEN + (loc.x - currentPos.x))
+        yIdx = math.ceil(GRID_OBSERVATION_Y_HALF_LEN + (loc.y - currentPos.y))
+        zIdx = math.ceil(GRID_OBSERVATION_Z_HALF_LEN + (loc.z - currentPos.z))
         idx = int(yIdx * GRID_OBSERVATION_Z_LEN * GRID_OBSERVATION_X_LEN + zIdx * GRID_OBSERVATION_X_LEN + xIdx)
-
         if idx < 0 or idx >= len(grid):
             return None
 
@@ -703,7 +704,7 @@ class Agent:
         distanceFromTarget = MathExt.distanceBetweenPoints(agentPos, targetPosition)
         yawRate = self.__getYawRateToFacePosition__(targetPosition)
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
-        if distanceFromTarget > 7:
+        if distanceFromTarget < 5:
             if abs(yawRate) >= .25 or abs(pitchRate) >= .25:
                 return False
         else:
@@ -725,7 +726,7 @@ class Agent:
         pitchRate = self.__getPitchRateToFacePosition__(targetPosition)
         self.__startChangingYaw__(yawRate)
         self.__startChangingPitch__(pitchRate)
-        if distanceFromTarget > 7:
+        if distanceFromTarget < 5:
             if abs(yawRate) >= .25 or abs(pitchRate) >= .25:
                 return False
         else:
@@ -742,13 +743,19 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.lookAtEntity:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # We don't log if it is an item we are moving to
-        if not isItem(entity.type):
-            Logger.logLookAtStart(self, entity)
+        # If we are dealing with a block, always target one block below the given value
+        if isBlock(entity.type):
+            targetPosition = Vector(entity.position.x, entity.position.y - 1, entity.position.z)
+        else:
+            targetPosition = entity.position
+
+        # We don't log if it is an item we are moving to (since this method is called as a result of pickUpItem())
+        # if not isItem(entity.type):
+        #     Logger.logLookAtStart(self, entity)
         self.lastStartedLookingAt = entity.id
 
         # Look at the target
-        isLookingAt = self.__lookAtPosition__(entity.position)
+        isLookingAt = self.__lookAtPosition__(targetPosition)
         if isLookingAt:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
@@ -836,10 +843,16 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.moveToEntity:
             return self.actionOverride.function(*self.actionOverride.args)
 
+        # If we are dealing with a block, always target one block below the given value
+        if isBlock(entity.type):
+            targetPosition = Vector(entity.position.x, entity.position.y - 1, entity.position.z)
+        else:
+            targetPosition = entity.position
+
         # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
         if self.actionOverride == None:
             # Precondition: We are looking at the target
-            isLooking = self.__isLookingAt__(entity.position)
+            isLooking = self.__isLookingAt__(targetPosition)
             if not isLooking:
                 self.stopAllMovement()
                 return False
@@ -848,7 +861,7 @@ class Agent:
         self.lastStartedMovingTo = entity.id
         
         # Move to the target
-        isAt = self.__moveToPosition__(entity.position, STRIKING_DISTANCE)
+        isAt = self.__moveToPosition__(targetPosition, STRIKING_DISTANCE)
         if isAt:
             self.lastFinishedMovingTo = entity.id
             Logger.logMoveToFinish(self, entity)
@@ -1053,6 +1066,7 @@ class Agent:
         if itemIdx < 9:
             self.host.sendCommand("hotbar.{} 1".format(itemIdx + 1))
             self.host.sendCommand("hotbar.{} 0".format(itemIdx + 1))
+            time.sleep(0.5) # There is small delay to equip item
             return True
         
         # Try to swap the item into the hotbar where there currently exists no item
@@ -1061,6 +1075,7 @@ class Agent:
             self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
             self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
             self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            time.sleep(0.5) # There is small delay to equip item
             return True
 
         # Try to swap the item into the index currently in use
@@ -1069,6 +1084,7 @@ class Agent:
             self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
             self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
             self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            time.sleep(0.5) # There is small delay to equip item
             return True
         
         return False
@@ -1089,9 +1105,11 @@ class Agent:
 
     def useItem(self):
         """
-        Discretely uses the item currently equipped by this agent.
+        Use the item currently equipped by this agent.
         """
         self.host.sendCommand("use 1")
+        time.sleep(0.1)
+        self.host.sendCommand("use 0")
 
     def giveItemToAgent(self, item, agent):
         """
@@ -1126,7 +1144,6 @@ class Agent:
         agent.inventory.addItem(item.value, inventoryItem.id)   # We must preserve the id of the item
 
         self.equip(item)
-        time.sleep(0.5) # There is a small delay in equipping an item
         self.__throwItem__()
         time.sleep(3)   # Wait for agent to pick up item
         return True
