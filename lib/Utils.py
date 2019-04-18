@@ -56,6 +56,13 @@ def isMob(string):
     mobs = [item.value for item in MobType.All]
     return string in mobs
 
+def isBlock(string):
+    """
+    Returns true if the given string is a type of block.
+    """
+    blocks = [block.value for block in BlockType]
+    return string in blocks
+
 def isHostileMob(string):
     """
     Returns true if the given string is a type of hostile mob.

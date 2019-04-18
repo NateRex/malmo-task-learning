@@ -125,6 +125,47 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
+def playerAction():
+    currentItem = player_agent.currentlyEquipped()
+
+    # If we only have 1 item left, tell the companion to go fetch more of it
+    if player_agent.inventory.amountOfItem(currentItem) == 1:
+        # If the companion has already been sent to fetch other materials and has not yet come back, do nothing
+        if currentItem == BlockType.Cobblestone and player_agent.inventory.amountOfItem(BlockType.Quartz_block) == 0:
+            return
+        if currentItem == BlockType.Quartz_block and player_agent.inventory.amountOfItem(BlockType.Cobblestone) == 0:
+            return
+
+        # Look at and move to the collection block site
+        if not player_agent.lookAtEntity(collectionBlock):
+            return
+        if not player_agent.moveToEntity(collectionBlock):
+            return
+
+        # If there is a block currently at the site, mine it
+        locToMine = Vector(collectionBlock.position.x, collectionBlock.position.y + 1, collectionBlock.position.z)
+        print(player_agent.getBlockTypeAtLocation(collectionBlock.position))
+        if player_agent.getBlockTypeAtLocation(locToMine) != BlockType.Air:
+            # TODO: Mine block
+            return
+        player_agent.useItem()
+        if currentItem == BlockType.Cobblestone:
+            player_agent.equip(BlockType.Quartz_block)
+        else:
+            player_agent.equip(BlockType.Cobblestone)
+        return
+    # If we have enough of all materials, continue building
+    else:
+        #print("Going to {}".format(buildingBlock.position))
+        if not player_agent.lookAtEntity(buildingBlock):
+            return
+        if not player_agent.moveToEntity(buildingBlock):
+            return
+        return
+
+    # Nothing to do...
+    player_agent.noAction()
+
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
 safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_1_viewpoint_continuous"), 0, '' )
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
@@ -142,48 +183,10 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
     if collectionBlock == None or buildingBlock == None:
         collectionBlock = player_agent.getClosestBlockByType(BlockType.Diamond_block)
         buildingBlock = player_agent.getClosestBlockByType(BlockType.Gold_block)
-        print(collectionBlock.position)
-        print(buildingBlock.position)
 
-    # PLAYER AGENT ACTIONS (wrapped in while loop to break without affecting mission loop) ======================================
-    while True:
-        currentItem = player_agent.currentlyEquipped()
-        
-        # If player agent only has one block left of current item, set it at the "collection block" location
-        if player_agent.inventory.amountOfItem(currentItem) == 1:
-            # If the companion is already collecting the other material for the player, do nothing
-            if currentItem == BlockType.Cobblestone and player_agent.inventory.amountOfItem(BlockType.Quartz_block) == 0:
-                break
-            if currentItem == BlockType.Quartz_block and player_agent.inventory.amountOfItem(BlockType.Cobblestone) == 0:
-                break
-            
-            # Look at, move to, and place the last block at the collection site
-            if not player_agent.lookAtEntity(collectionBlock):
-                break
-            if not player_agent.moveToEntity(collectionBlock):
-                break
-            if player_agent.getBlockTypeAtLocation(collectionBlock.position) == BlockType.Air:
-                player_agent.useItem()
-                if currentItem == BlockType.Cobblestone:
-                    player_agent.equip(BlockType.Quartz_block)
-                else:
-                    player_agent.equip(BlockType.Cobblestone)
-            #else:
-                #player_agent.mineBlock()
-        # Otherwise, place/destroy the block at the building location
-        else:
-            if not player_agent.lookAtEntity(buildingBlock):
-                break
-            if not player_agent.moveToEntity(buildingBlock):
-                break
-            if player_agent.getBlockTypeAtLocation(buildingBlock.position) == BlockType.Air:
-                player_agent.useItem()
-            #else:
-            #    player_agent.mineBlock()
-
-
-        break   # Fallback for breaking out of agent 1 action selection
-    # ==============================================================================================================================
+    # Player agent action
+    playerAction()
+    # TODO: Companion agent actions
 
     # Nothing to do...
     companion_agent.noAction()
