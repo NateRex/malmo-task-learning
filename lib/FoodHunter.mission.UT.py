@@ -13,6 +13,7 @@ from Utils import *
 from ScenarioBuilder import ScenarioBuilder
 from Agent import *
 from Logger import Logger
+from Performance import Performance
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -110,6 +111,10 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
+# Set up the Performance collector
+Performance.trackItems([ItemType.Food.beef])
+Performance.addAgents([player_agent, companion_agent])
+
 # Log initial state
 Logger.trackClosestFoodMob(companion_agent)
 Logger.trackClosestFoodItem(companion_agent)
@@ -117,6 +122,8 @@ Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
+    Performance.update()
+
     # If we have beef, go to the player and give it to them
     if companion_agent.inventory.amountOfItem(ItemType.Food.beef) > 0:
         isLookingAt = companion_agent.lookAtAgent(player_agent)
@@ -157,5 +164,9 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
 # Log final state and flush the log
 Logger.logFinalState(Agent.agentList)
 Logger.export()
+
+# Export the performance data for all agents
+Performance.export()
+
 print()
 print("Mission ended")

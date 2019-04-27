@@ -13,15 +13,8 @@ import random
 from Utils import *
 from Logger import *
 
-# A tuple containing agent IDs paired with dataframes containing the stats of that agent from a mission
-AgentData = namedtuple("AgentData", "agent_id data")
-
-# A list of all of the attribute names we track
-attribute_names = ["SysTime", "DamageDealt", "MobsKilled", "PlayersKilled", "CurrentHealth", "HealthLost", "IsAlive", "TimeAlive", "Hunger", "Score", "XP", "DistanceTravelled"]
-
-# ===========================================================================================================
-# Classes
-# ===========================================================================================================
+# A named tuple that contains an attribute name, as well as the handler and argument list for obtaining the attribute
+SpecialAttribute = namedtuple("SpecialAttribute", "name function args")
 
 class Performance:
     """
@@ -29,7 +22,9 @@ class Performance:
     """
     agentList = []                  # A list of all agents we are recording the performance of
     updateInterval = 100            # How often each Agent's performance should be updated
-    filenameOverride = "Test"       # An override to the suffix of the filename exported, rather than use the default timestamp
+    filenameOverride = None         # An override to the suffix of the filename exported, rather than use the default timestamp
+    defaultAttributes = ["SysTime", "DamageDealt", "MobsKilled", "PlayersKilled", "CurrentHealth", "HealthLost", "IsAlive", "TimeAlive", "Hunger", "Score", "XP", "DistanceTravelled"]
+    specialAttributes = []          # A list of specific performance metrics for a particular mission beyond just the defaults
 
     def __init__(self, agent):
         self.startTime = time.time()    # The starting time that the agent came into existence
@@ -40,7 +35,7 @@ class Performance:
         self.isAlive = True             # Whether or not the agent is alive
 
         # A pandas dataframe storing all of the data over time in CSV format
-        self.data = pandas.DataFrame(columns=attribute_names)
+        self.data = pandas.DataFrame(columns= (Performance.defaultAttributes + [i.name for i in Performance.specialAttributes]))
         self.dataIdx = 0
 
     @staticmethod
@@ -68,6 +63,18 @@ class Performance:
         for agent in Performance.agentList:
             agent.performance.__exportAgentPerformance__()
 
+    @staticmethod
+    def trackItems(items):
+        """
+        Specify items you want to track across agent inventories.
+        """
+        for item in items:
+            Performance.specialAttributes.append(SpecialAttribute(item.value, Performance.__getAgentAmountOfItem__, [item]))
+
+    @staticmethod
+    def __getAgentAmountOfItem__(agent, item):
+        return agent.inventory.amountOfItem(item)
+
     def __updateAgentHealth__(self):
         """
         Checks if the agent has lost health and if so, adds to the healthLost stat. If health is gained, currentHealth is adjusted.
@@ -89,7 +96,7 @@ class Performance:
         """
         if self.counter == 100:
             self.__updateAgentHealth__()
-            self.data.loc[self.dataIdx] = [
+            defaultData = [
                 time.time() - self.startTime,       # Time passed since start of mission
                 self.agent.getDamageDealt(),        # Amount of damage dealt
                 self.agent.getMobsKilled(),         # The number of mobs this agent killed
@@ -102,6 +109,10 @@ class Performance:
                 self.agent.getScore(),              # The current score
                 self.agent.getXP(),                 # The current experience point level
                 self.agent.getDistanceTravelled()]  # The total amount of distance travelled over time
+            specialData = []
+            for specialAttrib in Performance.specialAttributes:
+                specialData.append(specialAttrib.function(self.agent, *specialAttrib.args))
+            self.data.loc[self.dataIdx] = defaultData + specialData
             self.counter = 0
             self.dataIdx += 1
         else:
@@ -124,7 +135,7 @@ class Performance:
 
 
 # ===========================================================================================================
-# Standalone Functions for Reading Data
+# Standalone Functions for Interpreting Previously Recorded Data
 # ===========================================================================================================
 
 def __getCSVFiles__():
@@ -146,14 +157,14 @@ def __getCSVFiles__():
                 print("'{}' could not be found.".format(filepath))
     return filenames
 
-def __getGraphAttributes__():
+def __getGraphAttributes__(dataframe):
     """
-    Repeatedly collects attributes to plot from the user until an empty string is received.
+    Gets all available attributes from a sample dataframe, then repeatedly collects attributes to plot from the user until an empty string is received.
     Returns the list of attributes.
     """
     print("Plottable Attributes ==============================")
-    for i in attribute_names:
-        print("- " + i)
+    for col in dataframe.columns:
+        print("- " + col)
     print("===================================================\n")
     
     attributes = []
@@ -177,23 +188,24 @@ def main():
         return
 
     # These have a 1:1 mapping to the filepaths gathered above
-    agentDataList = []
+    agentIds = []
+    agentData = []
     for filepath in filenames:
-        agentData = AgentData(filepath.split("_")[0], pandas.read_csv(os.path.join("stats", filepath)))
-        agentDataList.append(agentData)
+        agentIds.append(filepath.split("_")[0])
+        agentData.append(pandas.read_csv(os.path.join("stats", filepath)))
 
     # Collect the attributes of interest in each AgentData object
-    attributes = __getGraphAttributes__()
+    attributes = __getGraphAttributes__(agentData[0])
 
     # Plot each attribute against SysTime
     fig = plt.figure()
     fig.canvas.set_window_title("Agent Statistics Over Time")
-    for agentData in agentDataList:
+    for i in range(len(agentIds)):
         for attribute in attributes:
             r = random.random()
             g = random.random()
             b = random.random()
-            plt.plot(agentData.data["SysTime"], agentData.data[attribute], markeredgecolor=(r, g, b, 1), linestyle="solid", label="{} {}".format(agentData.agent_id, attribute))
+            plt.plot(agentData[i]["SysTime"], agentData[i][attribute], markeredgecolor=(r, g, b, 1), linestyle="solid", label="{} {}".format(agentIds[i], attribute))
 
     # Show the plot on-screen
     plt.legend(loc="best")

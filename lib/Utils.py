@@ -31,11 +31,11 @@ GRID_OBSERVATION_Z_HALF_LEN = int(GRID_OBSERVATION_Z_LEN / 2)
 # Named tuples
 # ==============================================================================================
 
-Vector = namedtuple("Vector", "x y z")    # Vector/Position holding x, y, and z values
+Vector = namedtuple("Vector", "x y z")                               # Vector/Position holding x, y, and z values
 EntityInfo = namedtuple("EntityInfo", "id type position quantity")   # Information for an entity observed by an agent
-Action = namedtuple("Action", "function args") # An action function with a corresponding list of arguments
-Item = namedtuple("Item", "id type")    # An item with an associated id
-RecipeItem = namedtuple("RecipeItem", "type quantity")  # An item that is part of a recipe for crafting
+Action = namedtuple("Action", "function args")                       # A function with a corresponding list of arguments
+Item = namedtuple("Item", "id type")                                 # An item with an associated id
+RecipeItem = namedtuple("RecipeItem", "type quantity")               # An item that is part of a recipe for crafting
 
 # ==============================================================================================
 # Functions
@@ -105,6 +105,15 @@ def stringToBlockEnum(string):
     for block in BlockType:
         if block.value == string:
             return block
+    return None
+
+def stringToItemEnum(string):
+    """
+    Converts a plain string to an enum object from ItemType. If it does not exist, returns None.
+    """
+    for item in ItemType.All:
+        if item.value == string:
+            return item
     return None
 
 def numerifyId(string):

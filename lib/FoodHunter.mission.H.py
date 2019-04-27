@@ -12,6 +12,7 @@ from Utils import *
 from ScenarioBuilder import ScenarioBuilder
 from Agent import *
 from Logger import Logger
+from Performance import Performance
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -104,6 +105,11 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
+# Set up performance collection for all agents
+Performance.filenameOverride = input("Enter a participant id: ")
+Performance.trackItems([ItemType.Food.beef])
+Performance.addAgents([player_agent, companion_agent])
+
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
 safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_1_viewpoint_continuous"), 0, '' )
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
@@ -112,10 +118,10 @@ safeWaitForStart([player_agent.host, companion_agent.host])
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # Update the performance of each agent
-    Agent.recordPerformances()
+    Performance.update()
 
 # Export the performance of all agents
-Agent.exportPerformances()
+Performance.export()
 
 print()
 print("Mission ended")
