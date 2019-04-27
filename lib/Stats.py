@@ -15,6 +15,7 @@ from Logger import *
 
 # A tuple containing agent IDs paired with dataframes containing the stats of that agent from a mission
 AgentData = namedtuple("AgentData", "agent_id data")
+
 # A list of all of the attribute names we track
 attribute_names = ["SysTime", "DamageDealt", "MobsKilled", "PlayersKilled", "CurrentHealth", "HealthLost", "IsAlive", "TimeAlive", "Hunger", "Score", "XP", "DistanceTravelled"]
 
@@ -27,12 +28,14 @@ class Stats:
     This file contains methods used to record statistics on the various agents running as they perform
     in a given scenario.
     """
-    startTime = time.time()
+    updateInterval = 100            # How often each Agent's performance should be updated
+    filenameOverride = "Test"       # An override to the suffix of the filename exported, rather than use the default timestamp
 
     def __init__(self, agent):
+        self.startTime = time.time()    # The starting time that the agent came into existence
         self.agent = agent              # Although an object of this class is a member of the Agent class, store a reference to the agent
-        self.updateCounter = 100        # A counter to track when to actually conduct an update
-        self.currentHealth = 20.0       # Current health
+        self.counter = 0                # Counter for determining when an update is required
+        self.currentHealth = 20.0       # Current health (assume agent starts at full health)
         self.healthLost = 0.0           # Total amount of health lost
         self.isAlive = True             # Whether or not the agent is alive
 
@@ -57,23 +60,35 @@ class Stats:
 
     def update(self):
         """
-        Logs the damageDealt, mobsKilled, playersKilled, timeAlive, hunger, score, xp, and distanceTravelled stats for a specific agent.
-        Should be checked at the very end of a mission.
+        Update the log of this agent's performance to contain the most recent data.
         """
-        if self.updateCounter == 100:
+        if self.counter == 100:
             self.__updateHealth__()
-            self.data.loc[self.dataIdx] = [time.time() - Stats.startTime, self.agent.getDamageDealt(), self.agent.getMobsKilled(), self.agent.getPlayersKilled(), self.currentHealth, self.healthLost, self.isAlive, self.agent.getTimeAlive(), self.agent.getHunger(), self.agent.getScore(), self.agent.getXP(), self.agent.getDistanceTravelled()]
-            self.updateCounter = 0
+            self.data.loc[self.dataIdx] = [
+                time.time() - self.startTime,       # Time passed since start of mission
+                self.agent.getDamageDealt(),        # Amount of damage dealt
+                self.agent.getMobsKilled(),         # The number of mobs this agent killed
+                self.agent.getPlayersKilled(),      # The number of players this agent killed
+                self.currentHealth,                 # The current health
+                self.healthLost,                    # The total amount of health lost over time
+                self.isAlive,                       # Whether or not this agent is alive
+                self.agent.getTimeAlive(),          # The total amount of time this agent has been alive
+                self.agent.getHunger(),             # The current hunger level of this agent
+                self.agent.getScore(),              # The current score
+                self.agent.getXP(),                 # The current experience point level
+                self.agent.getDistanceTravelled()]  # The total amount of distance travelled over time
+            self.counter = 0
             self.dataIdx += 1
         else:
-            self.updateCounter += 1
+            self.counter += 1
 
     def export(self):
         """
-        Prints out all of the agent's stat information recorded throughout the mission.
+        Export all of this agent's performance data over time to a CSV file.
         """
         agentId = self.agent.getId()
-        fileName = agentId + "_" + datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S') + ".csv"
+        fileNameSuffix = Stats.filenameOverride if Stats.filenameOverride != None else datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S')
+        fileName = agentId + "_" + fileNameSuffix + ".csv"
         filePath = "stats"
         if not os.path.isdir(filePath):
             os.mkdir(filePath)
@@ -82,8 +97,9 @@ class Stats:
         print("{} stats output has been saved to: {}".format(agentId, filePath))
 
 
+
 # ===========================================================================================================
-# Standalone Functions
+# Standalone Functions for Reading Data
 # ===========================================================================================================
 
 def __getCSVFiles__():
