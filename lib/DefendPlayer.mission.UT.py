@@ -130,9 +130,8 @@ Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    # Update the stats of each agent
-    for agent in Agent.agentList:
-        agent.stats.update()
+    # Update the performance of each agent
+    Agent.recordPerformances()
 
     # Ensure we have our diamond sword equipped
     companion_agent.equip(ItemType.All.diamond_sword)
@@ -164,9 +163,8 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
 Logger.logFinalState(Agent.agentList)
 Logger.export()
 
-# Export all statistical information
-for agent in Agent.agentList:
-    agent.stats.export()
+# Export the performances of all agents
+Agent.exportPerformances()
 
 print()
 print("Mission ended")
