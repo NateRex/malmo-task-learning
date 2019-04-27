@@ -69,10 +69,10 @@ class Performance:
         Specify items you want to track across agent inventories.
         """
         for item in items:
-            Performance.specialAttributes.append(SpecialAttribute(item.value, Performance.__getAgentAmountOfItem__, [item]))
+            Performance.specialAttributes.append(SpecialAttribute(item.value, Performance.__trackItemHandler__, [item]))
 
     @staticmethod
-    def __getAgentAmountOfItem__(agent, item):
+    def __trackItemHandler__(agent, item):
         return agent.inventory.amountOfItem(item)
 
     def __updateAgentHealth__(self):
@@ -94,6 +94,10 @@ class Performance:
         """
         Update the log of this agent's performance to contain the most recent data.
         """
+        # If this agent is a human agent, there are things that are not automatically updated (such as inventory). Handle this on every update.
+        if self.agent.agentType == AgentType.Human:
+            self.agent.inventory.update()
+
         if self.counter == 100:
             self.__updateAgentHealth__()
             defaultData = [

@@ -226,6 +226,11 @@ class MathExt:
 # Enumerated Types
 # ==============================================================================================
 
+class AgentType(Enum):
+    Hardcoded = "hardcoded"
+    Trained = "trained"
+    Human = "human"
+
 class BlockType(Enum):
     Air = "air"
     Stone = "stone"

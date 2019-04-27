@@ -12,7 +12,7 @@ class HTNAgent(Agent):
     PLAN_UPDATE_COUNTER = 5000
 
     def __init__(self, name, generate_new_plan):
-        super(HTNAgent, self).__init__(name)
+        super(HTNAgent, self).__init__(name, AgentType.Trained)
         self.generate_new_plan = generate_new_plan     # A function pointer to the plan generator for this mission in particular
         self.plan = []                                 # A list of string actions returned by each call to the HTN
         self.__planCounter__ = 1                       # A counter that is incremented in each iteration of the mission loop, determining when to generate a new plan

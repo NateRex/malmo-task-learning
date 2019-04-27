@@ -18,10 +18,11 @@ class Agent:
     """
     agentList = []  # A list of all agents that have been created
 
-    def __init__(self, name):
+    def __init__(self, name, agentType):
         self.host = MalmoPython.AgentHost()     # A reference to a Malmo AgentHost object
+        self.agentType = agentType              # The AgentType for this agent
         self.inventory = AgentInventory(self)   # This agent's inventory
-        self.performance = None                       # This agent's performance data (not collected unless this agent is manually passed to the Performance class)
+        self.performance = None                 # This agent's performance data (not collected unless this agent is manually passed to the Performance class)
         self.id = "{}1".format(name)            # The ID of this agent
         self.actionOverride = None              # An function pointer that, if present, is ran instead of any called actions
         Agent.agentList.append(self)            # Add this agent to the global list of all agents

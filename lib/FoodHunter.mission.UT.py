@@ -19,8 +19,8 @@ MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
 # SET UP ALL AGENT HOSTS & CLIENT POOL ==================================================================================
 # Note: We only use one agent to parse command line options
-player_agent = Agent("Player")
-companion_agent = Agent("Companion")
+player_agent = Agent("Player", AgentType.Hardcoded)
+companion_agent = Agent("Companion", AgentType.Hardcoded)
 malmoutils.parse_command_line(player_agent.host)
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10000) )
