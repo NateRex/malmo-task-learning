@@ -109,17 +109,13 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
-# Log initial state
-Logger.trackClosestFoodMob()
-Logger.trackClosestFoodItem()
-Logger.logInitialState(Agent.agentList)
-
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
-    time.sleep(0.1)
+    # Update the performance of each agent
+    Agent.recordPerformances()
 
-# Log final state and flush the log
-Logger.logFinalState(Agent.agentList)
-Logger.export()
+# Export the performance of all agents
+Agent.exportPerformances()
+
 print()
 print("Mission ended")

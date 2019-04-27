@@ -23,17 +23,17 @@ attribute_names = ["SysTime", "DamageDealt", "MobsKilled", "PlayersKilled", "Cur
 # Classes
 # ===========================================================================================================
 
-class Stats:
+class Performance:
     """
-    This file contains methods used to record statistics on the various agents running as they perform
-    in a given scenario.
+    Static class for logging and exporting performance data of agents.
     """
+    agentList = []                  # A list of all agents we are recording the performance of
     updateInterval = 100            # How often each Agent's performance should be updated
     filenameOverride = "Test"       # An override to the suffix of the filename exported, rather than use the default timestamp
 
     def __init__(self, agent):
         self.startTime = time.time()    # The starting time that the agent came into existence
-        self.agent = agent              # Although an object of this class is a member of the Agent class, store a reference to the agent
+        self.agent = agent              # Store a reference to the Agent that owns this performance data (we will query for information from the agent)
         self.counter = 0                # Counter for determining when an update is required
         self.currentHealth = 20.0       # Current health (assume agent starts at full health)
         self.healthLost = 0.0           # Total amount of health lost
@@ -43,7 +43,32 @@ class Stats:
         self.data = pandas.DataFrame(columns=attribute_names)
         self.dataIdx = 0
 
-    def __updateHealth__(self):
+    @staticmethod
+    def addAgents(agents):
+        """
+        Add the given agents to the list of agents for which we are recording performance data.
+        """
+        for agent in agents:
+            Performance.agentList.append(agent)
+            agent.performance = Performance(agent)
+
+    @staticmethod
+    def update():
+        """
+        Update the performance data on all tracked agents.
+        """
+        for agent in Performance.agentList:
+            agent.performance.__updateAgentPerformance__()
+
+    @staticmethod
+    def export():
+        """
+        Export the performance data for all tracked agents.
+        """
+        for agent in Performance.agentList:
+            agent.performance.__exportAgentPerformance__()
+
+    def __updateAgentHealth__(self):
         """
         Checks if the agent has lost health and if so, adds to the healthLost stat. If health is gained, currentHealth is adjusted.
         If health reaches 0, agent is dead and isDead is changed to true.
@@ -58,12 +83,12 @@ class Stats:
             self.isAlive = False
         self.currentHealth = health
 
-    def update(self):
+    def __updateAgentPerformance__(self):
         """
         Update the log of this agent's performance to contain the most recent data.
         """
         if self.counter == 100:
-            self.__updateHealth__()
+            self.__updateAgentHealth__()
             self.data.loc[self.dataIdx] = [
                 time.time() - self.startTime,       # Time passed since start of mission
                 self.agent.getDamageDealt(),        # Amount of damage dealt
@@ -82,12 +107,12 @@ class Stats:
         else:
             self.counter += 1
 
-    def export(self):
+    def __exportAgentPerformance__(self):
         """
         Export all of this agent's performance data over time to a CSV file.
         """
         agentId = self.agent.getId()
-        fileNameSuffix = Stats.filenameOverride if Stats.filenameOverride != None else datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S')
+        fileNameSuffix = Performance.filenameOverride if Performance.filenameOverride != None else datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S')
         fileName = agentId + "_" + fileNameSuffix + ".csv"
         filePath = "stats"
         if not os.path.isdir(filePath):

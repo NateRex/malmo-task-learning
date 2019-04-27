@@ -13,6 +13,7 @@ from Utils import *
 from ScenarioBuilder import ScenarioBuilder
 from Agent import *
 from Logger import Logger
+from Performance import Performance
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -124,6 +125,9 @@ safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_defa
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
 
+# Specify which agents we want to track the performance of
+Performance.addAgents([player_agent, companion_agent])
+
 # Log initial state
 Logger.trackClosestHostileMob(player_agent)
 Logger.logInitialState(Agent.agentList)
@@ -131,7 +135,7 @@ Logger.logInitialState(Agent.agentList)
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
     # Update the performance of each agent
-    Agent.recordPerformances()
+    Performance.update()
 
     # Ensure we have our diamond sword equipped
     companion_agent.equip(ItemType.All.diamond_sword)
@@ -163,8 +167,8 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
 Logger.logFinalState(Agent.agentList)
 Logger.export()
 
-# Export the performances of all agents
-Agent.exportPerformances()
+# Export the performance of all agents
+Performance.export()
 
 print()
 print("Mission ended")

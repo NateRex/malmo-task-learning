@@ -10,7 +10,6 @@ import time
 from Utils import *
 from Logger import *
 from AgentInventory import *
-from Stats import *
 
 class Agent:
     """
@@ -22,7 +21,7 @@ class Agent:
     def __init__(self, name):
         self.host = MalmoPython.AgentHost()     # A reference to a Malmo AgentHost object
         self.inventory = AgentInventory(self)   # This agent's inventory
-        self.stats = Stats(self)                # This agent's statistical information
+        self.performance = None                       # This agent's performance data (not collected unless this agent is manually passed to the Performance class)
         self.id = "{}1".format(name)            # The ID of this agent
         self.actionOverride = None              # An function pointer that, if present, is ran instead of any called actions
         Agent.agentList.append(self)            # Add this agent to the global list of all agents
@@ -39,22 +38,6 @@ class Agent:
         self.lastClosestFoodMob = ""
         self.lastClosestFoodItem = ""
         self.lastItemAmount = 0
-
-    @staticmethod
-    def recordPerformances():
-        """
-        Log the performance data of all agents.
-        """
-        for agent in Agent.agentList:
-            agent.stats.update()
-
-    @staticmethod
-    def exportPerformances():
-        """
-        Export the performance data of all agents to CSV files.
-        """
-        for agent in Agent.agentList:
-            agent.stats.export()
 
     @staticmethod
     def findAgentById(agentId):
