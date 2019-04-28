@@ -31,12 +31,16 @@ class AgentInventory:
         """
         inventoryJson = self.__agent__.getInventoryJson()
         itemsLeft = len(inventoryJson) != 0
+        itemTypesInObservation = []
         itemsAdded = []
         itemsDeleted = []
 
+        # Loop over all item types in the observation
         while (itemsLeft):
             itemType = inventoryJson[0]["type"]
+            itemTypesInObservation.append(itemType)
             numOfItemInObs = inventoryJson[0]["quantity"]
+
             if itemType not in self.__inventory__:  # Add an array of ids for this item type if it was never discovered
                 self.__inventory__[itemType] = []
             numOfItemInInv = len(self.__inventory__[itemType])
@@ -60,6 +64,11 @@ class AgentInventory:
             if len(inventoryJson) == 0:
                 itemsLeft = False
         
+        # For any items in the inventory that was not in the observation, set the quantity to 0
+        for itemType in self.__inventory__:
+            if itemType not in itemTypesInObservation:
+                self.__inventory__[itemType].clear()
+
         return (itemsAdded, itemsDeleted)
 
     @staticmethod
