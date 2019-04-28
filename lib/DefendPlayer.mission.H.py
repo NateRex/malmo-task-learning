@@ -7,6 +7,7 @@ import sys
 import time
 import json
 import math
+from pynput.keyboard import Key, Controller
 from collections import namedtuple
 from Utils import *
 from ScenarioBuilder import ScenarioBuilder
@@ -127,6 +128,11 @@ Performance.addAgents([player_agent, companion_agent])
 safeStartMission(player_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_1_viewpoint_continuous"), 0, '' )
 safeStartMission(companion_agent.host, my_mission, client_pool, malmoutils.get_default_recording_object(player_agent.host, "agent_2_viewpoint_continuous"), 1, '' )
 safeWaitForStart([player_agent.host, companion_agent.host])
+
+# Press enter within the window to activate the human controller
+keyboard = Controller()
+keyboard.press(Key.enter)
+keyboard.release(Key.enter)
 
 # Wait for all agents to finish:
 while player_agent.isMissionActive() or companion_agent.isMissionActive():
