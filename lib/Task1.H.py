@@ -11,10 +11,9 @@ from pynput.keyboard import Key, Controller
 from collections import namedtuple
 from Utils import *
 from ScenarioBuilder import ScenarioBuilder
-from Agent import *
+from HTNAgent import *
 from Logger import Logger
 from Performance import Performance
-
 
 MalmoPython.setLogging("", MalmoPython.LoggingSeverityLevel.LOG_OFF)
 
@@ -29,21 +28,35 @@ client_pool.add( MalmoPython.ClientInfo('127.0.0.1',10001) )
 # ========================================================================================================================
 
 # SET UP THE ENVIRONMENT HERE ============================================================================================
-# Player Agent
-scenarioBuilder = ScenarioBuilder("Hunt For Food", 30000, player_agent.getId(), Vector(-15, 4, -16), Direction.North)
-scenarioBuilder.addAgent(companion_agent.getId(), Vector(-15, 4, -15), Direction.South)
+scenarioBuilder = ScenarioBuilder("Defend Player", 30000, player_agent.getId(), Vector(0, 4, 0), Direction.North)
+scenarioBuilder.addAgent(companion_agent.getId(), Vector(0, 4, 2), Direction.South)
+scenarioBuilder.setTimeOfDay(TimeOfDay.Midnight)
 
-scenarioBuilder.setTimeOfDay(TimeOfDay.Noon)
+# Player inventory
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_helmet, ItemSlot.Armor.Helmet)
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_chestplate, ItemSlot.Armor.Chestplate)
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_leggings, ItemSlot.Armor.Leggings)
+scenarioBuilder.agents[0].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
 
-scenarioBuilder.environment.addLine(Vector(-20, 4, -1), Vector(-20, 4, -20), BlockType.Fence)
-scenarioBuilder.environment.addLine(Vector(3, 4, -1), Vector(3, 4, -20), BlockType.Fence)
-scenarioBuilder.environment.addLine(Vector(-19, 4, -2), Vector(2, 4, -2), BlockType.Fence)
-scenarioBuilder.environment.addLine(Vector(-19, 4, -20), Vector(2, 4, -20), BlockType.Fence)
-
-scenarioBuilder.environment.addMob(Vector(-10, 4, -10), MobType.Peaceful.Cow)
-scenarioBuilder.environment.addMob(Vector(-10, 4, -15), MobType.Peaceful.Cow)
-
+# Companion inventory
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_helmet, ItemSlot.Armor.Helmet)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_chestplate, ItemSlot.Armor.Chestplate)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_leggings, ItemSlot.Armor.Leggings)
+scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_boots, ItemSlot.Armor.Boots)
 scenarioBuilder.agents[1].addInventoryItem(ItemType.All.diamond_sword, ItemSlot.HotBar._0)
+
+# Structures
+scenarioBuilder.environment.addCube(Vector(-100, 3, -100), Vector(100, 30, 100), BlockType.Stone)
+scenarioBuilder.environment.addCube(Vector(-99, 4, -99), Vector(99, 29, 99), BlockType.Air)
+for i in range(-99, 99):
+    for j in range(-99, 99):
+        if i % 4 == 0 and j % 4 == 0:
+            scenarioBuilder.environment.addBlock(Vector(i, 4, j), BlockType.Torch)
+
+# Zombie placements
+scenarioBuilder.environment.addMob(Vector(2, 4, 4), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(-20, 4, 20), MobType.Hostile.Zombie)
+scenarioBuilder.environment.addMob(Vector(5, 4, -11), MobType.Hostile.Zombie)
 
 missionXML = scenarioBuilder.finish()
 # ========================================================================================================================
@@ -107,9 +120,13 @@ def safeWaitForStart(agent_hosts):
         exit(1)
     print("Mission has started.")
 
-# Set up performance collection for all agents
+# Set up peformance collection for all agents
+print("If taking a recording, start the screen capture now...")
 Performance.filenameOverride = input("Enter a participant id: ")
-Performance.trackItems([ItemType.Food.beef])
+print("CLICK INSIDE MINECRAFT WINDOW NOW")
+for i in range(5):
+    print(5 - i)
+    time.sleep(1)
 Performance.addAgents([player_agent, companion_agent])
 
 # Not sure what the recording objects are for... but both use the agent host we said is parsing the command line options (see above)
