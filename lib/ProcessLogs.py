@@ -98,7 +98,7 @@ def addLine(line):
     for idx in range(0, len(strings)):
         # If an entity is referenced after already dying, do not add the line
         if endMarkerIndex == None and strings[idx] in dead_entities:
-            # Some actions reference a dead entity as the thing we are "looking FROM", "moving FROM", etc...
+            # Some actions reference a dead entity as the thing we are "looking FROM", "moving FROM", etc... THIS IS OKAY!
             if line.startswith("!") and idx == 2 and len(strings) > 3:
                 continue
             return
@@ -240,7 +240,7 @@ def checkActionPreconditions(idx, checkClosest=False):
         preconditions.append(new_file_contents[i].split("-"))
         preconditionLineNumbers.append(i)
 
-    # Loop backwards and check for the postconditions having been set. Note: if a precondition is set with the wrong values, then it is still a failure
+    # Loop backwards and check for the preconditions having been set. Note: if a precondition is set with the wrong values, then it is a failure
     linesDeleted = 0
     for i in range(startIdx, -1, -1):
         lineToCheck = new_file_contents[i].split("-")
@@ -438,14 +438,14 @@ def processLogFile(filePath):
                 os.remove(filePath)
                 LOGS_DELETED += 1
                 return
-            elif returnValue > 0:   # Just in case, move back that number of lines and continue
+            elif returnValue > 0:   # Move back that number of lines and continue
                 lineIdx -= (returnValue + 1)
                 new_file_len -= returnValue
                 continue
     
             # Check that each action is followed by its expected post-conditions
             returnValue = checkActionPostconditions(lineIdx)
-            if returnValue > 0:    # Just in case, move back that number of lines and continue
+            if returnValue > 0:    # Move back that number of lines and continue
                 lineIdx -= (returnValue + 1)
                 new_file_len -= returnValue
                 continue
