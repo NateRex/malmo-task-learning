@@ -132,6 +132,7 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         isAt = companion_agent.moveToAgent(player_agent)
         if not isAt:
             continue
+        companion_agent.equip(ItemType.Food.beef)
         companion_agent.giveItemToAgent(ItemType.Food.beef, player_agent)
         continue
 
