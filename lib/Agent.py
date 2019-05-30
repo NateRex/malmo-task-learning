@@ -38,6 +38,7 @@ class Agent:
         self.lastClosestHostileMob = ""
         self.lastClosestFoodMob = ""
         self.lastClosestFoodItem = ""
+        self.lastEquippedItem = "None"
         self.lastItemAmount = 0
 
     @staticmethod
@@ -838,7 +839,7 @@ class Agent:
 
     def moveToEntity(self, entity):
         """
-        Begin continuously moving to reach the specified mob.
+        Begin continuously moving to reach the specified entity.
         Returns true if the agent is currently within striking distance of the mob. Returns false otherwise.
         """
         # Check action override
@@ -860,7 +861,7 @@ class Agent:
         # Move to the target
         isAt = self.__moveToPosition__(entity.position, STRIKING_DISTANCE)
         if isAt:
-            if isItem(entity.type):
+            if not isItem(entity.type):
                 self.lastFinishedMovingTo = entity.id
                 Logger.logMoveToFinish(self, entity)
             self.stopMoving()
@@ -898,7 +899,6 @@ class Agent:
             if newAmount > self.lastItemAmount:
                 self.actionOverride = None  # Release lock
                 self.stopMoving()   # Stop moving, since __moveToPosition__ will not stop agent automatically in this case
-                self.lastFinishedMovingTo = item.id
                 return newItems
         return None
 
@@ -1057,10 +1057,17 @@ class Agent:
             if itemIdx == -1:
                 return False
         
+        # Obtain the inventory item we will give
+        inventoryItem = self.inventory.itemByType(item)
+        if inventoryItem == None:
+            return False
+
         # Check if item is already in hotbar (note: key commands are 1-indexed)
         if itemIdx < 9:
             self.host.sendCommand("hotbar.{} 1".format(itemIdx + 1))
             self.host.sendCommand("hotbar.{} 0".format(itemIdx + 1))
+            Logger.logEquipItem(self, inventoryItem)
+            self.lastEquippedItem = inventoryItem.id
             return True
         
         # Try to swap the item into the hotbar where there currently exists no item
@@ -1069,6 +1076,8 @@ class Agent:
             self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
             self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
             self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            Logger.logEquipItem(self, inventoryItem)
+            self.lastEquippedItem = inventoryItem.id
             return True
 
         # Try to swap the item into the index currently in use
@@ -1077,6 +1086,8 @@ class Agent:
             self.host.sendCommand("swapInventoryItems {} {}".format(swapIndex, itemIdx))
             self.host.sendCommand("hotbar.{} 1".format(swapIndex + 1))
             self.host.sendCommand("hotbar.{} 0".format(swapIndex + 1))
+            Logger.logEquipItem(self, inventoryItem)
+            self.lastEquippedItem = inventoryItem.id
             return True
         
         return False
@@ -1091,8 +1102,9 @@ class Agent:
             return
         
         for inventorySlot in inventoryJson:
-            if inventorySlot.index == hotbarIdx:
-                return stringToBlockEnum(inventorySlot.type)
+            if inventorySlot["index"] == hotbarIdx:
+                itemType = stringToItemEnum(inventorySlot["type"])
+                return self.inventory.itemByType(itemType)
         return None
 
     def giveItemToAgent(self, item, agent):
@@ -1111,8 +1123,15 @@ class Agent:
 
         # PRECONDITIONS
         if self.actionOverride == None:
-            # Precondition: We have atleast one item of that type
-            if self.inventory.amountOfItem(item) == 0:
+            # Precondition: We have that item equipped (not possible if we do not have the item)
+            equippedItem = self.currentlyEquipped()
+            equippedItemType = "None" if equippedItem == None else equippedItem.type
+            if equippedItemType != item.value:
+                return False
+
+            # Precondition: We are looking at the agent
+            isLookingAt = self.__isLookingAt__(agentPos)
+            if not isLookingAt:
                 return False
 
             # Precondition: We are at the agent

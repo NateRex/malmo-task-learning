@@ -171,7 +171,7 @@ class Logger:
         if len(Logger.__contents) == 0:
             return
         if Logger.__contents[len(Logger.__contents) - 1] != "":
-            Logger.__contents.append("")
+            Logger.__pushStatement__("")
 
     @staticmethod
     def __logAgentDefinition__(agent):
@@ -316,11 +316,15 @@ class Logger:
                 for entity in entities:
                     Logger.logEntityDefinition(entity)
                     
-            # Log starting inventory
+            # Log starting inventory and equipped item
             agent.inventory.update()
             inventoryItems = agent.inventory.allItems()
             for item in inventoryItems:
                 Logger.__logAgentHasItem__(agent, item)
+            equippedItem = agent.currentlyEquipped()
+            equippedItemId = "None" if equippedItem == None else equippedItem.id
+            Logger.__pushStatement__("equipped_item-{}-{}".format(agentId, equippedItemId))
+            agent.lastEquippedItem = equippedItemId     # Hacky way of making sure we don't re-log equipping the item after the START symbol
 
             # Log additional starting data dependent on the Logger flags set (getClosestXXX automatically logs)
             Logger.__pushStatement__("agent_looking_at-{}-None".format(agentId))
@@ -775,6 +779,46 @@ class Logger:
         Logger.__logAgentHasItem__(agent, item)
 
     @staticmethod
+    def logEquipItem(agent, item):
+        """
+        Log the preconditions, action, and possible postconditions for the EquipItem command.
+        """
+        agentId = agent.getId()
+
+        # Ensure this is not a repeat call to do what we were already doing
+        if agent.lastEquippedItem == item.id:
+            return
+
+        # Make sure the item has been declared
+        if item != None:
+            Logger.logItemDefinition(item)
+
+        Logger.__pushNewline__()
+
+        # Preconditions
+        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
+
+        # Action
+        Logger.__pushStatement__("!EQUIP-{}-{}".format(agentId, item.id))
+
+        # Postconditions
+        postcondition = "equipped_item-{}-{}".format(agentId, item.id)
+        Logger.__pushStatement__(postcondition)
+
+        # Change current state to reflect that this item is equipped
+        didModifyCurrentState = False
+        for i in range(0, len(Logger.__currentState)):  # Fix-up current state
+            if Logger.__currentState[i].startswith("equipped_item-{}".format(agentId)):
+                Logger.__currentState[i] = postcondition
+                didModifyCurrentState = True
+                break
+        if not didModifyCurrentState:
+            Logger.__currentState.append(postcondition)
+
+        Logger.__pushNewline__()
+
+
+    @staticmethod
     def logGiveItemToAgent(sourceAgent, item, targetAgent):
         """
         Log the preconditions, action, and possible postconditions for the GiveItem command.
@@ -790,13 +834,25 @@ class Logger:
         Logger.__pushStatement__("agent_looking_at-{}-{}".format(sourceAgentId, targetAgentId))
         Logger.__pushStatement__("agent_at-{}-{}".format(sourceAgentId, targetAgentId))
         Logger.__pushStatement__("agent_has-{}-{}".format(sourceAgentId, item.id))
+        Logger.__pushStatement__("equipped_item-{}-{}".format(sourceAgentId, item.id))
 
         # Action
         Logger.__pushStatement__("!GIVEITEM-{}-{}-{}".format(sourceAgentId, item.id, targetAgentId))
 
         # Postconditions
+        Logger.__pushStatement__("equipped_item-{}-{}".format(sourceAgentId, "None"))
         Logger.__logAgentLostItem__(sourceAgent, item)
         Logger.__logAgentHasItem__(targetAgent, item)
+
+        # Change current state to reflect that this item is no longer equipped
+        didModifyCurrentState = False
+        for i in range(0, len(Logger.__currentState)):
+            if Logger.__currentState[i].startswith("equipped_item-{}".format(sourceAgentId)):
+                Logger.__currentState[i] = "equipped_item-{}-{}".format(sourceAgentId, "None")
+                didModifyCurrentState = True
+                break
+        if not didModifyCurrentState:
+            Logger.__currentState.append("equipped_item-{}-{}".format(sourceAgentId, "None"))
 
         Logger.__pushNewline__()
 
