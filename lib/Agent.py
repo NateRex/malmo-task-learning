@@ -530,11 +530,11 @@ class Agent:
                     nearestDistance = distanceToEntity
                     nearestEntity = entity
         if nearestEntity == None:
-            Logger.logClosestFoodItem(self, None)
+            #Logger.logClosestFoodItem(self, None)
             self.lastClosestFoodItem = "None"
             return None
 
-        Logger.logClosestFoodItem(self, nearestEntity)
+        #Logger.logClosestFoodItem(self, nearestEntity)
         self.lastClosestFoodItem = nearestEntity.id
         return nearestEntity
 
@@ -962,6 +962,7 @@ class Agent:
         pickedUpItems = self.__moveToItem__(item)
         if pickedUpItems != None:
             self.actionOverride = None  # Release lock
+            print(pickedUpItems)
             for item in pickedUpItems:
                 Logger.logPickUpItem(self, item)
             return True
