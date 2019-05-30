@@ -90,6 +90,14 @@ class Performance:
             self.isAlive = False
         self.currentHealth = health
 
+    def __adjustSystemTimes__(self):
+        """
+        Adjust the system time values in the performance Dataframe to start at 0 for index 1.
+        """
+        timeLabel = Performance.defaultAttributes[0]
+        initialTime = self.data.iloc[0][timeLabel]
+        self.data.loc[:, timeLabel] -= initialTime
+
     def __updateAgentPerformance__(self):
         """
         Update the log of this agent's performance to contain the most recent data.
@@ -126,15 +134,18 @@ class Performance:
         """
         Export all of this agent's performance data over time to a CSV file.
         """
+        self.__adjustSystemTimes__()
+    
         agentId = self.agent.getId()
         fileNameSuffix = Performance.filenameOverride if Performance.filenameOverride != None else datetime.fromtimestamp(time.time()).strftime('%m_%d_%Y_%H_%M_%S')
         fileName = agentId + "_" + fileNameSuffix + ".csv"
-        filePath = "stats"
+        filePath = "performance"
         if not os.path.isdir(filePath):
             os.mkdir(filePath)
+
         filePath = os.path.join(filePath, fileName)
         self.data.to_csv(filePath, index=False)
-        print("{} stats output has been saved to: {}".format(agentId, filePath))
+        print("{} performance output has been saved to: {}".format(agentId, filePath))
 
 
 
@@ -144,7 +155,7 @@ class Performance:
 
 def __getCSVFiles__():
     """
-    Repeatedly asks the user to input the name of a stats CSV file in the stats directory, until the empty string is received.
+    Repeatedly asks the user to input the name of a performance CSV file in the performance directory, until the empty string is received.
     Returns the list of csv filenames.
     """
     filenames = []
@@ -154,7 +165,7 @@ def __getCSVFiles__():
         if len(filename) == 0:
             shouldGetInput = False
         else:
-            filepath = os.path.join("stats", filename)
+            filepath = os.path.join("performance", filename)
             if os.path.isfile(filepath):
                 filenames.append(filename)
             else:
@@ -196,7 +207,7 @@ def main():
     agentData = []
     for filepath in filenames:
         agentIds.append(filepath.split("_")[0])
-        agentData.append(pandas.read_csv(os.path.join("stats", filepath)))
+        agentData.append(pandas.read_csv(os.path.join("performance", filepath)))
 
     # Collect the attributes of interest in each AgentData object
     attributes = __getGraphAttributes__(agentData[0])
