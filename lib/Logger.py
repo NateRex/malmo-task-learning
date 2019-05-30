@@ -268,7 +268,7 @@ class Logger:
         return False
 
     @staticmethod
-    def logAgentHasItem(agent, item):
+    def __logAgentHasItem__(agent, item):
         """
         Logs that an agent aquired the item specified.
         """
@@ -282,7 +282,7 @@ class Logger:
         Logger.__currentState.append(hasLog)
 
     @staticmethod
-    def logAgentLostItem(agent, item):
+    def __logAgentLostItem__(agent, item):
         """
         Logs that an agent lost the item specified.
         """
@@ -320,7 +320,7 @@ class Logger:
             agent.inventory.update()
             inventoryItems = agent.inventory.allItems()
             for item in inventoryItems:
-                Logger.logAgentHasItem(agent, item)
+                Logger.__logAgentHasItem__(agent, item)
 
             # Log additional starting data dependent on the Logger flags set (getClosestXXX automatically logs)
             Logger.__pushStatement__("agent_looking_at-{}-None".format(agentId))
@@ -623,8 +623,6 @@ class Logger:
                 if Logger.__currentState[i].startswith("agent_looking_at-{}".format(agentId)):
                     Logger.__currentState[i] = lookAtLog
                     break
-        else:
-            print("UHOH")
 
         Logger.__lastLookAtDidFinish = True
         Logger.__pushNewline__()
@@ -697,16 +695,16 @@ class Logger:
 
         # Preconditions
         for item in itemsUsed:
-            Logger.logAgentHasItem(agent, item)
+            Logger.__logAgentHasItem__(agent, item)
 
         # Action
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
         Logger.__pushStatement__("items-{}-{}".format(itemCrafted.type, itemCrafted.id))
-        Logger.logAgentHasItem(agent, itemCrafted)
+        Logger.__logAgentHasItem__(agent, itemCrafted)
         for item in itemsUsed:
-            Logger.logAgentLostItem(agent, item)
+            Logger.__logAgentLostItem__(agent, item)
 
         Logger.__pushNewline__()
         
@@ -746,13 +744,14 @@ class Logger:
             else:
                 nearbyItems = agent.getAllNearbyItems()
                 for item in nearbyItems:
-                    if not Logger.isEntityDefined(item):
-                        AgentInventory.enqueueItem(item)    # We will most likely be picking up the item and so we will queue up the id to preserve it
-                        # This item, having come from the JSON observation, will have a quantity associated with it that denotes the size of the stack
-                        for _ in range(1, item.quantity):
-                            newItem = Item("{}{}".format(item.type, agent.inventory.getId()), item.type)
+                    newItem = Item("{}{}".format(item.type, agent.inventory.getId()), item.type)
+                    if not Logger.isEntityDefined(newItem):
+                        AgentInventory.enqueueItem(newItem)    # We will most likely be picking up the item and so we will queue up the id to preserve it
+                        for i in range(0, item.quantity):      # Items from a JSON observation have a stack quantity
                             Logger.logItemDefinition(newItem)
                             AgentInventory.enqueueItem(newItem)
+                            if i < item.quantity - 1:
+                                newItem = Item("{}{}".format(item.type, agent.inventory.getId()), item.type)
     
         Logger.__pushNewline__()
 
@@ -773,7 +772,7 @@ class Logger:
         Logger.__pushStatement__("!PICKUPITEM-{}-{}".format(agentId, item.id))
 
         # Postconditions
-        Logger.logAgentHasItem(agent, item)
+        Logger.__logAgentHasItem__(agent, item)
 
     @staticmethod
     def logGiveItemToAgent(sourceAgent, item, targetAgent):
@@ -796,8 +795,8 @@ class Logger:
         Logger.__pushStatement__("!GIVEITEM-{}-{}-{}".format(sourceAgentId, item.id, targetAgentId))
 
         # Postconditions
-        Logger.logAgentLostItem(sourceAgent, item)
-        Logger.logAgentHasItem(targetAgent, item)
+        Logger.__logAgentLostItem__(sourceAgent, item)
+        Logger.__logAgentHasItem__(targetAgent, item)
 
         Logger.__pushNewline__()
 

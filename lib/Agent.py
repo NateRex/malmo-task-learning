@@ -754,16 +754,16 @@ class Agent:
 
         if not isItem(entity.type):
             Logger.logLookAtStart(self, entity)
-        self.lastStartedLookingAt = entity.id
+            self.lastStartedLookingAt = entity.id
 
         # Look at the target
         isLookingAt = self.__lookAtPosition__(entity.position)
         if isLookingAt:
             self.__stopChangingPitch__()
             self.__stopChangingYaw__()
-            self.lastFinishedLookingAt = entity.id
             if not isItem(entity.type):
                 Logger.logLookAtFinish(self, entity)
+                self.lastFinishedLookingAt = entity.id
             return True
         return False
 
@@ -845,7 +845,7 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.moveToEntity:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition: We are looking at the target
             isLooking = self.__isLookingAt__(entity.position)
@@ -853,14 +853,16 @@ class Agent:
                 self.stopAllMovement()
                 return False
 
-        Logger.logMoveToStart(self, entity)
-        self.lastStartedMovingTo = entity.id
+        if not isItem(entity.type):
+            Logger.logMoveToStart(self, entity)
+            self.lastStartedMovingTo = entity.id
         
         # Move to the target
         isAt = self.__moveToPosition__(entity.position, STRIKING_DISTANCE)
         if isAt:
-            self.lastFinishedMovingTo = entity.id
-            Logger.logMoveToFinish(self, entity)
+            if isItem(entity.type):
+                self.lastFinishedMovingTo = entity.id
+                Logger.logMoveToFinish(self, entity)
             self.stopMoving()
             return True
         return False
@@ -874,7 +876,7 @@ class Agent:
         # DO NOT CHECK ACTION OVERRIDE HERE... The only way we will have called this action is from PickUpItem...
         # Which locks waiting for this action to report true
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition: We are looking at the target
             isLooking = self.__isLookingAt__(item.position)
@@ -887,8 +889,6 @@ class Agent:
         if self.lastStartedMovingTo != item.id:
             self.lastItemAmount = self.inventory.amountOfItem(item.type)
 
-        self.lastStartedMovingTo = item.id
-
         # Move to the target (do not allow hard-stop, in case we are not yet quite close enough to pick up item)
         isAt = self.__moveToPosition__(item.position, PICK_UP_ITEM_DISTANCE, 0, False)
         if isAt:
@@ -896,7 +896,6 @@ class Agent:
             newItems, _ = self.inventory.update()
             newAmount = self.inventory.amountOfItem(item.type)
             if newAmount > self.lastItemAmount:
-                Logger.logMoveToFinish(self, item)
                 self.actionOverride = None  # Release lock
                 self.stopMoving()   # Stop moving, since __moveToPosition__ will not stop agent automatically in this case
                 self.lastFinishedMovingTo = item.id
@@ -920,7 +919,7 @@ class Agent:
         # Represent the agent as an EntityInfo tuple
         agentEntity = EntityInfo(agentId, "agent", agentPos, 1)
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition: We are looking at target
             isLooking = self.__isLookingAt__(agentPos)
@@ -962,7 +961,6 @@ class Agent:
         pickedUpItems = self.__moveToItem__(item)
         if pickedUpItems != None:
             self.actionOverride = None  # Release lock
-            print(pickedUpItems)
             for item in pickedUpItems:
                 Logger.logPickUpItem(self, item)
             return True
@@ -978,7 +976,7 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.craft:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition - We have enough of each recipe item in our inventory
             for recipeItem in recipeItems:
@@ -1013,7 +1011,7 @@ class Agent:
         if oldMobsKilled == None:
             return False
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition: The provided entity is a mob
             if not isMob(mob.type):
@@ -1052,7 +1050,7 @@ class Agent:
         if self.actionOverride != None and self.actionOverride.function != self.equip:
             return self.actionOverride.function(*self.actionOverride.args)
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition: We have atleast one of that item
             itemIdx = self.__locationOfItemInInventory__(item)
@@ -1097,7 +1095,6 @@ class Agent:
                 return stringToBlockEnum(inventorySlot.type)
         return None
 
-
     def giveItemToAgent(self, item, agent):
         """
         Give an item in this agent's inventory to another agent.
@@ -1112,7 +1109,7 @@ class Agent:
         if agentPos == None:
             return False
 
-        # Note: Ignore preconditions if this function has been locked down on to avoid an infinite loop!
+        # PRECONDITIONS
         if self.actionOverride == None:
             # Precondition: We have atleast one item of that type
             if self.inventory.amountOfItem(item) == 0:
@@ -1129,6 +1126,9 @@ class Agent:
             return False
         self.inventory.removeItem(inventoryItem)
         agent.inventory.addItem(item.value, inventoryItem.id)   # We must preserve the id of the item
+
+        # Log the results
+        Logger.logGiveItemToAgent(self, inventoryItem, agent)
 
         self.equip(item)
         time.sleep(0.5) # There is a small delay in equipping an item
