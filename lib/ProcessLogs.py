@@ -144,7 +144,7 @@ def handleEntityDefinitionLine(line):
     else:
         newEntityId = "{}{}".format(entityType, getNextIdNumberForType(entityType))
         id_map[oldEntityId] = newEntityId
-        id_map[newEntityId] = newEntityId
+        # id_map[newEntityId] = newEntityId
         strings[1] = newEntityId
     addLine("-".join(strings))
     
@@ -403,9 +403,6 @@ def processLogFile(filePath):
             addLine(line)
             continue
 
-    for a in new_file_contents:
-        print(a)
-
     # ============================================================
     # Perform additional cleanup on new log
     # ============================================================
@@ -438,7 +435,6 @@ def processLogFile(filePath):
             else:
                 returnValue = checkActionPreconditions(lineIdx)
             if returnValue < 0:
-                print("DELETING DUE TO LINE: {}".format(line))
                 os.remove(filePath)
                 LOGS_DELETED += 1
                 return
