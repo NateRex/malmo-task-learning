@@ -302,7 +302,8 @@ class Logger:
         """
         # Log the None entity to define a placeholder for anything not yet set in the trace file (we shove this into the mobs section)
         # TODO: This should really be some kind of universal thing, and not just a mob (what if we have closest_food_item-None?...)
-        Logger.__pushStatement__("mobs-None-NoneType")
+        Logger.__pushStatement__("none-None-NoneType")
+        Logger.__currentState.append("none-None-NoneType")
 
         for agent in agents:
             agentId = agent.getId()
