@@ -12,11 +12,12 @@ class StateFlags(Enum):
     """
     Enumerated type for setting the flags of the Logger class on which state information to track in the initial and final state.
     """
-    ClosestMob = 0x1
-    ClosestPeacefulMob = 0x2
-    ClosestHostileMob = 0x4
-    ClosestFoodMob = 0x8
-    ClosestFoodItem = 0x10
+    ClosestMob          = 0x1
+    ClosestPeacefulMob  = 0x2
+    ClosestHostileMob   = 0x4
+    ClosestFoodMob      = 0x8
+    ClosestFoodItem     = 0x10
+    Inventory           = 0x20
 
 class Logger:
     """
@@ -28,7 +29,7 @@ class Logger:
     __contents = []                 # The string containing the entire log
     __currentState = []             # A list of atom strings defining the current environment state as a whole
     __declaredEntityIds = []        # A list of entity ids for entities that have already been declared in the log
-    __stateFlags = [0] * 20         # A list of flag values for determining what information to write out to the initial and final state for EACH AGENT (max 20)
+    __stateFlags = [0] * 5          # A list of flag values for determining what information to write out to the initial and final state for EACH AGENT (maximum of 5)
 
     @staticmethod
     def clearTrackingFlags():
@@ -41,87 +42,86 @@ class Logger:
     @staticmethod
     def trackClosestMob(agent):
         """
-        Set the flag to track the closest mob of an agent in the initial and final state.
+        Set the flag to track the closest mob of an agent in the initial and final states.
         """
         Logger.__stateFlags[agent.getIndex()] |= StateFlags.ClosestMob.value
 
     @staticmethod
     def trackClosestPeacefulMob(agent):
         """
-        Set the flag to track the closest peaceful mob of an agent in the initial and final state.
+        Set the flag to track the closest peaceful mob of an agent in the initial and final states.
         """
         Logger.__stateFlags[agent.getIndex()] |= StateFlags.ClosestPeacefulMob.value
 
     @staticmethod
     def trackClosestHostileMob(agent):
         """
-        Set the flag to track the closest hostile mob of an agent in the initial and final state.
+        Set the flag to track the closest hostile mob of an agent in the initial and final states.
         """
         Logger.__stateFlags[agent.getIndex()] |= StateFlags.ClosestHostileMob.value
 
     @staticmethod
     def trackClosestFoodMob(agent):
         """
-        Set the flag to track the closest food mob of an agent in the initial and final state.
+        Set the flag to track the closest food mob of an agent in the initial and final states.
         """
         Logger.__stateFlags[agent.getIndex()] |= StateFlags.ClosestFoodMob.value
 
     @staticmethod
     def trackClosestFoodItem(agent):
         """
-        Set the flag to track the closest food item of an agent in the initial and final state.
+        Set the flag to track the closest food item of an agent in the initial and final states.
         """
         Logger.__stateFlags[agent.getIndex()] |= StateFlags.ClosestFoodItem.value
 
     @staticmethod
+    def trackInventory(agent):
+        """
+        Set the flag to track the inventory of an agent in the initial and final states.
+        """
+        Logger.__stateFlags[agent.getIndex()] |= StateFlags.Inventory.value
+
+    @staticmethod
     def isTrackingClosestMob(agent):
         """
-        Returns true if the Logger is set to track the closest mob of an agent in the initial and final state.
+        Returns true if the Logger is set to track the closest mob of an agent in the initial and final states.
         """
-        if (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestMob.value) != 0:
-            return True
-        else:
-            return False
+        return (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestMob.value) != 0
 
     @staticmethod
     def isTrackingClosestPeacefulMob(agent):
         """
-        Returns true if the Logger is set to track the closest peaceful mob of an agent in the initial and final state.
+        Returns true if the Logger is set to track the closest peaceful mob of an agent in the initial and final states.
         """
-        if (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestPeacefulMob.value) != 0:
-            return True
-        else:
-            return False
+        return (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestPeacefulMob.value) != 0
 
     @staticmethod
     def isTrackingClosestHostileMob(agent):
         """
-        Returns true if the Logger is set to track the closest hostile mob of an agent in the initial and final state.
+        Returns true if the Logger is set to track the closest hostile mob of an agent in the initial and final states.
         """
-        if (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestHostileMob.value) != 0:
-            return True
-        else:
-            return False
+        return (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestHostileMob.value) != 0
 
     @staticmethod
     def isTrackingClosestFoodMob(agent):
         """
-        Returns true if the Logger is set to track the closest food mob of an agent in the initial and final state.
+        Returns true if the Logger is set to track the closest food mob of an agent in the initial and final states.
         """
-        if (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestFoodMob.value) != 0:
-            return True
-        else:
-            return False
+        return (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestFoodMob.value) != 0
 
     @staticmethod
     def isTrackingClosestFoodItem(agent):
         """
-        Returns true if the Logger is set to track the closest food item of an agent in the initial and final state.
+        Returns true if the Logger is set to track the closest food item of an agent in the initial and final states.
         """
-        if (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestFoodItem.value) != 0:
-            return True
-        else:
-            return False
+        return (Logger.__stateFlags[agent.getIndex()] & StateFlags.ClosestFoodItem.value) != 0
+
+    @staticmethod
+    def isTrackingInventory(agent):
+        """
+        Returns true if the Logger is set to track the inventory of an agent in the initial and final states.
+        """
+        return (Logger.__stateFlags[agent.getIndex()] & StateFlags.Inventory.value) != 0
 
     @staticmethod
     def getCurrentState(agents):
@@ -268,32 +268,21 @@ class Logger:
         return False
 
     @staticmethod
-    def __logAgentHasItem__(agent, item):
+    def __logAt__(entity, landmark):
         """
-        Logs that an agent aquired the item specified.
+        Logs that an entity is located at a specific landmark (which is another entity in the world).
         """
-        agentId = agent.getId()
-        hasLog = "agent_has-{}-{}".format(agentId, item.id)
+        Logger.__pushStatement__("at-{}-{}".format(entity.id, landmark.id))
 
-        # Ensure item has been defined
-        Logger.logItemDefinition(item)
-
-        Logger.__pushStatement__(hasLog)
-        Logger.__currentState.append(hasLog)
-
-    @staticmethod
-    def __logAgentLostItem__(agent, item):
-        """
-        Logs that an agent lost the item specified.
-        """
-        agentId = agent.getId()
-        Logger.__pushStatement__("agent_lost-{}-{}".format(agentId, item.id))
-        hasLog = "agent_has-{}-{}".format(agentId, item.id)
+        # Fix up current state
+        didChangeCurrentState = False
         for i in range(0, len(Logger.__currentState)):
-            log = Logger.__currentState[i]
-            if log == hasLog:
-                del Logger.__currentState[i]
-                break  
+            if Logger.__currentState[i].startswith("at-{}".format(entity.id)):
+                Logger.__currentState[i] = "at-{}-{}".format(entity.id, landmark.id)
+                didChangeCurrentState = True
+                break
+        if not didChangeCurrentState:
+            Logger.__currentState.append("at-{}-{}".format(entity.id, landmark.id))
 
     @staticmethod
     def logInitialState(agents):
@@ -318,14 +307,16 @@ class Logger:
                     Logger.logEntityDefinition(entity)
                     
             # Log starting inventory and equipped item
-            agent.inventory.update()
-            inventoryItems = agent.inventory.allItems()
-            for item in inventoryItems:
-                Logger.__logAgentHasItem__(agent, item)
-            equippedItem = agent.currentlyEquipped()
-            equippedItemId = "None" if equippedItem == None else equippedItem.id
-            Logger.__pushStatement__("equipped_item-{}-{}".format(agentId, equippedItemId))
-            agent.lastEquippedItem = equippedItemId     # Hacky way of making sure we don't re-log equipping the item after the START symbol
+            if Logger.isTrackingInventory(agent):
+                agent.inventory.update()
+                inventoryItems = agent.inventory.allItems()
+                for item in inventoryItems:
+                    Logger.logItemDefinition(item)
+                    Logger.__logAt__(item, agent)
+                equippedItem = agent.currentlyEquipped()
+                equippedItemId = "None" if equippedItem == None else equippedItem.id
+                Logger.__pushStatement__("equipped_item-{}-{}".format(agentId, equippedItemId))
+                agent.lastEquippedItem = equippedItemId     # Hacky way of making sure we don't re-log equipping the item after the START symbol
 
             # Log additional starting data dependent on the Logger flags set (getClosestXXX automatically logs)
             Logger.__pushStatement__("looking_at-{}-None".format(agentId))
@@ -592,8 +583,7 @@ class Logger:
 
         Logger.__pushNewline__()
 
-        # Modify the current state (there will always be an looking_at string in the current state..)
-        for i in range(0, len(Logger.__currentState)):
+        for i in range(0, len(Logger.__currentState)):  # Fix up current state
             if Logger.__currentState[i].startswith("looking_at-{}".format(agentId)):
                 Logger.__currentState[i] = "looking_at-{}-None".format(agentId)
                 break
@@ -621,7 +611,7 @@ class Logger:
         lookAtLog = "looking_at-{}-{}".format(agentId, entity.id)
         Logger.__pushStatement__(lookAtLog)
 
-        # Modify the current state (there will always be an looking_at string in the current state..)
+        # Fix up current state
         # TODO: We currently avoid doing this for HTNAgents, since we may no longer be at the entity by the time a plan is generated
         if agent.__class__.__name__ != "HTNAgent":
             for i in range(0, len(Logger.__currentState)):
@@ -678,7 +668,7 @@ class Logger:
         isAtLog = "at-{}-{}".format(agentId, entity.id)
         Logger.__pushStatement__(isAtLog)
 
-        # Modify the current state (there will always be an at string in the current state..)
+        # Fix up current state
         # TODO: We currently avoid doing this for HTNAgents, since we may no longer be at the entity by the time a plan is generated
         if agent.__class__.__name__ != "HTNAgent":
             for i in range(0, len(Logger.__currentState)):
@@ -700,16 +690,16 @@ class Logger:
 
         # Preconditions
         for item in itemsUsed:
-            Logger.__logAgentHasItem__(agent, item)
+            Logger.__logAt__(item, agent)
 
         # Action
         Logger.__pushStatement__("!CRAFT-{}-{}".format(agentId, itemCrafted.type))
 
         # Postconditions
         Logger.__pushStatement__("items-{}-{}".format(itemCrafted.type, itemCrafted.id))
-        Logger.__logAgentHasItem__(agent, itemCrafted)
+        Logger.__logAt__(itemCrafted, agent)
         for item in itemsUsed:
-            Logger.__logAgentLostItem__(agent, item)
+            Logger.__pushStatement__("at-{}-None".format(item.id))
 
         Logger.__pushNewline__()
         
@@ -743,6 +733,7 @@ class Logger:
             if len(newItems) > 0:
                 for item in newItems:
                     Logger.logItemDefinition(item)
+                    Logger.__pushStatement__("at-{}-None".format(item.id))
                 for item in newItems:
                     Logger.logPickUpItem(agent, item)
             # If we did NOT pick up an item, there are probably one or more lying closeby... define any items lying on the ground as post-conditions
@@ -754,6 +745,7 @@ class Logger:
                         AgentInventory.enqueueItem(newItem)    # We will most likely be picking up the item and so we will queue up the id to preserve it
                         for i in range(0, item.quantity):      # Items from a JSON observation have a stack quantity
                             Logger.logItemDefinition(newItem)
+                            Logger.__pushStatement__("at-{}-None".format(item.id))
                             AgentInventory.enqueueItem(newItem)
                             if i < item.quantity - 1:
                                 newItem = Item("{}{}".format(item.type, agent.inventory.getId()), item.type)
@@ -771,13 +763,14 @@ class Logger:
         # Make sure the item has been declared
         Logger.logItemDefinition(item)
 
-        # Preconditions - None
+        # Preconditions
+        Logger.__pushStatement__("at-{}-None".format(item.id))
 
         # Action
         Logger.__pushStatement__("!PICKUPITEM-{}-{}".format(agentId, item.id))
 
         # Postconditions
-        Logger.__logAgentHasItem__(agent, item)
+        Logger.__logAt__(item, agent)
 
     @staticmethod
     def logEquipItem(agent, item):
@@ -797,7 +790,7 @@ class Logger:
         Logger.__pushNewline__()
 
         # Preconditions
-        Logger.__pushStatement__("agent_has-{}-{}".format(agentId, item.id))
+        Logger.__pushStatement__("at-{}-{}".format(item.id, agentId))
 
         # Action
         Logger.__pushStatement__("!EQUIP-{}-{}".format(agentId, item.id))
@@ -833,8 +826,8 @@ class Logger:
 
         # Preconditions
         Logger.__pushStatement__("looking_at-{}-{}".format(sourceAgentId, targetAgentId))
-        Logger.__pushStatement__("at-{}-{}".format(sourceAgentId, targetAgentId))
-        Logger.__pushStatement__("agent_has-{}-{}".format(sourceAgentId, item.id))
+        Logger.__logAt__(sourceAgent, targetAgent)
+        Logger.__logAt__(item, sourceAgent)
         Logger.__pushStatement__("equipped_item-{}-{}".format(sourceAgentId, item.id))
 
         # Action
@@ -842,10 +835,9 @@ class Logger:
 
         # Postconditions
         Logger.__pushStatement__("equipped_item-{}-{}".format(sourceAgentId, "None"))
-        Logger.__logAgentLostItem__(sourceAgent, item)
-        Logger.__logAgentHasItem__(targetAgent, item)
+        Logger.__logAt__(item, targetAgent)
 
-        # Change current state to reflect that this item is no longer equipped
+        # Fix up current state
         didModifyCurrentState = False
         for i in range(0, len(Logger.__currentState)):
             if Logger.__currentState[i].startswith("equipped_item-{}".format(sourceAgentId)):

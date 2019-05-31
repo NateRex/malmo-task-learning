@@ -145,9 +145,9 @@ while player_agent.isMissionActive() or companion_agent.isMissionActive():
         continue
 
     # If there are cows nearby, go and harvest them
+    companion_agent.equip(ItemType.All.diamond_sword)   # Make sure we have our diamond sword equipped
     closestCow = companion_agent.getClosestFoodMob()
     if closestCow != None:
-        companion_agent.equip(ItemType.All.diamond_sword)   # Make sure we have our diamond sword equipped
         isLookingAt = companion_agent.lookAtEntity(closestCow)
         if not isLookingAt:
             continue
