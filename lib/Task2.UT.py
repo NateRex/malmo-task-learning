@@ -118,6 +118,7 @@ Performance.addAgents([player_agent, companion_agent])
 # Log initial state
 Logger.trackClosestFoodMob(companion_agent)
 Logger.trackClosestFoodItem(companion_agent)
+Logger.trackInventory(companion_agent)
 Logger.logInitialState(Agent.agentList)
 
 # Wait for all agents to finish:
