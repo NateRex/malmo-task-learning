@@ -14,8 +14,8 @@ LOGS_DELETED = 0            # Number of logs that were deleted due to unmet cond
 MIN_KILLS = 0               # Minimum number of kills that must be made by the agents in order to preserve log
 MIN_LINES = 0               # Minimum number of lines that the new log must have in order to preserve it
 ACTION_POST_TUPLES = {      # A set of tuples to show what post-condition is expected immediately following an action
-    "!LOOKAT" : "agent_looking_at",
-    "!MOVETO" : "agent_at",
+    "!LOOKAT" : "looking_at",
+    "!MOVETO" : "at",
     "!ATTACK" : "status"
 }
 ENTITY_DECLARATION_STRINGS = ["items", "mobs", "agents"]    # A list of strings representing the start to an entity declaration
@@ -320,11 +320,11 @@ def fixActionFromParameter(idx):
     entity = None
     expectedParam = None
     if line.startswith("!LOOKAT"):
-        statePrefix = "agent_looking_at"
+        statePrefix = "looking_at"
         entity = strings[1]
         expectedParam = strings[2]
     elif line.startswith("!MOVETO"):
-        statePrefix = "agent_at"
+        statePrefix = "at"
         entity = strings[1]
         expectedParam = strings[2]
     else:
